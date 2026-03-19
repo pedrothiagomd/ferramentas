@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prescritor HD — Novo Paciente</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+body{padding:1.5rem;font-family:'DM Sans',system-ui,sans-serif;background:#f4f3f0;color:#1a1a18;font-size:14px}
+.wrap{max-width:980px;margin:0 auto}
+h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
+.subtitle{font-size:12px;color:#888;margin-bottom:1.25rem;letter-spacing:.02em}
+.banner{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#166534}
+.card{background:#fff;border:1px solid #e8e8e5;border-radius:10px;padding:1rem 1.2rem;margin-bottom:.85rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:11px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-bottom:9px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;color:#777;font-weight:500}
+.field input,.field select{font-size:13px;padding:6px 9px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#1a1a18;width:100%;outline:none;font-family:inherit;transition:border .12s}
+.field input:focus,.field select:focus{border-color:#555}
+.toggle-row{display:flex;gap:6px;align-items:center;margin-bottom:12px}
+.toggle-btn{font-size:12px;padding:5px 16px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#555;cursor:pointer;font-family:inherit}
+.toggle-btn.sel{background:#1a1a18;color:#fff;border-color:#1a1a18;font-weight:500}
+.toggle-btn.sel-hdf{background:#3C3489;color:#fff;border-color:#3C3489;font-weight:500}
+.freq-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.freq-chip{font-size:12px;padding:4px 13px;border-radius:99px;border:1px solid #ddd;background:#fff;color:#555;cursor:pointer;font-family:inherit}
+.freq-chip.sel{background:#1a1a18;color:#fff;border-color:#1a1a18;font-weight:500}
+.freq-chip.sel-warn{background:#fffbeb;color:#92400e;border-color:#fcd34d;font-weight:500}
+.freq-note{font-size:11px;color:#999;margin-top:6px;font-style:italic;min-height:15px}
+.rec-box{border-radius:8px;padding:10px 13px;margin-top:8px;border:1px solid}
+.rec-box.blue{background:#eff6ff;border-color:#93c5fd;color:#1e40af}
+.rec-box.green{background:#f0fdf4;border-color:#86efac;color:#166534}
+.rec-box.amber{background:#fffbeb;border-color:#fcd34d;color:#92400e}
+.rec-box.red{background:#fff5f5;border-color:#fca5a5;color:#991b1b}
+.rec-box.purple{background:#faf5ff;border-color:#c4b5fd;color:#6b21a8}
+.rec-box.slate{background:#f8fafc;border-color:#cbd5e1;color:#334155}
+.rec-label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;opacity:.8}
+.rec-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;margin-bottom:3px}
+.rec-detail{font-size:11px;line-height:1.7;opacity:.85}
+.lab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:7px;margin-top:7px}
+.lab-card{border-radius:8px;padding:9px 12px;border:1px solid #e8e8e5;background:#fafaf8}
+.lab-card.alert{background:#fff5f5;border-color:#fca5a5}
+.lab-card.warn{background:#fffbeb;border-color:#fcd34d}
+.lab-card.ok{background:#f0fdf4;border-color:#86efac}
+.lab-card.neutral{background:#f8f8f6;border-color:#ddd;opacity:.65}
+.lab-label{font-size:10.5px;color:#888;margin-bottom:2px;font-weight:500}
+.lab-card.alert .lab-label{color:#991b1b}
+.lab-card.warn .lab-label{color:#92400e}
+.lab-card.ok .lab-label{color:#166534}
+.lab-val{font-size:14px;font-weight:600;color:#111;font-family:'DM Mono',monospace}
+.lab-card.alert .lab-val{color:#7f1d1d}
+.lab-card.warn .lab-val{color:#78350f}
+.lab-card.ok .lab-val{color:#14532d}
+.lab-ref{font-size:10px;color:#aaa;margin-top:2px}
+.acesso-group{margin-bottom:11px}
+.acesso-group-label{font-size:10.5px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #eee}
+.acesso-options{display:flex;flex-wrap:wrap;gap:5px}
+.acesso-chip{font-size:12px;padding:4px 11px;border-radius:99px;border:1px solid #ddd;background:#fff;color:#555;cursor:pointer;font-family:inherit}
+.acesso-chip:hover{border-color:#999}
+.acesso-chip.sel-fav{background:#f0fdf4;color:#166534;border-color:#86efac;font-weight:500}
+.acesso-chip.sel-cat{background:#fffbeb;color:#92400e;border-color:#fcd34d;font-weight:500}
+.acesso-chip.sel-prot{background:#faf5ff;color:#6b21a8;border-color:#c4b5fd;font-weight:500}
+.acessoSel-txt{font-size:12px;color:#888;margin-top:5px;min-height:16px;font-style:italic}
+.sec-divider{font-size:10.5px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em;margin:13px 0 8px;padding-bottom:4px;border-bottom:1px solid #eee}
+.med-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px}
+.med-item{display:flex;flex-direction:column;gap:5px;background:#fafaf8;border-radius:8px;padding:10px 12px;border:1px solid #e8e8e5}
+.med-item.active-med{border-color:#555;background:#fff}
+.med-header{display:flex;align-items:center;gap:8px}
+.med-check{width:14px;height:14px;accent-color:#1a1a18;cursor:pointer;flex-shrink:0}
+.med-name{font-size:13px;font-weight:500;color:#1a1a18;cursor:pointer;user-select:none}
+.med-fields{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:3px}
+.med-fields select,.med-fields input[type=text]{font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#1a1a18;outline:none;font-family:inherit}
+.med-full{grid-column:1/-1}
+.med-calc-box{grid-column:1/-1;font-size:11px;border-radius:6px;padding:6px 9px;margin-top:2px;line-height:1.65}
+.med-calc-box.green{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.med-calc-box.amber{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.med-calc-box.red{background:#fff5f5;color:#991b1b;border:1px solid #fecaca}
+.med-calc-box.slate{background:#f8fafc;color:#475569;border:1px solid #e2e8f0}
+.summary-box{background:#fafaf8;border:1px solid #e8e8e5;border-radius:10px;padding:1rem 1.2rem;margin-top:.85rem;font-size:12px;color:#1a1a18;line-height:1.95;white-space:pre-wrap;font-family:'DM Mono',monospace}
+.action-row{display:flex;gap:7px;margin-top:.85rem;flex-wrap:wrap}
+.action-row button{font-size:13px;padding:7px 17px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a18;cursor:pointer;font-family:inherit}
+.action-row button:hover{border-color:#999;background:#f8f8f6}
+.action-row button.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.action-row button.primary:hover{background:#333}
+.action-row button.danger{background:#fff5f5;color:#991b1b;border-color:#fca5a5}
+@media print{.action-row{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div style="margin-bottom:1rem">
+  <h1>Prescritor dialítico — Novo paciente</h1>
+  <div class="subtitle">CHB Belém · v13 · KDIGO 2017/2024 · KDOQI · Dose sugerida por diretrizes</div>
+</div>
+<div class="banner">Preencha os dados laboratoriais — as recomendações de dose são calculadas automaticamente com base nas diretrizes KDIGO/KDOQI.</div>
+
+<div class="card">
+  <div class="card-title">Identificação e parâmetros laboratoriais</div>
+  <div class="row" style="margin-bottom:6px">
+    <div class="field" style="grid-column:1/-1">
+      <label>Nome completo do paciente</label>
+      <input type="text" id="nomeNovo" placeholder="Nome completo">
+    </div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Kt/V equilibrado</label><input type="number" id="ktvE" step="0.01" min="0" max="5" placeholder="ex: 1.20" oninput="onLabChange()"></div>
+    <div class="field"><label>Hemoglobina (g/dL)</label><input type="number" id="hbInp" step="0.1" min="0" max="25" placeholder="ex: 11.5" oninput="onLabChange()"></div>
+    <div class="field"><label>Fósforo (mg/dL)</label><input type="number" id="pInp" step="0.1" min="0" max="20" placeholder="ex: 4.5" oninput="onLabChange()"></div>
+    <div class="field"><label>Cálcio (mg/dL)</label><input type="number" id="caInp" step="0.1" min="0" max="20" placeholder="ex: 9.0" oninput="onLabChange()"></div>
+    <div class="field"><label>Potássio (mEq/L)</label><input type="number" id="kInp" step="0.1" min="0" max="10" placeholder="ex: 5.0" oninput="onLabChange()"></div>
+    <div class="field"><label>Ureia pré (mg/dL)</label><input type="number" id="ureiaInp" step="1" min="0" max="800" placeholder="ex: 140"></div>
+    <div class="field"><label>PTH (pg/mL)</label><input type="number" id="pthInp" step="0.1" min="0" max="9999" placeholder="ex: 350" oninput="onLabChange()"></div>
+    <div class="field"><label>Data coleta PTH</label><input type="text" id="pthData" placeholder="dd/mm/aaaa"></div>
+    <div class="field"><label>25-OH Vit D (ng/mL)</label><input type="number" id="vitDInp" step="0.1" min="0" max="200" placeholder="ex: 22" oninput="onLabChange()"></div>
+    <div class="field"><label>Ferritina (ng/mL)</label><input type="number" id="ferritinaInp" step="1" min="0" max="5000" placeholder="ex: 280" oninput="onLabChange()"></div>
+    <div class="field"><label>Sat. Transferrina (%)</label><input type="number" id="satFeInp" step="0.1" min="0" max="100" placeholder="ex: 25" oninput="onLabChange()"></div>
+  </div>
+  <div id="labPreview"></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Modalidade e parâmetros dialíticos</div>
+  <div class="toggle-row">
+    <span style="font-size:13px;color:#888">Modalidade:</span>
+    <button class="toggle-btn sel" id="btnHD" onclick="setModal('HD')">HD</button>
+    <button class="toggle-btn" id="btnHDF" onclick="setModal('HDF')">HDF</button>
+  </div>
+  <div style="margin-bottom:13px">
+    <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Frequência semanal</div>
+    <div class="freq-chips">
+      <button class="freq-chip" onclick="selFreq(this,'2x/semana','warn')">2x/sem</button>
+      <button class="freq-chip sel" onclick="selFreq(this,'3x/semana','')">3x/sem</button>
+      <button class="freq-chip" onclick="selFreq(this,'4x/semana','')">4x/sem</button>
+      <button class="freq-chip" onclick="selFreq(this,'5x/semana','')">5x/sem</button>
+      <button class="freq-chip" onclick="selFreq(this,'Diária (6x/sem)','')">Diária</button>
+    </div>
+    <div id="freqNote" class="freq-note"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Peso seco alvo (kg)</label><input type="number" id="pesoSeco" step="0.1" min="20" max="200" placeholder="ex: 69.0" oninput="calcAll()"></div>
+    <div class="field"><label>Tempo de sessão</label>
+      <select id="tempo" onchange="calcAll()">
+        <option value="">-- selecione --</option>
+        <option value="3">3 horas</option><option value="3.5">3,5 horas</option>
+        <option value="4">4 horas</option><option value="4.5">4,5 horas</option><option value="5">5 horas</option>
+      </select>
+    </div>
+    <div class="field"><label>Perfil cardiopata?</label>
+      <select id="cardio" onchange="calcAll()">
+        <option value="0">Não — 13 mL/kg/h</option>
+        <option value="1">Sim — 10 mL/kg/h</option>
+      </select>
+    </div>
+  </div>
+  <div id="ufResult"></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Acesso vascular</div>
+  <div class="acesso-group">
+    <div class="acesso-group-label">Fístula arteriovenosa (FAV) — Qb meta 350–450 mL/min</div>
+    <div class="acesso-options">
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — rádio-cefálica ESQ','sel-fav','fav')">Rádio-cefálica ESQ</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — rádio-cefálica DIR','sel-fav','fav')">Rádio-cefálica DIR</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — braquio-cefálica ESQ','sel-fav','fav')">Braquio-cefálica ESQ</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — braquio-cefálica DIR','sel-fav','fav')">Braquio-cefálica DIR</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — braquio-basílica ESQ','sel-fav','fav')">Braquio-basílica ESQ</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — braquio-basílica DIR','sel-fav','fav')">Braquio-basílica DIR</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — ulno-basílica ESQ','sel-fav','fav')">Ulno-basílica ESQ</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'FAV — ulno-basílica DIR','sel-fav','fav')">Ulno-basílica DIR</button>
+    </div>
+  </div>
+  <div class="acesso-group">
+    <div class="acesso-group-label">Prótese PTFE — Qb meta 300–400 mL/min</div>
+    <div class="acesso-options">
+      <button class="acesso-chip" onclick="selAcesso(this,'Prótese PTFE — MSE','sel-prot','ptfe')">PTFE — MSE</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Prótese PTFE — MSD','sel-prot','ptfe')">PTFE — MSD</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Prótese PTFE — coxa ESQ','sel-prot','ptfe')">PTFE — coxa ESQ</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Prótese PTFE — coxa DIR','sel-prot','ptfe')">PTFE — coxa DIR</button>
+    </div>
+  </div>
+  <div class="acesso-group">
+    <div class="acesso-group-label">Cateter de duplo lúmen — Qb meta 250–350 mL/min</div>
+    <div class="acesso-options">
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter temporário — JID','sel-cat','cat')">Temporário JID</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter temporário — JIE','sel-cat','cat')">Temporário JIE</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter temporário — subclávio DIR','sel-cat','cat')">Temporário subclávio DIR</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter temporário — subclávio ESQ','sel-cat','cat')">Temporário subclávio ESQ</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter temporário — femoral DIR','sel-cat','cat')">Temporário femoral DIR</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter temporário — femoral ESQ','sel-cat','cat')">Temporário femoral ESQ</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter tunelizado (Permcath) — JID','sel-cat','cat')">Tunelizado JID</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter tunelizado (Permcath) — JIE','sel-cat','cat')">Tunelizado JIE</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter tunelizado (Permcath) — subclávio DIR','sel-cat','cat')">Tunelizado subclávio DIR</button>
+      <button class="acesso-chip" onclick="selAcesso(this,'Cateter tunelizado (Permcath) — subclávio ESQ','sel-cat','cat')">Tunelizado subclávio ESQ</button>
+    </div>
+  </div>
+  <div class="acessoSel-txt" id="acessoSel"></div>
+  <div id="qbResult"></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Anticoagulação e cuidados com cateter</div>
+  <div class="sec-divider">Heparina — calculada pelo peso seco</div>
+  <div id="hepResult"><div style="font-size:12px;color:#aaa">Informe o peso seco para calcular a dose</div></div>
+  <div style="margin-top:10px">
+    <div class="field" style="max-width:290px">
+      <label>Esquema de heparina</label>
+      <select id="hepEsquema" onchange="calcAll()">
+        <option value="std">Padrão — bolus + manutenção</option>
+        <option value="bolus">Somente bolus inicial</option>
+        <option value="mini">Heparinização mínima</option>
+        <option value="sem">Sem heparina (heparina-free)</option>
+      </select>
+    </div>
+  </div>
+  <div class="sec-divider">Taurolock (somente para cateter)</div>
+  <div id="taurolockArea"><div style="font-size:12px;color:#aaa;font-style:italic">Selecione um cateter para habilitar</div></div>
+  <div class="sec-divider">Calcitonina</div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+      <input type="checkbox" id="calcitoninaChk" style="width:14px;height:14px;accent-color:#1a1a18"> Em uso de calcitonina
+    </label>
+    <select id="calcitoninaFreq" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit">
+      <option>100 UI SC — 1x/dia</option><option>100 UI SC — 2x/dia</option>
+      <option>200 UI SC — 1x/dia</option><option>50 UI SC — 1x/dia</option><option>100 UI IM — 1x/dia</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Medicações — dose sugerida por diretrizes (KDIGO/KDOQI)</div>
+  <div class="med-grid" id="medGrid"></div>
+</div>
+
+<div class="action-row">
+  <button class="primary" onclick="gerarResumo()">Gerar resumo clínico</button>
+  <button onclick="copiarResumo()">Copiar resumo</button>
+  <button onclick="window.print()">Imprimir</button>
+  <button class="danger" onclick="limparTudo()">Limpar tudo</button>
+</div>
+<div id="summaryArea"></div>
+</div>
+
+<script>
+var HEP_CONC=5000;
+var modal='HD',medState={},acessoNome='',acessoTipo='',freqSel='3x/semana';
+var FREQ_NOTES={
+  '2x/semana':'Atenção: abaixo do padrão — indicada apenas com função renal residual significativa.',
+  '3x/semana':'Frequência padrão recomendada pelo KDIGO.',
+  '4x/semana':'Frequência estendida — indicada em hiperfosfatemia refratária ou ganho excessivo.',
+  '5x/semana':'Diálise estendida — considerar em instabilidade hemodinâmica frequente.',
+  'Diária (6x/sem)':'Diálise diária — máxima depuração. Avaliar impacto no acesso e qualidade de vida.'
+};
+
+var MEDS=[
+  {id:'sevelamer',    nome:'Sevelamer',                doses:['400 mg','800 mg','1.200 mg','1.600 mg','2.400 mg','3.200 mg','4.800 mg'],freqs:['1x/dia','2x/dia','3x/dia','4x/dia']},
+  {id:'epo',          nome:'EPO (eritropoietina)',      doses:['2.000 UI','4.000 UI','6.000 UI','8.000 UI','10.000 UI','12.000 UI'],   freqs:['1x/sem','2x/sem','3x/sem','a cada 2 sem']},
+  {id:'noripurum',    nome:'Noripurum EV',              doses:['100 mg','200 mg'],                                                      freqs:['1x/sem','2x/sem','3x/sem (intradialítico)','dose única','quinzenal','mensal']},
+  {id:'calcio',       nome:'Carbonato de cálcio',       doses:['500 mg','1g','1,5g','2g','2,5g','3g'],                                  freqs:['1x/dia','2x/dia','3x/dia','4x/dia']},
+  {id:'cinacalcet',   nome:'Cinacalcete',               doses:['30 mg','60 mg','90 mg','180 mg'],                                      freqs:['1x/dia','2x/dia']},
+  {id:'vitd',         nome:'Vitamina D (colecalciferol)',doses:['400 UI','800 UI','1.000 UI','2.000 UI','50.000 UI'],                   freqs:['1x/dia','2x/dia','1x/semana','quinzenal']},
+  {id:'paricalcitol', nome:'Paricalcitol',              doses:[],                                                                       freqs:['3x/sem (intradialítico)','2x/sem','1x/sem','1x/dia (VO)']}
+];
+
+function g(id){return document.getElementById(id);}
+function fv(id){var v=g(id)&&g(id).value;return v&&v.trim()!==''?parseFloat(v.replace(',','.'))||null:null;}
+function sv(id){return g(id)?g(id).value.trim():'';}
+
+function initMedState(){
+  medState={};
+  MEDS.forEach(function(m){medState[m.id]={ativo:false,dose:m.doses[0]||'',freq:m.freqs[0],via:'IV',doseManual:''};});
+}
+initMedState();
+
+function getLabs(){
+  return{hb:fv('hbInp'),p:fv('pInp'),ca:fv('caInp'),k:fv('kInp'),pth:fv('pthInp'),
+    ferritina:fv('ferritinaInp'),satFe:fv('satFeInp'),vitD:fv('vitDInp')};
+}
+
+function getRecs(hb,p,ca,k,pth,pthStr,ps,ferritina,satFe,vitD){
+  var r={};
+
+// ─── QUELANTES DE FÓSFORO ────────────────────────────────────────────────────
+  // Lógica baseada em KDIGO 2017 Rec. 4.1.6 (grau 2B):
+  // Regra geral: RESTRINGIR quelantes de cálcio em adultos em diálise.
+  // Sevelamer é o quelante de escolha na maioria dos cenários.
+  // Carbonato de cálcio só como QUELANTE se Ca < 8,4 + P > 4,5 (dupla indicação).
+  // Combinação sevelamer + carbonato: apenas quando Ca < 8,4 + P > 4,5 (quelante + reposição simultânea).
+  // Carbonato como REPOSIÇÃO ISOLADA (sem quelação): Ca < 8,4 + P ≤ 4,5 (não quelante).
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // SEVELAMER
+  if(p===null){
+    r.sevelamer={cor:'slate',dose:'—',freq:'—',
+      detail:'Fósforo não informado. Inserir valor para recomendação automática.'};
+  }
+  else if(p>4.5&&ca!==null&&ca>=9.5){
+    // P elevado + hipercalcemia → sevelamer obrigatório
+    r.sevelamer={cor:'red',dose:'800–1.600 mg',freq:'3x/dia (com as refeições)',
+      detail:'P '+p.toFixed(1)+' + Ca '+ca.toFixed(1)+' mg/dL: sevelamer OBRIGATÓRIO. Quelante à base de cálcio contraindicado — risco de agravar hipercalcemia e calcificação vascular. Titular de 800 mg 3x/dia. (KDIGO 2017 2B)'};
+  }
+  else if(p>4.5&&ca!==null&&(pth!==null&&pth<150)){
+    // P elevado + PTH suprimido → sevelamer obrigatório (carbonato suprimiria ainda mais o PTH)
+    r.sevelamer={cor:'red',dose:'800–1.600 mg',freq:'3x/dia (com as refeições)',
+      detail:'P '+p.toFixed(1)+' + PTH '+pthStr+': sevelamer OBRIGATÓRIO. Carbonato de cálcio contraindicado com PTH baixo — risco de doença adinâmica óssea. (KDIGO 2017 2B)'};
+  }
+  else if(p>4.5&&ca!==null&&ca<8.4){
+    // P elevado + hipocalcemia → combinação: sevelamer quelante + carbonato reposição
+    r.sevelamer={cor:'amber',dose:'800 mg',freq:'3x/dia (com as refeições)',
+      detail:'P '+p.toFixed(1)+' + Ca '+ca.toFixed(1)+' mg/dL: sevelamer como quelante principal. Associar carbonato de cálcio em doses menores para reposição de Ca (ver abaixo). Evitar carga excessiva de cálcio. (KDIGO 2017)'};
+  }
+  else if(p>5.5){
+    // P muito elevado, Ca normal → sevelamer preferencial
+    r.sevelamer={cor:'red',dose:'800–1.600 mg',freq:'3x/dia (com as refeições)',
+      detail:'P '+p.toFixed(1)+' mg/dL: hiperfosfatemia significativa. Sevelamer preferencial sobre quelante cálcico para evitar sobrecarga de cálcio. Titular de 800 mg 3x/dia. (KDIGO 2017 2B)'};
+  }
+  else if(p>4.5){
+    // P acima da meta, Ca normal, PTH ok → sevelamer preferencial
+    r.sevelamer={cor:'amber',dose:'800 mg',freq:'3x/dia (com as refeições)',
+      detail:'P '+p.toFixed(1)+' mg/dL: acima da meta (> 4,5). Sevelamer preferencial. Carbonato de cálcio pode ser alternativa se custo for limitante e Ca < 9,5 e PTH > 150. (KDIGO 2017)'};
+  }
+  else{
+    // P dentro da meta
+    r.sevelamer={cor:'green',dose:'—',freq:'—',
+      detail:'P '+(p!==null?p.toFixed(1):'—')+' mg/dL: dentro da meta (≤ 4,5). Quelante não indicado no momento. Reforçar orientação dietética. Monitorar mensalmente.'};
+  }
+
+
+  // EPO — baseado em Hb (KDIGO 2012 Anemia)
+  if(hb===null){r.epo={cor:'slate',dose:'—',freq:'—',detail:'Hemoglobina não informada.'};}
+  else if(hb<10){r.epo={cor:'red',dose:'4.000–6.000 UI',freq:'3x/sem (intradialítico)',detail:'Hb '+hb.toFixed(1)+' g/dL: abaixo de 10 — iniciar/intensificar AEE. Meta 10–12 g/dL. Verificar ferro antes de escalar dose. (KDIGO 2012 Anemia)'};}
+  else if(hb<11){r.epo={cor:'amber',dose:'4.000 UI',freq:'3x/sem (intradialítico)',detail:'Hb '+hb.toFixed(1)+' g/dL: próximo ao limite inferior. Manutenção. Verificar ferro. Meta 10–12 g/dL. (KDIGO 2012)'};}
+  else if(hb<=13){r.epo={cor:'green',dose:'2.000–4.000 UI',freq:'2–3x/sem',detail:'Hb '+hb.toFixed(1)+' g/dL: dentro da meta (10–12). Manutenção ou redução 25%. Evitar Hb > 13 g/dL — risco CV. (KDIGO 2012)'};}
+  else{r.epo={cor:'red',dose:'Suspender ou reduzir 50%',freq:'—',detail:'Hb '+hb.toFixed(1)+' g/dL: ACIMA DE 13 — reduzir ou suspender AEE. Risco de AVC, HAS, trombose. (KDIGO 2012 — Grau 2C)'};}
+
+  // NORIPURUM — baseado em ferritina e SatFe (KDIGO 2012 Anemia)
+  if(ferritina===null||satFe===null){r.noripurum={cor:'slate',dose:'—',freq:'—',detail:'Ferritina e SatFe não informados. Solicitar antes de prescrever ferro EV. Meta: ferritina 200–500 ng/mL, satFe > 20%. (KDIGO 2012)'};}
+  else if(ferritina<200||satFe<20){r.noripurum={cor:'red',dose:'100–200 mg',freq:'1–3x/sem (intradialítico)',detail:'Ferritina '+ferritina+' ng/mL / SatFe '+satFe+'%: deficiência de ferro. Repor IV. Não administrar se ferritina > 500 ou satFe > 30%. (KDIGO 2012)'};}
+  else if(ferritina<=500&&satFe<=30){r.noripurum={cor:'green',dose:'100 mg',freq:'Mensal (manutenção)',detail:'Ferritina '+ferritina+' ng/mL / SatFe '+satFe+'%: dentro da meta. Manutenção mensal. Reavaliar trimestralmente. (KDIGO 2012)'};}
+  else{r.noripurum={cor:'amber',dose:'Suspender',freq:'—',detail:'Ferritina '+ferritina+' ng/mL / SatFe '+satFe+'%: acima do limite — suspender ferro IV. Risco de toxicidade. (KDIGO 2012)'};}
+
+  // CARBONATO DE CÁLCIO
+  if(ca===null||p===null){
+    r.calcio={cor:'slate',dose:'—',freq:'—',
+      detail:'Ca e P necessários para recomendação.'};
+  }
+  else if(ca>=9.5){
+    // Hipercalcemia → carbonato contraindicado como quelante ou reposição
+    r.calcio={cor:'red',dose:'Contraindicado',freq:'—',
+      detail:'Ca '+ca.toFixed(1)+' mg/dL: hipercalcemia — carbonato de cálcio CONTRAINDICADO em qualquer dose (quelante ou suplemento). Risco de calcificação vascular e metastática. (KDIGO 2017 2C)'};
+  }
+  else if(pth!==null&&pth<150&&p>4.5){
+    // PTH suprimido + P elevado → carbonato contraindicado como quelante
+    r.calcio={cor:'red',dose:'Contraindicado como quelante',freq:'—',
+      detail:'PTH '+pthStr+' + P '+p.toFixed(1)+': carbonato de cálcio NÃO usar como quelante — PTH já suprimido, risco de doença adinâmica óssea. Usar sevelamer. Carbonato apenas se Ca < 8,4 e necessidade de reposição. (KDIGO 2017)'};
+  }
+  else if(ca<8.4&&p>4.5){
+    // Hipocalcemia + P elevado → combinação: carbonato como coadjuvante (reposição Ca + quelação parcial)
+    r.calcio={cor:'amber',dose:'500 mg–1g',freq:'2–3x/dia (com as refeições)',
+      detail:'Ca '+ca.toFixed(1)+' + P '+p.toFixed(1)+': carbonato como COADJUVANTE do sevelamer — repõe Ca e reduz carga quelante isolada de sevelamer. Dose limitada para evitar sobrecarga cálcica. Monitorar Ca semanalmente. (KDIGO 2017)'};
+  }
+  else if(ca<8.4&&p<=4.5){
+    // Hipocalcemia com P controlado → carbonato como reposição pura (não quelante)
+    r.calcio={cor:'red',dose:'1–1,5g',freq:'3x/dia (com as refeições)',
+      detail:'Ca '+ca.toFixed(1)+' mg/dL: hipocalcemia com P controlado ('+p.toFixed(1)+'). Carbonato de cálcio como REPOSIÇÃO (não quelante). Monitorar Ca semanalmente. Reavaliar quando Ca ≥ 8,4. (KDIGO 2017)'};
+  }
+  else{
+    // Ca normal, P normal ou levemente elevado → carbonato como alternativa de 2ª linha
+    r.calcio={cor:'slate',dose:'Alternativa de 2ª linha',freq:'2–3x/dia se usado',
+      detail:'Ca '+ca.toFixed(1)+' + P '+p.toFixed(1)+': carbonato pode ser usado como quelante alternativo ao sevelamer se P > 4,5 e custo for limitante. KDIGO 2017 recomenda restringir quelantes cálcicos — preferir sevelamer. Monitorar Ca mensalmente.'};
+  }
+
+  // CINACALCETE
+  if(pth===null||ca===null){r.cinacalcet={cor:'slate',dose:'—',freq:'—',detail:'PTH e Ca necessários para recomendação.'};}
+  else if(pth>=600&&ca>=8.4){r.cinacalcet={cor:'red',dose:'30 mg',freq:'1x/dia (titular até 180 mg)',detail:'PTH '+pthStr+': HPT grave. Cinacalcete indicado. Titular a cada 4 semanas. Meta: redução PTH ≥ 30%. (KDIGO 2017)'};}
+  else if(pth>=300&&ca>=8.4){r.cinacalcet={cor:'amber',dose:'30 mg',freq:'1x/dia — avaliar início',detail:'PTH '+pthStr+': HPT moderado. Considerar se tendência ascendente. Ca '+ca.toFixed(1)+' seguro. (KDIGO 2017)'};}
+  else if(ca<8.4){r.cinacalcet={cor:'amber',dose:'Contraindicado',freq:'—',detail:'Ca '+ca.toFixed(1)+' mg/dL: hipocalcemia — contraindicado. Corrigir cálcio primeiro. (KDIGO 2017)'};}
+  else{r.cinacalcet={cor:'green',dose:'—',freq:'—',detail:'PTH '+(pthStr||'—')+': dentro da meta. Cinacalcete não indicado. Monitorar trimestralmente.'};}
+
+  // VITAMINA D
+  if(vitD===null){r.vitd={cor:'slate',dose:'—',freq:'—',detail:'25-OH Vit D não informado. Solicitar antes de prescrever. Meta ≥ 30 ng/mL. Deficiência agrava HPT secundário. (KDIGO 2017)'};}
+  else if(vitD<10){r.vitd={cor:'red',dose:'50.000 UI/sem × 12 semanas',freq:'1x/semana VO',detail:'Vit D '+vitD+' ng/mL: deficiência grave. Colecalciferol 50.000 UI/sem × 12 sem, depois 2.000 UI/dia manutenção. Reavaliar após 3 meses. (KDIGO 2017)'};}
+  else if(vitD<20){r.vitd={cor:'red',dose:'50.000 UI/sem × 8 semanas',freq:'1x/semana VO',detail:'Vit D '+vitD+' ng/mL: deficiência moderada. Colecalciferol 50.000 UI/sem × 8 sem, depois 1.000–2.000 UI/dia. Reavaliar após 3 meses. (KDIGO 2017)'};}
+  else if(vitD<30){r.vitd={cor:'amber',dose:'2.000 UI/dia ou 50.000 UI/quinzenal',freq:'VO diário ou quinzenal',detail:'Vit D '+vitD+' ng/mL: insuficiência. Colecalciferol 2.000 UI/dia ou 50.000 UI quinzenal × 4 semanas. Reavaliar em 2 meses. (KDIGO 2017)'};}
+  else{r.vitd={cor:'green',dose:'800–1.000 UI/dia',freq:'1x/dia VO (manutenção)',detail:'Vit D '+vitD+' ng/mL: nível adequado. Manutenção 800–1.000 UI/dia se necessário. Monitorar anualmente. (KDIGO 2017)'};}
+
+  // PARICALCITOL
+  if(pth===null){r.paricalcitol={cor:'slate',dose:'—',freq:'—',detail:'PTH não informado.'};}
+  else if(!ps){r.paricalcitol={cor:'slate',dose:'Informe o peso seco',freq:'—',detail:'Peso seco necessário para dose EV. VO alternativo: PTH ÷ 80 mcg/dia.'};}
+  else if(pth<150){r.paricalcitol={cor:'green',dose:'—',freq:'—',detail:'PTH '+(pthStr||pth)+': abaixo de 150 — NÃO indicado. Risco de doença adinâmica óssea. (KDIGO 2017)'};}
+  else if(pth<600){var lo=(ps*0.04).toFixed(1),hi=(ps*0.1).toFixed(1);r.paricalcitol={cor:'amber',dose:'EV: '+lo+'–'+hi+' mcg/sessão',freq:'3x/sem',detail:'PTH '+(pthStr||pth)+': HPT moderado. Dose conservadora: '+lo+' mcg/sessão. Monitorar Ca e PTH mensalmente. (KDIGO 2017)'};}
+  else{var lo2=(ps*0.06).toFixed(1),hi2=(ps*0.1).toFixed(1),voD=(pth/80).toFixed(1);r.paricalcitol={cor:'red',dose:'EV: '+lo2+'–'+hi2+' mcg/sessão',freq:'3x/sem',detail:'PTH '+(pthStr||pth)+': HPT grave. Dose 0,06–0,1 mcg/kg × '+ps+' kg. VO alternativo: PTH ÷ 80 = '+voD+' mcg/dia. Meta: redução ≥ 30% em 8 sem. (KDIGO 2017)'};}
+
+  return r;
+}
+
+function onLabChange(){renderLabPreview();buildMedGrid();}
+
+function renderLabPreview(){
+  var labs=getLabs(),hb=labs.hb,p=labs.p,ca=labs.ca,k=labs.k,pth=labs.pth,ferritina=labs.ferritina,satFe=labs.satFe,vitD=labs.vitD;
+  var caxp=(ca!==null&&p!==null)?(ca*p).toFixed(1):null;
+  var cards=[
+    {label:'Hemoglobina',      val:hb!==null?hb.toFixed(1)+' g/dL':'—',      ref:'Meta 10–12',    cl:hb===null?'neutral':hb<10||hb>13?'alert':hb<11||hb>12?'warn':'ok'},
+    {label:'Fósforo',          val:p!==null?p.toFixed(1)+' mg/dL':'—',        ref:'Meta ≤ 4,5',    cl:p===null?'neutral':p>5.5?'alert':p>4.5?'warn':'ok'},
+    {label:'Cálcio',           val:ca!==null?ca.toFixed(1)+' mg/dL':'—',      ref:'Meta 8,4–9,5',  cl:ca===null?'neutral':ca<8.4||ca>10.2?'alert':ca>9.5?'warn':'ok'},
+    {label:'Ca × P',           val:caxp||'—',                                  ref:'Meta < 55',     cl:caxp===null?'neutral':parseFloat(caxp)>55?'alert':parseFloat(caxp)>45?'warn':'ok'},
+    {label:'Potássio',         val:k!==null?k.toFixed(1)+' mEq/L':'—',        ref:'Meta 3,5–5,5',  cl:k===null?'neutral':k>=6.5?'alert':k>=5.5?'warn':'ok'},
+    {label:'PTH',              val:pth!==null?pth+' pg/mL':'—',                ref:'Meta 150–600',  cl:pth===null?'neutral':pth>=600?'alert':pth<150?'warn':'ok'},
+    {label:'25-OH Vit D',      val:vitD!==null?vitD+' ng/mL':'—',              ref:'Meta ≥ 30',     cl:vitD===null?'neutral':vitD<20?'alert':vitD<30?'warn':'ok'},
+    {label:'Ferritina',        val:ferritina!==null?ferritina+' ng/mL':'—',    ref:'Meta 200–500',  cl:ferritina===null?'neutral':ferritina<200||ferritina>800?'alert':ferritina>500?'warn':'ok'},
+    {label:'Sat. Transf.',     val:satFe!==null?satFe+'%':'—',                 ref:'Meta 20–50%',   cl:satFe===null?'neutral':satFe<20?'alert':satFe>50?'warn':'ok'},
+  ];
+  var hasAny=Object.values(labs).some(function(v){return v!==null;});
+  if(!hasAny){g('labPreview').innerHTML='';return;}
+  g('labPreview').innerHTML='<div class="lab-grid" style="margin-top:10px">'+cards.map(function(c){
+    return '<div class="lab-card '+c.cl+'"><div class="lab-label">'+c.label+'</div><div class="lab-val">'+c.val+'</div><div class="lab-ref">'+c.ref+'</div></div>';
+  }).join('')+'</div>';
+}
+
+function buildMedGrid(){
+  var labs=getLabs(),ps=fv('pesoSeco');
+  var pthStr=labs.pth?String(labs.pth):'—';
+  var recs=getRecs(labs.hb,labs.p,labs.ca,labs.k,labs.pth,pthStr,ps,labs.ferritina,labs.satFe,labs.vitD);
+  g('medGrid').innerHTML=MEDS.map(function(m){
+    var isPari=m.id==='paricalcitol';
+    var rec=recs[m.id];
+    var cor=rec?rec.cor:'slate';
+    var doseField=isPari
+      ?'<input type="text" id="dose-'+m.id+'" placeholder="'+(rec?rec.dose:'—')+'" value="'+medState[m.id].doseManual+'" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit" oninput="medState[\''+m.id+'\'].doseManual=this.value;medState[\''+m.id+'\'].dose=this.value">'
+      :'<select id="dose-'+m.id+'" onchange="medState[\''+m.id+'\'].dose=this.value" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit">'+m.doses.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select>';
+    var pariExtra=isPari?'<select id="via-paricalcitol" class="med-full" onchange="medState[\'paricalcitol\'].via=this.value;buildMedGrid()" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit;margin-top:2px"><option value="IV">EV — intradialítico</option><option value="VO">VO — oral</option></select>':'';
+    var recBox=rec?'<div class="med-calc-box '+cor+' med-full"><div style="font-weight:600;font-size:11px;margin-bottom:2px">Dose sugerida (KDIGO): '+rec.dose+(rec.freq?' · '+rec.freq:'')+'</div><div style="font-size:11px;opacity:.85">'+rec.detail+'</div></div>':'';
+    return '<div class="med-item" id="meditem-'+m.id+'"><div class="med-header"><input type="checkbox" class="med-check" id="chk-'+m.id+'" onchange="toggleMed(\''+m.id+'\')" '+(medState[m.id].ativo?'checked':'')+'><label class="med-name" for="chk-'+m.id+'">'+m.nome+'</label></div>'+recBox+'<div class="med-fields" id="fields-'+m.id+'" style="display:'+(medState[m.id].ativo?'grid':'none')+'">'+doseField+'<select id="freq-'+m.id+'" onchange="medState[\''+m.id+'\'].freq=this.value" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit">'+m.freqs.map(function(f){return '<option>'+f+'</option>';}).join('')+'</select>'+pariExtra+'</div></div>';
+  }).join('');
+}
+
+function toggleMed(id){
+  medState[id].ativo=g('chk-'+id).checked;
+  g('fields-'+id).style.display=medState[id].ativo?'grid':'none';
+  g('meditem-'+id).className='med-item'+(medState[id].ativo?' active-med':'');
+}
+
+function setModal(m){
+  modal=m;
+  g('btnHD').className='toggle-btn'+(m==='HD'?' sel':'');
+  g('btnHDF').className='toggle-btn'+(m==='HDF'?' sel-hdf':'');
+}
+
+function selFreq(btn,freq,type){
+  freqSel=freq;
+  document.querySelectorAll('.freq-chip').forEach(function(c){c.className='freq-chip';});
+  btn.className='freq-chip '+(type==='warn'?'sel-warn':'sel');
+  g('freqNote').textContent=FREQ_NOTES[freq]||'';
+}
+
+function selAcesso(btn,nome,cls,tipo){
+  document.querySelectorAll('.acesso-chip').forEach(function(c){c.className='acesso-chip';});
+  btn.className='acesso-chip '+cls;
+  acessoNome=nome;acessoTipo=tipo;
+  g('acessoSel').textContent='Selecionado: '+nome;
+  renderQb();renderTaurolock();
+}
+
+function renderQb(){
+  var div=g('qbResult');if(!acessoTipo){div.innerHTML='';return;}
+  var map={fav:{min:350,max:450,label:'FAV'},ptfe:{min:300,max:400,label:'Prótese PTFE'},cat:{min:250,max:350,label:'Cateter'}};
+  var r=map[acessoTipo];
+  div.innerHTML='<div class="rec-box blue" style="margin-top:8px"><div class="rec-label">Meta Qb — '+r.label+'</div><div class="rec-val">'+r.min+'–'+r.max+' mL/min</div><div class="rec-detail">Iniciar em '+r.min+' mL/min e titular conforme tolerância hemodinâmica</div></div>';
+}
+
+function renderTaurolock(){
+  var div=g('taurolockArea');
+  if(acessoTipo!=='cat'){div.innerHTML='<div style="font-size:12px;color:#aaa;font-style:italic">Selecione um cateter para habilitar</div>';return;}
+  div.innerHTML='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="taurolockChk" style="width:14px;height:14px;accent-color:#1a1a18"> Em uso de Taurolock</label><select id="taurolockFreq" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit"><option>1x/sem (após 1ª sessão)</option><option>2x/sem (sessões alternadas)</option><option>3x/sem (após cada sessão)</option></select></div><div style="font-size:11px;color:#aaa;margin-top:5px">Taurolock HEP 500 — instilação intraluminal ao fim da sessão</div>';
+}
+
+function calcAll(){calcUF();calcHeparina();buildMedGrid();}
+
+function calcUF(){
+  var ps=fv('pesoSeco'),t=fv('tempo'),c=parseInt(g('cardio').value),div=g('ufResult');
+  if(!ps||!t){div.innerHTML='';return;}
+  var taxa=c?10:13,ufMax=taxa*ps*t;
+  div.innerHTML='<div class="rec-box blue" style="margin-top:10px"><div class="rec-label">UF máxima prescrita — '+(c?'cardiopata (10 mL/kg/h)':'padrão (13 mL/kg/h)')+'</div><div class="rec-val">Máx. '+Math.round(ufMax)+' mL/sessão · '+taxa+' mL/kg/h</div><div class="rec-detail">Peso seco: '+ps.toFixed(1)+' kg · Sessão: '+t+' h · '+taxa+' × '+ps.toFixed(1)+' × '+t+' = '+Math.round(ufMax)+' mL</div></div>';
+}
+
+function calcHeparina(){
+  var ps=fv('pesoSeco'),esq=g('hepEsquema').value,div=g('hepResult');
+  if(esq==='sem'){div.innerHTML='<div class="rec-box slate"><div class="rec-label">Anticoagulação</div><div class="rec-val">Heparina-free</div><div class="rec-detail">Sem heparina — manter circuito com solução salina</div></div>';return;}
+  if(!ps){div.innerHTML='<div style="font-size:12px;color:#aaa">Informe o peso seco para calcular a dose</div>';return;}
+  var bML=(ps*50/HEP_CONC).toFixed(1),mML=(ps*25/HEP_CONC).toFixed(1);
+  var val2='',detail='';
+  if(esq==='std'){val2='Bolus: '+bML+' mL · Manutenção: '+mML+' mL/h';detail='Bolus '+bML+' mL EV + '+mML+' mL/h contínuo (suspender 30–60 min antes). 5.000 UI/mL · 50 UI/kg · 25 UI/kg/h';}
+  else if(esq==='bolus'){val2='Bolus único: '+bML+' mL';detail='Bolus '+bML+' mL EV — sem manutenção. 5.000 UI/mL · 50 UI/kg';}
+  else if(esq==='mini'){val2='Heparinização mínima: '+(ps*25/HEP_CONC).toFixed(1)+' mL';detail='Bolus reduzido — sem manutenção. 5.000 UI/mL · 25 UI/kg';}
+  div.innerHTML='<div class="rec-box purple"><div class="rec-label">Heparina não fracionada (5.000 UI/mL) — peso: '+ps.toFixed(1)+' kg</div><div class="rec-val">'+val2+'</div><div class="rec-detail">'+detail+'</div></div>';
+}
+
+function getMedStr(m){
+  var s=medState[m.id],ps=fv('pesoSeco');
+  if(m.id==='paricalcitol'){
+    var via=s.via==='VO'?'VO':'EV';
+    var labs=getLabs(),pthStr=labs.pth?String(labs.pth):'—';
+    var rec=getRecs(labs.hb,labs.p,labs.ca,labs.k,labs.pth,pthStr,ps,labs.ferritina,labs.satFe,labs.vitD)['paricalcitol'];
+    var doseStr=s.doseManual||(rec?rec.dose:'a definir');
+    return 'Paricalcitol '+via+': '+doseStr+' — '+s.freq;
+  }
+  return m.nome+': '+s.dose+' — '+s.freq;
+}
+
+function gerarResumo(){
+  var nome=sv('nomeNovo')||'NOVO PACIENTE';
+  var ps=g('pesoSeco').value,t=g('tempo').value,c=g('cardio').value;
+  var labs=getLabs(),hb=labs.hb,p=labs.p,ca=labs.ca,k=labs.k,pth=labs.pth,vitD=labs.vitD,ferritina=labs.ferritina,satFe=labs.satFe;
+  var calcChk=g('calcitoninaChk').checked,calcFreq=g('calcitoninaFreq').value;
+  var tauChk=g('taurolockChk')&&g('taurolockChk').checked,tauFreq=g('taurolockFreq')?g('taurolockFreq').value:'';
+  var taxa=c==='1'?10:13,ufMax=ps&&t?Math.round(taxa*parseFloat(ps)*parseFloat(t)):null;
+  var qbMap={fav:'350–450 mL/min',ptfe:'300–400 mL/min',cat:'250–350 mL/min'};
+  var caxp=(ca!==null&&p!==null)?(ca*p).toFixed(1):null;
+  var medsAtivos=MEDS.filter(function(m){return medState[m.id].ativo;});
+  var ktvN=fv('ktvE'),ureN=fv('ureiaInp'),pthData=sv('pthData');
+  var txt='PRESCRIÇÃO DIALÍTICA — '+nome.toUpperCase()+'\n';
+  txt+='Data: '+new Date().toLocaleDateString('pt-BR')+'\n'+'─'.repeat(52)+'\n';
+  txt+='MODALIDADE: '+modal+'  |  FREQUÊNCIA: '+freqSel+'  |  SESSÃO: '+(t?t+' h':'—')+'\n';
+  txt+='ACESSO: '+(acessoNome||'—')+'  |  Qb META: '+(acessoTipo?qbMap[acessoTipo]:'—')+'\n\n';
+  txt+='PESO SECO E UF MÁXIMA\n';
+  if(ps&&t)txt+='  Peso seco: '+ps+' kg  |  UF máx: '+taxa+' × '+ps+' × '+t+' = '+ufMax+' mL/sessão\n';
+  else txt+='  Não calculado\n';
+  txt+='\nEXAMES LABORATORIAIS\n';
+  txt+='  Kt/V equilibrado:  '+(ktvN!==null?ktvN.toFixed(2):'—')+(ktvN!==null&&ktvN<1.2?' [ INADEQUADO ]':'')+'\n';
+  txt+='  Hemoglobina:       '+(hb!==null?hb.toFixed(1)+' g/dL':'—')+(hb!==null&&hb>13?' [ ACIMA ]':hb!==null&&hb<10?' [ BAIXO ]':'')+'\n';
+  txt+='  Fósforo:           '+(p!==null?p.toFixed(1)+' mg/dL':'—')+(p!==null&&p>5.5?' [ ELEVADO ]':p!==null&&p>4.5?' [ acima da meta ]':'')+'\n';
+  txt+='  Cálcio:            '+(ca!==null?ca.toFixed(1)+' mg/dL':'—')+(ca!==null&&ca<8.4?' [ HIPOCALCEMIA ]':'')+'\n';
+  txt+='  Ca × P:            '+(caxp||'—')+(caxp&&parseFloat(caxp)>55?' [ ACIMA DO LIMITE ]':'')+'\n';
+  txt+='  Potássio:          '+(k!==null?k.toFixed(1)+' mEq/L':'—')+(k!==null&&k>=6.5?' [ HIPERCALEMIA GRAVE ]':k!==null&&k>=5.5?' [ hipercalemia ]':'')+'\n';
+  txt+='  Ureia pré:         '+(ureN!==null?Math.round(ureN)+' mg/dL':'—')+'\n';
+  txt+='  PTH:               '+(pth!==null?pth+' pg/mL':'—')+(pth!==null&&pth>=600?' [ ELEVADO ]':pth!==null&&pth<150?' [ suprimido ]':'')+(pthData?' ('+pthData+')':'')+'\n';
+  txt+='  25-OH Vit D:       '+(vitD!==null?vitD+' ng/mL':'não informado')+(vitD!==null&&vitD<30?' [ deficiente ]':'')+'\n';
+  txt+='  Ferritina:         '+(ferritina!==null?ferritina+' ng/mL':'não informado')+(ferritina!==null&&ferritina<200?' [ baixo ]':ferritina>500?' [ acima da meta ]':'')+'\n';
+  txt+='  Sat. Transferrina: '+(satFe!==null?satFe+'%':'não informado')+(satFe!==null&&satFe<20?' [ baixo ]':'')+'\n';
+  txt+='\nANTICOAGULAÇÃO\n';
+  if(acessoTipo==='cat')txt+='  Taurolock: '+(tauChk?tauFreq:'não prescrito')+'\n';
+  if(calcChk)txt+='  Calcitonina: '+calcFreq+'\n';
+  txt+='\nMEDICAÇÕES PRESCRITAS\n';
+  if(!medsAtivos.length)txt+='  Nenhuma selecionada\n';
+  else medsAtivos.forEach(function(m){txt+='  '+getMedStr(m)+'\n';});
+  g('summaryArea').innerHTML='<div class="summary-box">'+txt+'</div>';
+}
+
+function copiarResumo(){
+  var box=document.querySelector('.summary-box');
+  if(!box){alert('Gere o resumo primeiro.');return;}
+  navigator.clipboard.writeText(box.textContent).then(function(){
+    var btn=event.target,orig=btn.textContent;
+    btn.textContent='Copiado ✓';setTimeout(function(){btn.textContent=orig;},2000);
+  });
+}
+
+function limparTudo(){
+  if(!confirm('Limpar todos os campos?'))return;
+  document.querySelectorAll('input[type=text],input[type=number]').forEach(function(el){el.value='';});
+  document.querySelectorAll('select').forEach(function(el){el.selectedIndex=0;});
+  document.querySelectorAll('.acesso-chip').forEach(function(c){c.className='acesso-chip';});
+  document.querySelectorAll('.freq-chip').forEach(function(c){c.className='freq-chip';});
+  document.querySelector('.freq-chip:nth-child(2)').className='freq-chip sel';
+  g('acessoSel').textContent='';g('qbResult').innerHTML='';g('ufResult').innerHTML='';
+  g('hepResult').innerHTML='<div style="font-size:12px;color:#aaa">Informe o peso seco para calcular a dose</div>';
+  g('taurolockArea').innerHTML='<div style="font-size:12px;color:#aaa;font-style:italic">Selecione um cateter para habilitar</div>';
+  g('summaryArea').innerHTML='';g('labPreview').innerHTML='';g('freqNote').textContent='';
+  modal='HD';freqSel='3x/semana';acessoNome='';acessoTipo='';
+  g('btnHD').className='toggle-btn sel';g('btnHDF').className='toggle-btn';
+  initMedState();buildMedGrid();
+}
+
+buildMedGrid();
+</script>
+</body>
+</html>
