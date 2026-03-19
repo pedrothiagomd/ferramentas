@@ -542,6 +542,18 @@ function gerarResumo(){
   txt+='  Ferritina:         '+(ferritina!==null?ferritina+' ng/mL':'não informado')+(ferritina!==null&&ferritina<200?' [ baixo ]':ferritina>500?' [ acima da meta ]':'')+'\n';
   txt+='  Sat. Transferrina: '+(satFe!==null?satFe+'%':'não informado')+(satFe!==null&&satFe<20?' [ baixo ]':'')+'\n';
   txt+='\nANTICOAGULAÇÃO\n';
+  var esq=g('hepEsquema')?g('hepEsquema').value:'std';
+  var psN=ps?parseFloat(ps):null;
+  if(esq==='sem'){
+    txt+='  Heparina: não prescrito (heparina-free)\n';
+  } else if(psN){
+    var bML=(psN*50/5000).toFixed(1),mML=(psN*25/5000).toFixed(1);
+    if(esq==='std')      txt+='  Heparina: bolus '+bML+' mL EV + manutenção '+mML+' mL/h (5.000 UI/mL)\n';
+    else if(esq==='bolus')txt+='  Heparina: bolus único '+bML+' mL EV (5.000 UI/mL)\n';
+    else if(esq==='mini') txt+='  Heparina: heparinização mínima '+(psN*25/5000).toFixed(1)+' mL EV (5.000 UI/mL)\n';
+  } else {
+    txt+='  Heparina: peso seco não informado — calcular dose\n';
+  }
   if(acessoTipo==='cat')txt+='  Taurolock: '+(tauChk?tauFreq:'não prescrito')+'\n';
   if(calcChk)txt+='  Calcitonina: '+calcFreq+'\n';
   txt+='\nMEDICAÇÕES PRESCRITAS\n';
