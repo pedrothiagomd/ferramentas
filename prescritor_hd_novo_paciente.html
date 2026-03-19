@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -430,7 +431,9 @@ function buildMedGrid(){
       ?'<input type="text" id="dose-'+m.id+'" placeholder="'+(rec?rec.dose:'—')+'" value="'+medState[m.id].doseManual+'" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit" oninput="medState[\''+m.id+'\'].doseManual=this.value;medState[\''+m.id+'\'].dose=this.value">'
       :'<select id="dose-'+m.id+'" onchange="medState[\''+m.id+'\'].dose=this.value" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit">'+m.doses.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select>';
     var pariExtra=isPari?'<select id="via-paricalcitol" class="med-full" onchange="medState[\'paricalcitol\'].via=this.value;buildMedGrid()" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit;margin-top:2px"><option value="IV">EV — intradialítico</option><option value="VO">VO — oral</option></select>':'';
-    var recBox=rec?'<div class="med-calc-box '+cor+' med-full"><div style="font-weight:600;font-size:11px;margin-bottom:2px">Dose sugerida (KDIGO): '+rec.dose+(rec.freq?' · '+rec.freq:'')+'</div><div style="font-size:11px;opacity:.85">'+rec.detail+'</div></div>':'';
+    var hideIfEmpty=['epo','noripurum','vitd'];
+    var recEmpty=rec&&rec.cor==='slate'&&rec.dose==='—'&&hideIfEmpty.indexOf(m.id)!==-1;
+    var recBox=(rec&&!recEmpty)?'<div class="med-calc-box '+cor+' med-full"><div style="font-weight:600;font-size:11px;margin-bottom:2px">Dose sugerida (KDIGO): '+rec.dose+(rec.freq&&rec.freq!=='—'?' · '+rec.freq:'')+'</div><div style="font-size:11px;opacity:.85">'+rec.detail+'</div></div>':'';
     return '<div class="med-item" id="meditem-'+m.id+'"><div class="med-header"><input type="checkbox" class="med-check" id="chk-'+m.id+'" onchange="toggleMed(\''+m.id+'\')" '+(medState[m.id].ativo?'checked':'')+'><label class="med-name" for="chk-'+m.id+'">'+m.nome+'</label></div>'+recBox+'<div class="med-fields" id="fields-'+m.id+'" style="display:'+(medState[m.id].ativo?'grid':'none')+'">'+doseField+'<select id="freq-'+m.id+'" onchange="medState[\''+m.id+'\'].freq=this.value" style="font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:inherit">'+m.freqs.map(function(f){return '<option>'+f+'</option>';}).join('')+'</select>'+pariExtra+'</div></div>';
   }).join('');
 }
@@ -574,5 +577,6 @@ function limparTudo(){
 
 buildMedGrid();
 </script>
+
 </body>
 </html>
