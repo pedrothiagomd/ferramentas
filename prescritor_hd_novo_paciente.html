@@ -372,12 +372,75 @@ function getRecs(hb,p,ca,k,pth,pthStr,ps,ferritina,satFe,vitD){
       detail:'Ca '+ca.toFixed(1)+' + P '+p.toFixed(1)+': carbonato pode ser usado como quelante alternativo ao sevelamer se P > 4,5 e custo for limitante. KDIGO 2017 recomenda restringir quelantes cálcicos — preferir sevelamer. Monitorar Ca mensalmente.'};
   }
 
+  // ─── CINACALCETE E PARICALCITOL — lógica de prioridade integrada ────────────
+  // Regra KDIGO 2017: paricalcitol é 1ª linha quando Ca < 9,5.
+  // Cinacalcete é 1ª linha quando Ca ≥ 9,5 (paricalcitol agravaria hipercalcemia).
+  // Associação possível quando resposta parcial ao paricalcitol após 8–12 semanas.
+  // Ca < 8,4: cinacalcete contraindicado em qualquer cenário.
+  // ─────────────────────────────────────────────────────────────────────────────
+
   // CINACALCETE
-  if(pth===null||ca===null){r.cinacalcet={cor:'slate',dose:'—',freq:'—',detail:'PTH e Ca necessários para recomendação.'};}
-  else if(pth>=600&&ca>=8.4){r.cinacalcet={cor:'red',dose:'30 mg',freq:'1x/dia (titular até 180 mg)',detail:'PTH '+pthStr+': HPT grave. Cinacalcete indicado. Titular a cada 4 semanas. Meta: redução PTH ≥ 30%. (KDIGO 2017)'};}
-  else if(pth>=300&&ca>=8.4){r.cinacalcet={cor:'amber',dose:'30 mg',freq:'1x/dia — avaliar início',detail:'PTH '+pthStr+': HPT moderado. Considerar se tendência ascendente. Ca '+ca.toFixed(1)+' seguro. (KDIGO 2017)'};}
-  else if(ca<8.4){r.cinacalcet={cor:'amber',dose:'Contraindicado',freq:'—',detail:'Ca '+ca.toFixed(1)+' mg/dL: hipocalcemia — contraindicado. Corrigir cálcio primeiro. (KDIGO 2017)'};}
-  else{r.cinacalcet={cor:'green',dose:'—',freq:'—',detail:'PTH '+(pthStr||'—')+': dentro da meta. Cinacalcete não indicado. Monitorar trimestralmente.'};}
+  if(pth===null||ca===null){
+    r.cinacalcet={cor:'slate',dose:'—',freq:'—',detail:'PTH e Ca necessários para recomendação.'};
+  }
+  else if(ca<8.4){
+    r.cinacalcet={cor:'red',dose:'Contraindicado',freq:'—',
+      detail:'Ca '+ca.toFixed(1)+' mg/dL: hipocalcemia — cinacalcete CONTRAINDICADO. Corrigir cálcio antes de qualquer terapia para HPT. (KDIGO 2017)'};
+  }
+  else if(pth<150){
+    r.cinacalcet={cor:'green',dose:'—',freq:'—',
+      detail:'PTH '+(pthStr||'—')+': dentro da meta ou suprimido. Cinacalcete não indicado — risco de doença adinâmica óssea.'};
+  }
+  else if(ca>=9.5&&pth>=600){
+    // Hipercalcemia + HPT grave → cinacalcete 1ª linha (paricalcitol agravaria Ca)
+    r.cinacalcet={cor:'red',dose:'30 mg',freq:'1x/dia (titular até 180 mg)',
+      detail:'PTH '+pthStr+' + Ca '+ca.toFixed(1)+' mg/dL: PRIMEIRA LINHA — hipercalcemia impede uso de paricalcitol. Cinacalcete reduz PTH e Ca simultaneamente. Titular a cada 4 sem. Meta: redução PTH ≥ 30%. (KDIGO 2017)'};
+  }
+  else if(ca>=9.5&&pth>=300){
+    r.cinacalcet={cor:'amber',dose:'30 mg',freq:'1x/dia — avaliar início',
+      detail:'PTH '+pthStr+' + Ca '+ca.toFixed(1)+': HPT moderado com Ca elevado. Cinacalcete preferencial — paricalcitol contraindicado com Ca ≥ 9,5. (KDIGO 2017)'};
+  }
+  else if(pth>=600){
+    // Ca normal, PTH grave → cinacalcete é 2ª linha após paricalcitol
+    r.cinacalcet={cor:'slate',dose:'Segunda linha',freq:'Avaliar após 8–12 sem de paricalcitol',
+      detail:'PTH '+pthStr+': paricalcitol é 1ª linha (ver abaixo). Cinacalcete: considerar associação se PTH não reduzir ≥ 30% após 8–12 sem, ou se Ca subir > 9,5 durante paricalcitol. (KDIGO 2017)'};
+  }
+  else if(pth>=300){
+    r.cinacalcet={cor:'slate',dose:'Segunda linha',freq:'Avaliar se paricalcitol for insuficiente',
+      detail:'PTH '+pthStr+': paricalcitol é 1ª linha. Cinacalcete: reservar para não-resposta ao paricalcitol ou progressão do HPT. (KDIGO 2017)'};
+  }
+  else{
+    r.cinacalcet={cor:'green',dose:'—',freq:'—',
+      detail:'PTH '+(pthStr||'—')+': dentro da meta. Cinacalcete não indicado. Monitorar trimestralmente.'};
+  }
+
+  // PARICALCITOL
+  if(pth===null){
+    r.paricalcitol={cor:'slate',dose:'—',freq:'—',detail:'PTH não informado.'};
+  }
+  else if(pth<150){
+    r.paricalcitol={cor:'green',dose:'—',freq:'—',
+      detail:'PTH '+(pthStr||pth)+': abaixo de 150 — NÃO indicado. Risco de doença adinâmica óssea. Suspender análogos de VD se em uso. (KDIGO 2017)'};
+  }
+  else if(ca!==null&&ca>=9.5){
+    // Hipercalcemia → paricalcitol contraindicado
+    r.paricalcitol={cor:'red',dose:'Contraindicado',freq:'—',
+      detail:'Ca '+ca.toFixed(1)+' mg/dL: hipercalcemia — paricalcitol CONTRAINDICADO. Usar cinacalcete como 1ª linha. Reavalie paricalcitol quando Ca < 9,5. (KDIGO 2017)'};
+  }
+  else if(!ps){
+    r.paricalcitol={cor:'slate',dose:'Informe o peso seco',freq:'—',
+      detail:'Peso seco necessário para dose EV. VO alternativo: PTH ÷ 80 mcg/dia.'};
+  }
+  else if(pth<600){
+    var lo=(ps*0.04).toFixed(1),hi=(ps*0.1).toFixed(1);
+    r.paricalcitol={cor:'amber',dose:'EV: '+lo+'–'+hi+' mcg/sessão',freq:'3x/sem (1ª linha)',
+      detail:'PTH '+(pthStr||pth)+': HPT moderado — PARICALCITOL 1ª LINHA. Ca '+ca.toFixed(1)+' permite uso seguro. Dose: '+lo+' mcg/sessão. Cinacalcete: 2ª linha se PTH não reduzir ≥ 30% após 8–12 sem. (KDIGO 2017)'};
+  }
+  else{
+    var lo2=(ps*0.06).toFixed(1),hi2=(ps*0.1).toFixed(1),voD=(pth/80).toFixed(1);
+    r.paricalcitol={cor:'red',dose:'EV: '+lo2+'–'+hi2+' mcg/sessão',freq:'3x/sem (1ª linha)',
+      detail:'PTH '+(pthStr||pth)+': HPT grave — PARICALCITOL 1ª LINHA. 0,06–0,1 mcg/kg × '+ps+' kg. VO: PTH ÷ 80 = '+voD+' mcg/dia. Cinacalcete: 2ª linha ou associar se PTH não reduzir ≥ 30% em 8–12 sem. Se sem resposta após 6 meses → avaliar PTX. (KDIGO 2017)'};
+  }
 
   // VITAMINA D
   if(vitD===null){r.vitd={cor:'slate',dose:'—',freq:'—',detail:'25-OH Vit D não informado. Solicitar antes de prescrever. Meta ≥ 30 ng/mL. Deficiência agrava HPT secundário. (KDIGO 2017)'};}
