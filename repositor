@@ -1,23 +1,29 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reposição Eletrolítica — Calculadora Clínica FAAMA</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--navy:#0a1628;--navy2:#0f2040;--navy3:#091220;--teal:#00c9b1;--teal2:#00a896;--amber:#f4a535;--red:#e8463a;--green:#2ecc8a;--blue:#4a9eff;--purple:#9b7fe8;--white:#e8edf4;--gray:#7a8fa8;--border:rgba(255,255,255,0.07);--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.07)}
+:root{
+  --navy:#0a1628;--navy2:#0f2040;--navy3:#091220;
+  --teal:#00c9b1;--teal2:#00a896;--amber:#f4a535;
+  --red:#e8463a;--green:#2ecc8a;--blue:#4a9eff;--purple:#9b7fe8;
+  --white:#e8edf4;--gray:#7a8fa8;
+  --border:rgba(255,255,255,0.07);--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.07);
+  --fs: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --fm: ui-monospace,'Cascadia Code','SF Mono','Consolas','Courier New',monospace;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'IBM Plex Sans',sans-serif;background:var(--navy);color:var(--white);min-height:100vh}
+body{font-family:var(--fs);background:var(--navy);color:var(--white);min-height:100vh}
 .header{background:var(--navy2);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
 .hico{width:36px;height:36px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-.header h1{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;letter-spacing:-.02em}
+.header h1{font-family:var(--fm);font-size:15px;font-weight:600;letter-spacing:-.02em}
 .header p{font-size:11px;color:var(--gray);margin-top:1px}
 .nav{background:var(--navy3);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;padding:0 20px}
 .nav::-webkit-scrollbar{display:none}
-.ntab{padding:12px 20px;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;color:var(--gray);transition:all .15s;display:flex;align-items:center;gap:7px;background:none;border-top:none;border-left:none;border-right:none;font-family:'IBM Plex Sans',sans-serif}
+.ntab{padding:12px 20px;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;color:var(--gray);transition:all .15s;display:flex;align-items:center;gap:7px;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--fs)}
 .ntab:hover{color:var(--white)}
 .ntab.on{color:var(--white);border-bottom-color:var(--teal)}
 .ntab .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -26,45 +32,45 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--navy);color:var(--w
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
 .card-info{background:rgba(0,0,0,0.15);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px}
 .card-hab{background:rgba(244,165,53,0.07);border:1px solid rgba(244,165,53,0.25);border-radius:10px;padding:13px 16px;margin-bottom:14px}
-.sec{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);font-family:'IBM Plex Mono',monospace;margin-bottom:12px}
-.sec-gray{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);font-family:'IBM Plex Mono',monospace;margin-bottom:8px}
+.sec{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);font-family:var(--fm);margin-bottom:12px}
+.sec-gray{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);font-family:var(--fm);margin-bottom:8px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
 .field label{font-size:11px;font-weight:500;color:var(--gray);display:block;margin-bottom:4px;letter-spacing:.02em}
-.field input,.field select{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:7px;padding:8px 10px;font-size:13px;color:var(--white);font-family:'IBM Plex Sans',sans-serif;outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+.field input,.field select{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:7px;padding:8px 10px;font-size:13px;color:var(--white);font-family:var(--fs);outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
 .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a8fa8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-color:rgba(255,255,255,0.05);padding-right:28px}
 .field input:focus,.field select:focus{border-color:rgba(0,201,177,.45);background:rgba(0,201,177,.04)}
 .ref-table{width:100%;border-collapse:collapse;font-size:12px}
-.ref-table th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;font-family:'IBM Plex Mono',monospace}
+.ref-table th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;font-family:var(--fm)}
 .ref-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--white)}
 .ref-table tr:last-child td{border-bottom:none}
 .ref-table tr:nth-child(even) td{background:rgba(255,255,255,.02)}
-.ref-table td strong{color:var(--teal);font-family:'IBM Plex Mono',monospace}
-.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.ref-table td strong{color:var(--teal);font-family:var(--fm)}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:var(--fm);white-space:nowrap}
 .bc{background:rgba(74,158,255,.15);color:#7ec6ff;border:1px solid rgba(74,158,255,.2)}
 .bp{background:rgba(46,204,138,.15);color:#7eeabb;border:1px solid rgba(46,204,138,.2)}
 .bh{background:rgba(244,165,53,.15);color:#ffc76a;border:1px solid rgba(244,165,53,.25)}
 .bv{background:rgba(155,127,232,.15);color:#c4aaff;border:1px solid rgba(155,127,232,.2)}
 .mtabs{display:flex;gap:6px;margin-bottom:12px}
-.mt{flex:1;padding:8px 6px;font-size:12px;font-weight:500;text-align:center;cursor:pointer;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--gray);transition:all .15s;font-family:'IBM Plex Sans',sans-serif}
+.mt{flex:1;padding:8px 6px;font-size:12px;font-weight:500;text-align:center;cursor:pointer;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--gray);transition:all .15s;font-family:var(--fs)}
 .mt:hover{background:var(--card2);color:var(--white)}
 .mt.on{background:rgba(0,201,177,.1);border-color:rgba(0,201,177,.35);color:var(--teal)}
 .mp{display:none}.mp.on{display:block}
 .mode-hint{font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5}
-.btn{width:100%;padding:11px;background:var(--teal);color:var(--navy);border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:2px;font-family:'IBM Plex Sans',sans-serif;transition:background .15s,transform .1s}
+.btn{width:100%;padding:11px;background:var(--teal);color:var(--navy);border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:2px;font-family:var(--fs);transition:background .15s,transform .1s}
 .btn:hover{background:var(--teal2)}
 .btn:active{transform:scale(.99)}
 .res-area{margin-top:14px}
 .rcard{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.rtitle{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);font-family:'IBM Plex Mono',monospace;margin-bottom:12px}
+.rtitle{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);font-family:var(--fm);margin-bottom:12px}
 .ng{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .nb{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;padding:11px;text-align:center}
-.nbv{font-size:20px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:var(--teal);line-height:1}
+.nbv{font-size:20px;font-weight:600;font-family:var(--fm);color:var(--teal);line-height:1}
 .nbl{font-size:11px;color:var(--gray);margin-top:3px}
 .drow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
 .drow:last-child{border-bottom:none}
-.dk{color:var(--gray)}.dv{color:var(--white);font-weight:500;text-align:right}.dv.hl{color:var(--teal);font-family:'IBM Plex Mono',monospace}
+.dk{color:var(--gray)}.dv{color:var(--white);font-weight:500;text-align:right}.dv.hl{color:var(--teal);font-family:var(--fm)}
 .sub{background:rgba(0,0,0,.18);border:1px solid var(--border);border-radius:7px;padding:10px 13px;margin-top:9px}
 .sub .rtitle{margin-bottom:7px}
 .al{font-size:12px;padding:9px 12px;border-radius:7px;margin-top:8px;border-left:3px solid;line-height:1.5}
@@ -91,7 +97,6 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--navy);color:var(--w
 </nav>
 
 <!-- ══ POTÁSSIO ══ -->
-
 <div id="p-k" class="panel on"><div class="container">
   <div class="card-info">
     <div class="sec-gray">📦 Apresentações — Brasil</div>
@@ -134,13 +139,12 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--navy);color:var(--w
 </div></div>
 
 <!-- ══ SÓDIO ══ -->
-
 <div id="p-na" class="panel"><div class="container">
   <div class="card-hab">
-    <div style="font-size:11px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-family:'IBM Plex Mono',monospace">🏥 Solução Institucional HAB</div>
+    <div style="font-size:11px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-family:var(--fm)">🏥 Solução Institucional HAB</div>
     <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center">
       <div style="font-size:13px;color:var(--white)">SF 0,9% <strong style="color:var(--amber)">390mL</strong> + <strong style="color:var(--amber)">11 ampolas</strong> NaCl 10% (17 mEq/amp) = <strong style="color:var(--amber)">500mL / 247 mEq / 494 mEq/L (~2,9%)</strong></div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(244,165,53,.7);text-align:right;line-height:1.7">Na SF: 60 mEq<br>Na 11amp: 187 mEq<br>Total: 247 mEq</div>
+      <div style="font-family:var(--fm);font-size:11px;color:rgba(244,165,53,.7);text-align:right;line-height:1.7">Na SF: 60 mEq<br>Na 11amp: 187 mEq<br>Total: 247 mEq</div>
     </div>
     <div style="font-size:11px;color:rgba(244,165,53,.7);margin-top:6px">⚠️ ~NaCl 3% (513 mEq/L) — EXCLUSIVAMENTE via CVC | Taxa máx. segura: individualizada pelo peso (calculada abaixo)</div>
   </div>
@@ -225,7 +229,6 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--navy);color:var(--w
 </div></div>
 
 <!-- ══ MAGNÉSIO ══ -->
-
 <div id="p-mg" class="panel"><div class="container">
   <div class="card-info">
     <div class="sec-gray">📦 Apresentações — Brasil</div>
@@ -270,7 +273,6 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--navy);color:var(--w
 </div></div>
 
 <!-- ══ CÁLCIO ══ -->
-
 <div id="p-ca" class="panel"><div class="container">
   <div class="card-info">
     <div class="sec-gray">📦 Apresentações — Brasil</div>
@@ -554,6 +556,5 @@ function calcCa(){
   show('r-ca',h);
 }
 </script>
-
 </body>
 </html>
