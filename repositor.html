@@ -143,13 +143,13 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
   <div class="card">
     <div class="card-title">Calculadora</div>
     <div class="row3">
-      <div class="field"><label>Peso (kg)</label><input type="number" id="kp" placeholder="70" step="0.1" min="20" max="200"></div>
-      <div class="field"><label>K+ atual (mEq/L)</label><input type="number" id="ka" placeholder="3.0" step="0.1"></div>
-      <div class="field"><label>K+ alvo (mEq/L)</label><input type="number" id="kalvo" placeholder="4.0" step="0.1" value="4.0"></div>
+      <div class="field"><label>Peso (kg)</label><input type="number" id="kp" oninput="calcK()" placeholder="70" step="0.1" min="20" max="200"></div>
+      <div class="field"><label>K+ atual (mEq/L)</label><input type="number" id="ka" oninput="calcK()" placeholder="3.0" step="0.1"></div>
+      <div class="field"><label>K+ alvo (mEq/L)</label><input type="number" id="kalvo" oninput="calcK()" placeholder="4.0" step="0.1" value="4.0"></div>
     </div>
     <div class="row2">
       <div class="field"><label>Apresentacao / Via</label>
-        <select id="kv">
+        <select id="kv" onchange="calcK()">
           <option value="cvc25">EV CVC &mdash; KCl 19,1% (25 mEq/amp)</option>
           <option value="cvc10">EV CVC &mdash; KCl 10% (13,4 mEq/amp)</option>
           <option value="pvp20">EV PVP &mdash; Bolsa pronta 20 mEq/100mL</option>
@@ -159,15 +159,18 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
         </select>
       </div>
       <div class="field"><label>Funcao renal</label>
-        <select id="kr">
+        <select id="kr" onchange="calcK()">
           <option value="n">Normal</option>
           <option value="a">Alterada (TFG 30&ndash;60)</option>
           <option value="g">Grave (TFG &lt;30 / dialise)</option>
         </select>
       </div>
     </div>
-    <button class="btn-calc" onclick="calcK()">Calcular reposicao</button>
-    <div id="r-k" class="res-area"></div>
+
+```
+<div id="r-k" class="res-area"></div>
+```
+
   </div>
 
 </div>
@@ -226,7 +229,7 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
       <div class="field"><label>Limite de seguranca (ODS)</label>
         <select id="nalim" onchange="calcNa()">
           <option value="8">Padrao &mdash; max. 8 mEq/L/24h</option>
-          <option value="6">Alto risco (alcoolismo, cirrose, K+ baixo, Na &lt; 105) &mdash; max. 6 mEq/L/24h</option>
+          <option value="6">Alto risco (alcoolismo, cirrose, hipocalemia, Na &lt; 105) &mdash; max. 6 mEq/L/24h</option>
           <option value="10">Sintomatico grave (vigilancia) &mdash; max. 10 mEq/L/24h</option>
         </select>
       </div>
@@ -272,10 +275,10 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
   <div class="card">
     <div class="card-title">Calculadora</div>
     <div class="row3">
-      <div class="field"><label>Peso (kg)</label><input type="number" id="mgp" placeholder="70" step="0.1"></div>
-      <div class="field"><label>Mg2+ atual (mg/dL)</label><input type="number" id="mga" placeholder="1.2" step="0.1"></div>
+      <div class="field"><label>Peso (kg)</label><input type="number" id="mgp" oninput="calcMg()" placeholder="70" step="0.1"></div>
+      <div class="field"><label>Mg2+ atual (mg/dL)</label><input type="number" id="mga" oninput="calcMg()" placeholder="1.2" step="0.1"></div>
       <div class="field"><label>Gravidade</label>
-        <select id="mgg">
+        <select id="mgg" onchange="calcMg()">
           <option value="l">Leve (1,4&ndash;1,8 mg/dL) &mdash; assintomatico</option>
           <option value="m">Moderada (1,0&ndash;1,4 mg/dL)</option>
           <option value="g">Grave (&lt;1,0 mg/dL) / sintomatico</option>
@@ -284,22 +287,25 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
     </div>
     <div class="row2">
       <div class="field"><label>Apresentacao / Via</label>
-        <select id="mgv">
+        <select id="mgv" onchange="calcMg()">
           <option value="ev50">EV &mdash; MgSO4 50% (5g/10mL = 40,5 mEq/amp)</option>
           <option value="ev10">EV &mdash; MgSO4 10% (1g/10mL = 8,1 mEq/amp)</option>
           <option value="vo">VO &mdash; Oxido / Citrato de Mg</option>
         </select>
       </div>
       <div class="field"><label>Funcao renal</label>
-        <select id="mgr">
+        <select id="mgr" onchange="calcMg()">
           <option value="n">Normal</option>
           <option value="a">Alterada (TFG 30&ndash;60)</option>
           <option value="g">Grave (TFG &lt;30)</option>
         </select>
       </div>
     </div>
-    <button class="btn-calc" onclick="calcMg()">Calcular reposicao</button>
-    <div id="r-mg" class="res-area"></div>
+
+```
+<div id="r-mg" class="res-area"></div>
+```
+
   </div>
 
 </div>
@@ -326,14 +332,14 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
   <div class="card">
     <div class="card-title">Calculadora</div>
     <div class="row3">
-      <div class="field"><label>Peso (kg)</label><input type="number" id="cap" placeholder="70" step="0.1"></div>
-      <div class="field"><label>Ca2+ total (mg/dL)</label><input type="number" id="cat" placeholder="7.5" step="0.1"></div>
-      <div class="field"><label>Albumina (g/dL)</label><input type="number" id="caalb" placeholder="4.0" step="0.1" value="4.0"></div>
+      <div class="field"><label>Peso (kg)</label><input type="number" id="cap" oninput="calcCa()" placeholder="70" step="0.1"></div>
+      <div class="field"><label>Ca2+ total (mg/dL)</label><input type="number" id="cat" oninput="calcCa()" placeholder="7.5" step="0.1"></div>
+      <div class="field"><label>Albumina (g/dL)</label><input type="number" id="caalb" oninput="calcCa()" placeholder="4.0" step="0.1" value="4.0"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>Ca2+ ionizado (mmol/L) &mdash; opcional</label><input type="number" id="caion" placeholder="0.95" step="0.01"></div>
+      <div class="field"><label>Ca2+ ionizado (mmol/L) &mdash; opcional</label><input type="number" id="caion" oninput="calcCa()" placeholder="0.95" step="0.01"></div>
       <div class="field"><label>Apresentacao / Via</label>
-        <select id="cav">
+        <select id="cav" onchange="calcCa()">
           <option value="gluc">EV &mdash; Gluconato Ca 10% (4,65 mEq/amp) &mdash; PVP OK</option>
           <option value="clor">EV &mdash; Cloreto Ca 10% (13,6 mEq/amp) &mdash; CVC</option>
           <option value="carb">VO &mdash; Carbonato Ca (500mg elem/cp = 25 mEq)</option>
@@ -342,14 +348,17 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
       </div>
     </div>
     <div class="field" style="max-width:340px;margin-bottom:9px"><label>Gravidade</label>
-      <select id="cag">
+      <select id="cag" onchange="calcCa()">
         <option value="l">Leve / Assintomatico</option>
         <option value="m">Moderada (cambras, parestesias)</option>
         <option value="g">Grave (tetania, convulsao, arritmia)</option>
       </select>
     </div>
-    <button class="btn-calc" onclick="calcCa()">Calcular reposicao</button>
-    <div id="r-ca" class="res-area"></div>
+
+```
+<div id="r-ca" class="res-area"></div>
+```
+
   </div>
 
 </div>
@@ -424,8 +433,8 @@ function calcK(){
   var via  = sv('kv');
   var renal= sv('kr');
 
-  if(!peso || !kA){ show('r-k', al('w','Preencha peso e K+ atual.')); return; }
-  if(kA >= alvo){ show('r-k', al('w','K+ atual ja esta no alvo ou acima.')); return; }
+  if(!peso || !kA){ g('r-k').innerHTML=''; return; }
+  if(kA >= alvo){ g('r-k').innerHTML=''; return; }
 
   var deficit = (alvo - kA) * peso * 0.4;
   var limDia  = renal === 'g' ? 40 : renal === 'a' ? 80 : 300;
@@ -648,7 +657,7 @@ function calcMg(){
   var via  = sv('mgv');
   var renal= sv('mgr');
 
-  if(!peso || !mgA){ show('r-mg', al('w','Preencha peso e Mg2+ atual.')); return; }
+  if(!peso || !mgA){ g('r-mg').innerHTML=''; return; }
 
   var deficit  = Math.max(0, 2.0 - mgA);
   var baseG    = deficit / 0.2 * 2;
@@ -712,7 +721,7 @@ function calcCa(){
   var grav = sv('cag');
   var via  = sv('cav');
 
-  if(!caT){ show('r-ca', al('w','Preencha Ca2+ total.')); return; }
+  if(!caT){ g('r-ca').innerHTML=''; return; }
 
   var caCorr = caT + 0.8 * (4 - alb);
   var deficit= Math.max(0, 9.0 - caCorr);
