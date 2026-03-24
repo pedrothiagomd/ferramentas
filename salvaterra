@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Controle Financeiro 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e1117;
+  --surface:#161b27;
+  --surface2:#1e2535;
+  --surface3:#252d40;
+  --border:#2a3349;
+  --text:#e8eaf0;
+  --text2:#8b92a8;
+  --text3:#555f78;
+  --green:#22c55e;
+  --green-dim:#16a34a22;
+  --red:#f43f5e;
+  --red-dim:#f43f5e22;
+  --orange:#f59e0b;
+  --orange-dim:#f59e0b22;
+  --blue:#3b82f6;
+  --blue-dim:#3b82f622;
+  --purple:#a78bfa;
+  --purple-dim:#a78bfa22;
+  --teal:#2dd4bf;
+  --teal-dim:#2dd4bf22;
+  --accent:#3b82f6;
+  --radius:12px;
+  --radius-sm:8px;
+  --font:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+html{font-size:15px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(–bg)}
+::-webkit-scrollbar-thumb{background:var(–border);border-radius:99px}
+
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+width:230px;min-width:230px;background:var(–surface);
+border-right:1px solid var(–border);
+display:flex;flex-direction:column;padding:0;
+position:sticky;top:0;height:100vh;overflow-y:auto;
+transition:transform .3s;z-index:100;
+}
+.sidebar-logo{
+padding:24px 20px 16px;
+border-bottom:1px solid var(–border);
+}
+.sidebar-logo .logo-text{font-size:1rem;font-weight:700;color:var(–text);letter-spacing:-.3px}
+.sidebar-logo .logo-sub{font-size:.72rem;color:var(–text3);margin-top:2px}
+.sidebar-logo .year-badge{
+display:inline-block;background:var(–blue);color:#fff;
+font-size:.65rem;font-weight:600;padding:2px 7px;border-radius:99px;
+margin-left:6px;vertical-align:middle;
+}
+.sidebar-section{padding:20px 14px 4px;font-size:.68rem;font-weight:600;
+letter-spacing:.08em;text-transform:uppercase;color:var(–text3)}
+.nav-item{
+display:flex;align-items:center;gap:10px;
+padding:9px 14px;margin:1px 8px;border-radius:var(–radius-sm);
+cursor:pointer;font-size:.88rem;font-weight:500;color:var(–text2);
+transition:background .15s,color .15s;border:none;background:none;width:calc(100% - 16px);text-align:left;
+}
+.nav-item:hover{background:var(–surface2);color:var(–text)}
+.nav-item.active{background:var(–blue-dim);color:var(–blue)}
+.nav-item .nav-icon{font-size:1rem;width:20px;text-align:center}
+.nav-item .nav-badge{
+margin-left:auto;background:var(–red);color:#fff;
+font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:99px;
+}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(–border);
+font-size:.75rem;color:var(–text3)}
+
+/* ── MAIN ── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+background:var(–surface);border-bottom:1px solid var(–border);
+padding:0 28px;height:60px;display:flex;align-items:center;gap:16px;
+position:sticky;top:0;z-index:50;
+}
+.topbar-title{font-size:1.05rem;font-weight:600;flex:1}
+.topbar-month{
+font-size:.82rem;color:var(–text2);
+background:var(–surface2);border:1px solid var(–border);
+padding:6px 12px;border-radius:var(–radius-sm);cursor:pointer;
+display:flex;align-items:center;gap:6px;
+}
+.menu-btn{display:none;background:none;border:none;color:var(–text);font-size:1.3rem;cursor:pointer;padding:4px}
+
+/* ── CONTENT ── */
+.content{padding:24px 28px;flex:1}
+
+/* ── PAGE ── */
+.page{display:none}
+.page.active{display:block}
+
+/* ── SECTION TITLE ── */
+.section-header{
+display:flex;align-items:center;justify-content:space-between;
+margin-bottom:20px;
+}
+.section-title{font-size:1.25rem;font-weight:700;display:flex;align-items:center;gap:10px}
+.section-title .icon-dot{
+width:10px;height:10px;border-radius:50%;
+display:inline-block;flex-shrink:0;
+}
+
+/* ── CARDS GRID ── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:28px}
+.card{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);padding:18px 16px;
+transition:border-color .2s,transform .15s;
+}
+.card:hover{border-color:var(–text3);transform:translateY(-1px)}
+.card-label{font-size:.75rem;color:var(–text2);font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.card-value{font-family:var(–mono);font-size:1.2rem;font-weight:500;color:var(–text)}
+.card-value.positive{color:var(–green)}
+.card-value.negative{color:var(–red)}
+.card-value.warning{color:var(–orange)}
+.card-sub{font-size:.72rem;color:var(–text3);margin-top:4px}
+.card.highlight{border-color:var(–blue);background:var(–blue-dim)}
+.card.highlight .card-value{color:var(–blue)}
+
+/* ── TABLE ── */
+.table-wrap{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);overflow:hidden;margin-bottom:28px;
+}
+.table-head{
+padding:14px 18px;border-bottom:1px solid var(–border);
+display:flex;align-items:center;justify-content:space-between;
+}
+.table-head-title{font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.btn{
+display:inline-flex;align-items:center;gap:6px;
+padding:7px 14px;border-radius:var(–radius-sm);
+font-family:var(–font);font-size:.82rem;font-weight:500;
+cursor:pointer;border:1px solid var(–border);
+background:var(–surface2);color:var(–text2);
+transition:background .15s,color .15s,border-color .15s;
+}
+.btn:hover{background:var(–surface3);color:var(–text);border-color:var(–text3)}
+.btn-primary{background:var(–blue);color:#fff;border-color:var(–blue)}
+.btn-primary:hover{background:#2563eb;border-color:#2563eb;color:#fff}
+.btn-sm{padding:5px 10px;font-size:.78rem}
+.btn-green{background:var(–green);color:#0e1117;border-color:var(–green)}
+.btn-green:hover{background:#16a34a;border-color:#16a34a}
+.btn-red{background:var(–red-dim);color:var(–red);border-color:var(–red)}
+.btn-red:hover{background:var(–red);color:#fff}
+
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(–surface2)}
+thead th{
+padding:10px 14px;font-size:.75rem;font-weight:600;
+color:var(–text3);text-transform:uppercase;letter-spacing:.06em;
+text-align:left;border-bottom:1px solid var(–border);white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(–border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(–surface2)}
+tbody td{padding:10px 14px;font-size:.85rem;color:var(–text)}
+.td-mono{font-family:var(–mono);font-size:.82rem}
+.td-right{text-align:right}
+
+/* ── STATUS BADGE ── */
+.badge{
+display:inline-flex;align-items:center;gap:4px;
+padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:600;
+cursor:pointer;user-select:none;transition:opacity .15s;white-space:nowrap;
+}
+.badge:hover{opacity:.8}
+.badge.pendente{background:var(–orange-dim);color:var(–orange)}
+.badge.pago{background:var(–green-dim);color:var(–green)}
+.badge.vencido{background:var(–red-dim);color:var(–red)}
+.badge.cancelado{background:var(–surface3);color:var(–text3)}
+
+/* ── RECEBIMENTOS (input cards) ── */
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
+.rec-card{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);padding:16px;
+transition:border-color .2s;
+}
+.rec-card:focus-within{border-color:var(–accent)}
+.rec-card-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.rec-icon{width:36px;height:36px;border-radius:var(–radius-sm);
+display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.rec-name{font-size:.85rem;font-weight:600}
+.rec-input-wrap{position:relative}
+.rec-input-wrap span{
+position:absolute;left:10px;top:50%;transform:translateY(-50%);
+font-size:.8rem;color:var(–text3);font-family:var(–mono);pointer-events:none;
+}
+.rec-input{
+width:100%;background:var(–surface2);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:8px 10px 8px 34px;
+font-family:var(–mono);font-size:.9rem;color:var(–text);
+outline:none;transition:border-color .15s;
+}
+.rec-input:focus{border-color:var(–accent)}
+.rec-total-bar{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);padding:14px 18px;
+display:flex;align-items:center;justify-content:space-between;
+margin-bottom:28px;
+}
+.rec-total-label{font-size:.85rem;font-weight:600;color:var(–text2)}
+.rec-total-value{font-family:var(–mono);font-size:1.3rem;font-weight:500;color:var(–green)}
+
+/* ── MODAL ── */
+.overlay{
+position:fixed;inset:0;background:rgba(0,0,0,.65);
+display:none;align-items:center;justify-content:center;z-index:200;
+padding:16px;
+}
+.overlay.open{display:flex}
+.modal{
+background:var(–surface);border:1px solid var(–border);
+border-radius:16px;width:100%;max-width:480px;
+padding:28px;animation:slideUp .2s ease;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal-title{font-size:1.05rem;font-weight:700;margin-bottom:20px;
+display:flex;align-items:center;gap:8px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.78rem;font-weight:600;color:var(–text2);
+display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.form-input,.form-select{
+width:100%;background:var(–surface2);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:9px 12px;
+font-family:var(–font);font-size:.88rem;color:var(–text);
+outline:none;transition:border-color .15s;
+}
+.form-input:focus,.form-select:focus{border-color:var(–accent)}
+.form-select option{background:var(–surface2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+/* ── RESUMO GERAL ── */
+.resumo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:28px}
+
+/* ── MONTH SELECTOR ── */
+.month-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}
+.month-tab{
+padding:6px 14px;border-radius:99px;font-size:.8rem;font-weight:500;
+border:1px solid var(–border);background:none;color:var(–text2);
+cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+}
+.month-tab:hover{background:var(–surface2);color:var(–text)}
+.month-tab.active{background:var(–blue);color:#fff;border-color:var(–blue)}
+
+/* ── EMPTY STATE ── */
+.empty{
+text-align:center;padding:40px 20px;color:var(–text3);
+}
+.empty-icon{font-size:2.5rem;margin-bottom:10px}
+.empty-text{font-size:.88rem}
+
+/* ── PROGRESS BAR ── */
+.progress-bar{height:4px;background:var(–surface3);border-radius:99px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:99px;transition:width .4s ease}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:12px 16px;
+font-size:.85rem;display:flex;align-items:center;gap:8px;
+animation:toastIn .25s ease;min-width:220px;
+box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{border-left:3px solid var(–green)}
+.toast.error{border-left:3px solid var(–red)}
+.toast.info{border-left:3px solid var(–blue)}
+
+/* ── FUNCIONÁRIOS ── */
+.func-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.func-card{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius);padding:16px;
+}
+.func-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.func-avatar{
+width:40px;height:40px;border-radius:50%;
+background:var(–blue-dim);color:var(–blue);
+display:flex;align-items:center;justify-content:center;
+font-weight:700;font-size:.95rem;flex-shrink:0;
+}
+.func-name{font-weight:600;font-size:.9rem}
+.func-cargo{font-size:.76rem;color:var(–text3)}
+.func-salario{font-family:var(–mono);font-size:1rem;font-weight:500;color:var(–teal)}
+.func-encargos{font-size:.75rem;color:var(–text3);margin-top:2px}
+.func-actions{display:flex;gap:6px;margin-top:12px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+.sidebar{position:fixed;left:0;top:0;height:100%;transform:translateX(-100%)}
+.sidebar.open{transform:translateX(0)}
+.main{margin-left:0}
+.content{padding:16px}
+.topbar{padding:0 16px}
+.menu-btn{display:block}
+.cards-grid{grid-template-columns:repeat(2,1fr)}
+.rec-grid{grid-template-columns:1fr 1fr}
+.form-row{grid-template-columns:1fr}
+.func-grid{grid-template-columns:1fr}
+.month-tabs{gap:4px}
+.month-tab{padding:5px 10px;font-size:.75rem}
+}
+@media(max-width:420px){
+.cards-grid{grid-template-columns:1fr 1fr}
+.rec-grid{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+
+<div class="app">
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">FinControl <span class="year-badge">2026</span></div>
+    <div class="logo-sub">Gestão Financeira</div>
+  </div>
+  <div class="sidebar-section">Principal</div>
+  <button class="nav-item active" onclick="showPage('dashboard')">
+    <span class="nav-icon">📊</span> Resumo Geral
+  </button>
+  <button class="nav-item" onclick="showPage('recebimentos')">
+    <span class="nav-icon">💰</span> Recebimentos
+  </button>
+  <button class="nav-item" onclick="showPage('boletos')">
+    <span class="nav-icon">📄</span> Boletos / Contas
+    <span class="nav-badge" id="badge-pendentes">0</span>
+  </button>
+  <div class="sidebar-section">Gastos</div>
+  <button class="nav-item" onclick="showPage('custos')">
+    <span class="nav-icon">🏢</span> Custos Fixos
+  </button>
+  <button class="nav-item" onclick="showPage('funcionarios')">
+    <span class="nav-icon">👥</span> Funcionários
+  </button>
+  <div class="sidebar-footer">
+    Dados salvos no navegador
+  </div>
+</nav>
+
+<!-- MAIN -->
+
+<div class="main">
+  <div class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-title" id="topbar-title">Resumo Geral</div>
+    <div class="topbar-month" onclick="cycleMonth()">
+      <span>📅</span>
+      <span id="topbar-month-label">Janeiro 2026</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+```
+<!-- ── MONTH TABS ── -->
+<div class="month-tabs" id="month-tabs"></div>
+
+<!-- ════ PAGE: DASHBOARD ════ -->
+<div class="page active" id="page-dashboard">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="icon-dot" style="background:var(--blue)"></span>
+      Visão do Mês
+    </div>
+  </div>
+  <div class="cards-grid" id="dash-cards"></div>
+
+  <div class="section-header">
+    <div class="section-title">
+      <span class="icon-dot" style="background:var(--purple)"></span>
+      Recebimentos por Categoria
+    </div>
+  </div>
+  <div id="dash-rec-breakdown" class="table-wrap" style="margin-bottom:28px"></div>
+
+  <div class="section-header">
+    <div class="section-title">
+      <span class="icon-dot" style="background:var(--orange)"></span>
+      Últimos Boletos
+    </div>
+    <button class="btn btn-sm" onclick="showPage('boletos')">Ver todos →</button>
+  </div>
+  <div class="table-wrap">
+    <table><thead><tr>
+      <th>Descrição</th><th>Vencimento</th><th class="td-right">Valor</th><th>Status</th>
+    </tr></thead>
+    <tbody id="dash-boletos-table"><tr><td colspan="4" class="empty"><div class="empty-icon">📭</div><div class="empty-text">Nenhum boleto lançado</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ PAGE: RECEBIMENTOS ════ -->
+<div class="page" id="page-recebimentos">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="icon-dot" style="background:var(--green)"></span>
+      Recebimentos do Mês
+    </div>
+    <button class="btn btn-primary" onclick="saveRecebimentos()">💾 Salvar</button>
+  </div>
+  <div class="rec-grid" id="rec-inputs"></div>
+  <div class="rec-total-bar">
+    <span class="rec-total-label">Total Recebido no Mês</span>
+    <span class="rec-total-value" id="rec-total-display">R$ 0,00</span>
+  </div>
+</div>
+
+<!-- ════ PAGE: BOLETOS ════ -->
+<div class="page" id="page-boletos">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="icon-dot" style="background:var(--red)"></span>
+      Boletos / Contas a Pagar
+    </div>
+    <button class="btn btn-primary" onclick="openModal('modal-boleto')">+ Adicionar</button>
+  </div>
+  <div class="cards-grid" id="bol-summary-cards"></div>
+  <div class="table-wrap">
+    <div class="table-head">
+      <div class="table-head-title">📄 Lançamentos do Mês</div>
+    </div>
+    <table><thead><tr>
+      <th>Descrição</th><th>Categoria</th><th>Vencimento</th>
+      <th class="td-right">Valor</th><th>Forma</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody id="bol-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ PAGE: CUSTOS FIXOS ════ -->
+<div class="page" id="page-custos">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="icon-dot" style="background:var(--purple)"></span>
+      Custos Fixos
+    </div>
+    <button class="btn btn-primary" onclick="openModal('modal-custo')">+ Adicionar</button>
+  </div>
+  <div class="cards-grid" id="cf-summary-cards"></div>
+  <div class="table-wrap">
+    <div class="table-head">
+      <div class="table-head-title">🏢 Despesas Recorrentes</div>
+    </div>
+    <table><thead><tr>
+      <th>Descrição</th><th>Categoria</th><th>Venc. (Dia)</th>
+      <th class="td-right">Valor</th><th>Forma</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody id="cf-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ PAGE: FUNCIONÁRIOS ════ -->
+<div class="page" id="page-funcionarios">
+  <div class="section-header">
+    <div class="section-title">
+      <span class="icon-dot" style="background:var(--teal)"></span>
+      Folha de Pagamento
+    </div>
+    <button class="btn btn-primary" onclick="openModal('modal-func')">+ Funcionário</button>
+  </div>
+  <div class="cards-grid" id="func-summary-cards"></div>
+  <div class="func-grid" id="func-cards"></div>
+</div>
+```
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODALS -->
+
+<div class="overlay" id="modal-boleto">
+  <div class="modal">
+    <div class="modal-title">📄 Novo Boleto / Conta</div>
+    <div class="form-group"><label class="form-label">Descrição</label>
+      <input class="form-input" id="bol-desc" placeholder="Ex: Aluguel, Fornecedor..."/></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Vencimento</label>
+        <input class="form-input" id="bol-venc" type="date"/></div>
+      <div class="form-group"><label class="form-label">Valor (R$)</label>
+        <input class="form-input" id="bol-valor" type="number" step="0.01" placeholder="0,00"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Categoria</label>
+        <select class="form-select" id="bol-cat">
+          <option>Aluguel</option><option>Energia</option><option>Água</option>
+          <option>Internet</option><option>Telefone</option><option>Folha</option>
+          <option>Imposto</option><option>Fornecedor</option><option>Outros</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Forma de Pagamento</label>
+        <select class="form-select" id="bol-forma">
+          <option>Boleto</option><option>PIX</option><option>Cartão Crédito</option>
+          <option>Cartão Débito</option><option>Dinheiro</option><option>Transferência</option>
+        </select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-boleto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addBoleto()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-custo">
+  <div class="modal">
+    <div class="modal-title">🏢 Custo Fixo</div>
+    <div class="form-group"><label class="form-label">Descrição</label>
+      <input class="form-input" id="cf-desc" placeholder="Ex: Aluguel, Internet..."/></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Valor (R$)</label>
+        <input class="form-input" id="cf-valor" type="number" step="0.01" placeholder="0,00"/></div>
+      <div class="form-group"><label class="form-label">Dia de Vencimento</label>
+        <input class="form-input" id="cf-dia" type="number" min="1" max="31" placeholder="10"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Categoria</label>
+        <select class="form-select" id="cf-cat">
+          <option>Imóvel</option><option>Utilidades</option><option>Comunicação</option>
+          <option>Software</option><option>Serviços</option><option>Seguros</option>
+          <option>Marketing</option><option>Manutenção</option><option>Outros</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Forma de Pagamento</label>
+        <select class="form-select" id="cf-forma">
+          <option>Boleto</option><option>Débito Auto</option><option>Cartão Crédito</option>
+          <option>PIX</option><option>Transferência</option>
+        </select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-custo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addCusto()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-func">
+  <div class="modal">
+    <div class="modal-title">👤 Funcionário</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nome</label>
+        <input class="form-input" id="func-nome" placeholder="Nome completo"/></div>
+      <div class="form-group"><label class="form-label">Cargo</label>
+        <input class="form-input" id="func-cargo" placeholder="Ex: Vendedor"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Salário Base (R$)</label>
+        <input class="form-input" id="func-sal" type="number" step="0.01" placeholder="0,00"/></div>
+      <div class="form-group"><label class="form-label">Vale Transporte (R$)</label>
+        <input class="form-input" id="func-vt" type="number" step="0.01" placeholder="0,00"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Vale Refeição (R$)</label>
+      <input class="form-input" id="func-vr" type="number" step="0.01" placeholder="0,00"/></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-func')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addFuncionario()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+               'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const FORMAS_REC = [
+  {key:'cartao_credito', label:'Cartão Crédito', icon:'💳', color:'#3b82f6'},
+  {key:'cartao_debito',  label:'Cartão Débito',  icon:'💳', color:'#6366f1'},
+  {key:'pix',           label:'PIX',            icon:'📱', color:'#2dd4bf'},
+  {key:'dinheiro',      label:'Dinheiro',        icon:'💵', color:'#22c55e'},
+  {key:'crediario',     label:'Crediário',       icon:'📋', color:'#a78bfa'},
+];
+
+let currentMonth = new Date().getMonth(); // 0-indexed
+
+function storageKey(type, month) {
+  return `finctrl_2026_${type}_m${month}`;
+}
+function globalKey(type) {
+  return `finctrl_2026_global_${type}`;
+}
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
+}
+function save(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function getRecebimentos(m) {
+  return load(storageKey('rec', m)) || {};
+}
+function getBoletos(m) {
+  return load(storageKey('bol', m)) || [];
+}
+function getCustos() {
+  return load(globalKey('custos')) || [];
+}
+function getFuncionarios() {
+  return load(globalKey('funcs')) || [];
+}
+function getCustosStatus(m) {
+  return load(storageKey('cf_status', m)) || {};
+}
+function getFuncStatus(m) {
+  return load(storageKey('func_status', m)) || {};
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+function brl(v) {
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+}
+function dateStr(d) {
+  if(!d) return '—';
+  const p = d.split('-');
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+function toast(msg, type='success') {
+  const wrap = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = (type==='success'?'✅':type==='error'?'❌':'ℹ️') + ' ' + msg;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(), 3000);
+}
+
+function statusBadge(status, onclick) {
+  const map = {pendente:'pendente',pago:'pago',vencido:'vencido',cancelado:'cancelado'};
+  const cls = map[status?.toLowerCase()]||'pendente';
+  const dot = cls==='pago'?'●':cls==='vencido'?'●':cls==='cancelado'?'—':'●';
+  return `<span class="badge ${cls}" onclick="${onclick}">${dot} ${status||'PENDENTE'}</span>`;
+}
+
+function nextStatus(s) {
+  const cycle = ['PENDENTE','PAGO','VENCIDO','CANCELADO'];
+  const i = cycle.indexOf((s||'PENDENTE').toUpperCase());
+  return cycle[(i+1)%cycle.length];
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const pageNames = {
+  dashboard:'Resumo Geral', recebimentos:'Recebimentos',
+  boletos:'Boletos / Contas', custos:'Custos Fixos', funcionarios:'Funcionários'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelector(`[onclick="showPage('${id}')"]`).classList.add('active');
+  document.getElementById('topbar-title').textContent = pageNames[id];
+  closeSidebar();
+  renderPage(id);
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// MONTH TABS
+// ═══════════════════════════════════════════════════════════
+function renderMonthTabs() {
+  const wrap = document.getElementById('month-tabs');
+  wrap.innerHTML = MESES.map((m,i)=>
+    `<button class="month-tab${i===currentMonth?' active':''}" onclick="setMonth(${i})">${m.slice(0,3)}</button>`
+  ).join('');
+  document.getElementById('topbar-month-label').textContent = MESES[currentMonth]+' 2026';
+}
+
+function setMonth(i) {
+  currentMonth = i;
+  renderMonthTabs();
+  const active = document.querySelector('.page.active');
+  if(active) renderPage(active.id.replace('page-',''));
+}
+
+function cycleMonth() {
+  setMonth((currentMonth+1)%12);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════════════════════
+// RENDER PAGE ROUTER
+// ═══════════════════════════════════════════════════════════
+function renderPage(id) {
+  if(id==='dashboard') renderDashboard();
+  if(id==='recebimentos') renderRecebimentos();
+  if(id==='boletos') renderBoletos();
+  if(id==='custos') renderCustos();
+  if(id==='funcionarios') renderFuncionarios();
+  updateBadge();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard() {
+  const m = currentMonth;
+  const rec = getRecebimentos(m);
+  const bols = getBoletos(m);
+  const custos = getCustos();
+  const funcs = getFuncionarios();
+  const cfStatus = getCustosStatus(m);
+  const fStatus = getFuncStatus(m);
+
+  const totalRec = FORMAS_REC.reduce((s,f)=>s+(parseFloat(rec[f.key])||0), 0);
+  const bolPagos = bols.filter(b=>b.status==='PAGO').reduce((s,b)=>s+(b.valor||0),0);
+  const bolPend  = bols.filter(b=>b.status==='PENDENTE').reduce((s,b)=>s+(b.valor||0),0);
+  const bolVenc  = bols.filter(b=>b.status==='VENCIDO').reduce((s,b)=>s+(b.valor||0),0);
+  const totalCF  = custos.reduce((s,c)=>s+(c.valor||0),0);
+  const totalFolha = funcs.reduce((s,f)=>s+(f.sal||0)+(f.sal||0)*.11+(f.sal||0)*.08+(f.vt||0)+(f.vr||0),0);
+  const saldo = totalRec - bolPagos - totalCF - totalFolha;
+
+  // Cards
+  document.getElementById('dash-cards').innerHTML = [
+    {label:'💰 Total Recebido', val:totalRec, cls:'positive'},
+    {label:'✅ Boletos Pagos', val:bolPagos, cls:''},
+    {label:'⏳ Boletos Pendentes', val:bolPend, cls:'warning'},
+    {label:'❌ Boletos Vencidos', val:bolVenc, cls:'negative'},
+    {label:'🏢 Custos Fixos', val:totalCF, cls:''},
+    {label:'👥 Folha de Pagamento', val:totalFolha, cls:''},
+    {label:'📊 Saldo do Mês', val:saldo, cls:saldo>=0?'positive':'negative', highlight:true},
+  ].map(c=>`
+    <div class="card${c.highlight?' highlight':''}">
+      <div class="card-label">${c.label}</div>
+      <div class="card-value ${c.cls}">${brl(c.val)}</div>
+    </div>`).join('');
+
+  // Recebimentos breakdown
+  const total = totalRec || 1;
+  document.getElementById('dash-rec-breakdown').innerHTML = `
+    <div class="table-head"><div class="table-head-title">💰 Recebimentos por Categoria</div></div>
+    <table><tbody>${FORMAS_REC.map(f=>{
+      const v = parseFloat(rec[f.key])||0;
+      const pct = totalRec>0 ? (v/totalRec*100).toFixed(1) : 0;
+      return `<tr><td style="width:150px">
+        <span style="display:inline-flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${f.color};display:inline-block"></span>
+          ${f.label}
+        </span></td>
+        <td style="width:60%">
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${f.color}"></div></div>
+        </td>
+        <td class="td-right td-mono">${brl(v)}</td>
+        <td class="td-right" style="color:var(--text3);font-size:.78rem">${pct}%</td>
+      </tr>`;}).join('')}</tbody></table>`;
+
+  // Últimos boletos
+  const tbody = document.getElementById('dash-boletos-table');
+  if(!bols.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Nenhum boleto lançado neste mês</div></div></td></tr>';
+  } else {
+    tbody.innerHTML = bols.slice(-5).reverse().map((b,i)=>`
+      <tr>
+        <td>${b.desc}</td>
+        <td style="color:var(--text3);font-size:.82rem">${dateStr(b.venc)}</td>
+        <td class="td-right td-mono">${brl(b.valor)}</td>
+        <td>${statusBadge(b.status, `toggleBolStatus(${bols.indexOf(b)})`)}</td>
+      </tr>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECEBIMENTOS
+// ═══════════════════════════════════════════════════════════
+function renderRecebimentos() {
+  const m = currentMonth;
+  const rec = getRecebimentos(m);
+  document.getElementById('rec-inputs').innerHTML = FORMAS_REC.map(f=>`
+    <div class="rec-card">
+      <div class="rec-card-top">
+        <div class="rec-icon" style="background:${f.color}22;color:${f.color}">${f.icon}</div>
+        <div class="rec-name">${f.label}</div>
+      </div>
+      <div class="rec-input-wrap">
+        <span>R$</span>
+        <input class="rec-input" id="rec-${f.key}"
+          type="number" step="0.01" min="0"
+          value="${rec[f.key]||''}"
+          placeholder="0,00"
+          oninput="updateRecTotal()"/>
+      </div>
+    </div>`).join('');
+  updateRecTotal();
+}
+
+function updateRecTotal() {
+  const total = FORMAS_REC.reduce((s,f)=>{
+    const v = parseFloat(document.getElementById('rec-'+f.key)?.value)||0;
+    return s+v;
+  },0);
+  document.getElementById('rec-total-display').textContent = brl(total);
+}
+
+function saveRecebimentos() {
+  const m = currentMonth;
+  const data = {};
+  FORMAS_REC.forEach(f=>{
+    data[f.key] = parseFloat(document.getElementById('rec-'+f.key)?.value)||0;
+  });
+  save(storageKey('rec', m), data);
+  toast('Recebimentos salvos!');
+  updateBadge();
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOLETOS
+// ═══════════════════════════════════════════════════════════
+function addBoleto() {
+  const desc  = document.getElementById('bol-desc').value.trim();
+  const venc  = document.getElementById('bol-venc').value;
+  const valor = parseFloat(document.getElementById('bol-valor').value)||0;
+  const cat   = document.getElementById('bol-cat').value;
+  const forma = document.getElementById('bol-forma').value;
+  if(!desc||!valor) { toast('Preencha descrição e valor','error'); return; }
+  const m = currentMonth;
+  const bols = getBoletos(m);
+  bols.push({id:uid(),desc,venc,valor,cat,forma,status:'PENDENTE'});
+  save(storageKey('bol',m), bols);
+  closeModal('modal-boleto');
+  document.getElementById('bol-desc').value='';
+  document.getElementById('bol-venc').value='';
+  document.getElementById('bol-valor').value='';
+  toast('Boleto adicionado!');
+  renderBoletos();
+  updateBadge();
+}
+
+function toggleBolStatus(idx) {
+  const m = currentMonth;
+  const bols = getBoletos(m);
+  if(!bols[idx]) return;
+  bols[idx].status = nextStatus(bols[idx].status);
+  save(storageKey('bol',m), bols);
+  renderBoletos();
+  renderDashboard();
+  updateBadge();
+  if(bols[idx].status==='PAGO') toast(`✅ "${bols[idx].desc}" marcado como PAGO`,'success');
+}
+
+function deleteBoleto(idx) {
+  const m = currentMonth;
+  const bols = getBoletos(m);
+  if(!confirm(`Remover "${bols[idx]?.desc}"?`)) return;
+  bols.splice(idx,1);
+  save(storageKey('bol',m), bols);
+  toast('Removido','info');
+  renderBoletos();
+  updateBadge();
+}
+
+function renderBoletos() {
+  const m = currentMonth;
+  const bols = getBoletos(m);
+  const pago  = bols.filter(b=>b.status==='PAGO').reduce((s,b)=>s+b.valor,0);
+  const pend  = bols.filter(b=>b.status==='PENDENTE').reduce((s,b)=>s+b.valor,0);
+  const venc  = bols.filter(b=>b.status==='VENCIDO').reduce((s,b)=>s+b.valor,0);
+  const total = bols.reduce((s,b)=>s+b.valor,0);
+
+  document.getElementById('bol-summary-cards').innerHTML = [
+    {label:'Total do Mês', val:total, cls:''},
+    {label:'✅ Pagos', val:pago, cls:'positive'},
+    {label:'⏳ Pendentes', val:pend, cls:'warning'},
+    {label:'❌ Vencidos', val:venc, cls:'negative'},
+  ].map(c=>`<div class="card"><div class="card-label">${c.label}</div>
+    <div class="card-value ${c.cls}">${brl(c.val)}</div></div>`).join('');
+
+  const tbody = document.getElementById('bol-table');
+  if(!bols.length) {
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Nenhum boleto — clique em + Adicionar</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = bols.map((b,i)=>`
+    <tr>
+      <td>${b.desc}</td>
+      <td style="color:var(--text3);font-size:.82rem">${b.cat}</td>
+      <td style="color:var(--text3);font-size:.82rem">${dateStr(b.venc)}</td>
+      <td class="td-right td-mono">${brl(b.valor)}</td>
+      <td style="font-size:.8rem;color:var(--text2)">${b.forma}</td>
+      <td>${statusBadge(b.status, `toggleBolStatus(${i})`)}</td>
+      <td><button class="btn btn-sm btn-red" onclick="deleteBoleto(${i})">🗑</button></td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// CUSTOS FIXOS
+// ═══════════════════════════════════════════════════════════
+function addCusto() {
+  const desc  = document.getElementById('cf-desc').value.trim();
+  const valor = parseFloat(document.getElementById('cf-valor').value)||0;
+  const dia   = document.getElementById('cf-dia').value||'—';
+  const cat   = document.getElementById('cf-cat').value;
+  const forma = document.getElementById('cf-forma').value;
+  if(!desc||!valor) { toast('Preencha descrição e valor','error'); return; }
+  const custos = getCustos();
+  custos.push({id:uid(),desc,valor,dia,cat,forma});
+  save(globalKey('custos'), custos);
+  closeModal('modal-custo');
+  document.getElementById('cf-desc').value='';
+  document.getElementById('cf-valor').value='';
+  document.getElementById('cf-dia').value='';
+  toast('Custo fixo adicionado!');
+  renderCustos();
+}
+
+function toggleCfStatus(idx) {
+  const m = currentMonth;
+  const st = getCustosStatus(m);
+  const custos = getCustos();
+  const id = custos[idx]?.id;
+  if(!id) return;
+  st[id] = nextStatus(st[id]||'PENDENTE');
+  save(storageKey('cf_status',m), st);
+  renderCustos();
+  if(st[id]==='PAGO') toast(`✅ "${custos[idx].desc}" marcado como PAGO`,'success');
+}
+
+function deleteCusto(idx) {
+  const custos = getCustos();
+  if(!confirm(`Remover "${custos[idx]?.desc}"?`)) return;
+  custos.splice(idx,1);
+  save(globalKey('custos'), custos);
+  toast('Removido','info');
+  renderCustos();
+}
+
+function renderCustos() {
+  const m = currentMonth;
+  const custos = getCustos();
+  const st = getCustosStatus(m);
+  const total = custos.reduce((s,c)=>s+c.valor,0);
+  const pagos = custos.filter(c=>st[c.id]==='PAGO').reduce((s,c)=>s+c.valor,0);
+
+  document.getElementById('cf-summary-cards').innerHTML = [
+    {label:'Total Mensal', val:total, cls:''},
+    {label:'✅ Pagos este mês', val:pagos, cls:'positive'},
+    {label:'⏳ Em aberto', val:total-pagos, cls:'warning'},
+  ].map(c=>`<div class="card"><div class="card-label">${c.label}</div>
+    <div class="card-value ${c.cls}">${brl(c.val)}</div></div>`).join('');
+
+  const tbody = document.getElementById('cf-table');
+  if(!custos.length) {
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">🏢</div><div class="empty-text">Nenhum custo fixo cadastrado</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = custos.map((c,i)=>`
+    <tr>
+      <td>${c.desc}</td>
+      <td style="color:var(--text3);font-size:.82rem">${c.cat}</td>
+      <td style="color:var(--text3);font-size:.82rem;text-align:center">Dia ${c.dia}</td>
+      <td class="td-right td-mono">${brl(c.valor)}</td>
+      <td style="font-size:.8rem;color:var(--text2)">${c.forma}</td>
+      <td>${statusBadge(st[c.id]||'PENDENTE', `toggleCfStatus(${i})`)}</td>
+      <td><button class="btn btn-sm btn-red" onclick="deleteCusto(${i})">🗑</button></td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// FUNCIONÁRIOS
+// ═══════════════════════════════════════════════════════════
+function addFuncionario() {
+  const nome = document.getElementById('func-nome').value.trim();
+  const cargo= document.getElementById('func-cargo').value.trim();
+  const sal  = parseFloat(document.getElementById('func-sal').value)||0;
+  const vt   = parseFloat(document.getElementById('func-vt').value)||0;
+  const vr   = parseFloat(document.getElementById('func-vr').value)||0;
+  if(!nome||!sal) { toast('Preencha nome e salário','error'); return; }
+  const funcs = getFuncionarios();
+  funcs.push({id:uid(),nome,cargo,sal,vt,vr});
+  save(globalKey('funcs'), funcs);
+  closeModal('modal-func');
+  ['func-nome','func-cargo','func-sal','func-vt','func-vr'].forEach(id=>document.getElementById(id).value='');
+  toast('Funcionário adicionado!');
+  renderFuncionarios();
+}
+
+function toggleFuncStatus(idx) {
+  const m = currentMonth;
+  const st = getFuncStatus(m);
+  const funcs = getFuncionarios();
+  const id = funcs[idx]?.id;
+  if(!id) return;
+  st[id] = nextStatus(st[id]||'PENDENTE');
+  save(storageKey('func_status',m), st);
+  renderFuncionarios();
+  if(st[id]==='PAGO') toast(`✅ Salário de "${funcs[idx].nome}" marcado como PAGO`,'success');
+}
+
+function deleteFuncionario(idx) {
+  const funcs = getFuncionarios();
+  if(!confirm(`Remover "${funcs[idx]?.nome}"?`)) return;
+  funcs.splice(idx,1);
+  save(globalKey('funcs'), funcs);
+  toast('Removido','info');
+  renderFuncionarios();
+}
+
+function renderFuncionarios() {
+  const m = currentMonth;
+  const funcs = getFuncionarios();
+  const st = getFuncStatus(m);
+
+  const totalSal   = funcs.reduce((s,f)=>s+f.sal,0);
+  const totalInss  = funcs.reduce((s,f)=>s+f.sal*.11,0);
+  const totalFgts  = funcs.reduce((s,f)=>s+f.sal*.08,0);
+  const totalCusto = funcs.reduce((s,f)=>s+f.sal+f.sal*.11+f.sal*.08+f.vt+f.vr,0);
+
+  document.getElementById('func-summary-cards').innerHTML = [
+    {label:'👥 Funcionários', val:funcs.length+' pessoas', mono:false},
+    {label:'💼 Total Salários', val:brl(totalSal), mono:true},
+    {label:'📋 INSS (11%)', val:brl(totalInss), mono:true},
+    {label:'🏦 FGTS (8%)', val:brl(totalFgts), mono:true},
+    {label:'💰 Custo Total Folha', val:brl(totalCusto), mono:true, highlight:true},
+  ].map(c=>`<div class="card${c.highlight?' highlight':''}">
+    <div class="card-label">${c.label}</div>
+    <div class="card-value">${c.val}</div>
+  </div>`).join('');
+
+  const wrap = document.getElementById('func-cards');
+  if(!funcs.length) {
+    wrap.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">👥</div><div class="empty-text">Nenhum funcionário cadastrado</div></div>';
+    return;
+  }
+
+  wrap.innerHTML = funcs.map((f,i)=>{
+    const inss = f.sal*.11, fgts = f.sal*.08;
+    const custo = f.sal+inss+fgts+(f.vt||0)+(f.vr||0);
+    const initials = f.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const status = st[f.id]||'PENDENTE';
+    return `
+    <div class="func-card">
+      <div class="func-card-top">
+        <div class="func-avatar">${initials}</div>
+        <div>
+          <div class="func-name">${f.nome}</div>
+          <div class="func-cargo">${f.cargo||'—'}</div>
+        </div>
+        <div style="margin-left:auto">${statusBadge(status,`toggleFuncStatus(${i})`)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.8rem;color:var(--text2);margin-bottom:10px">
+        <div>Salário: <span class="func-salario">${brl(f.sal)}</span></div>
+        <div>INSS: <span style="font-family:var(--mono)">${brl(inss)}</span></div>
+        <div>FGTS: <span style="font-family:var(--mono)">${brl(fgts)}</span></div>
+        <div>VT: <span style="font-family:var(--mono)">${brl(f.vt)}</span></div>
+        <div>VR: <span style="font-family:var(--mono)">${brl(f.vr)}</span></div>
+        <div><strong>Custo Total:</strong><br><span style="font-family:var(--mono);color:var(--teal)">${brl(custo)}</span></div>
+      </div>
+      <div class="func-actions">
+        <button class="btn btn-sm btn-red" onclick="deleteFuncionario(${i})">🗑 Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// BADGE
+// ═══════════════════════════════════════════════════════════
+function updateBadge() {
+  const m = currentMonth;
+  const bols = getBoletos(m);
+  const pend = bols.filter(b=>b.status==='PENDENTE'||b.status==='VENCIDO').length;
+  const badge = document.getElementById('badge-pendentes');
+  badge.textContent = pend;
+  badge.style.display = pend>0?'':'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+  renderMonthTabs();
+  renderDashboard();
+  updateBadge();
+}
+
+init();
+</script>
+
+</body>
+</html>
