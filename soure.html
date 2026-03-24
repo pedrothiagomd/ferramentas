@@ -1,867 +1,744 @@
+
 <!DOCTYPE html>
 
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>FinControl 2026</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#0f1117;--card:#1a1d27;--card2:#22253a;--border:#2a2d3e;
-  --text:#f0f2f8;--text2:#8b90a8;--text3:#4a4f68;
-  --green:#22c55e;--green-bg:#22c55e18;
-  --red:#f43f5e;--red-bg:#f43f5e18;
-  --orange:#f59e0b;--orange-bg:#f59e0b18;
-  --blue:#4f8ef7;--blue-bg:#4f8ef718;
-  --purple:#a78bfa;--purple-bg:#a78bfa18;
-  --teal:#2dd4bf;--teal-bg:#2dd4bf18;
-  --nav-h:68px;--top-h:56px;--r:14px;--r-sm:10px;
-}
-html,body{height:100%;overflow:hidden}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px}
-
-/* TOPBAR */
-.topbar{position:fixed;top:0;left:0;right:0;height:var(–top-h);background:var(–bg);
-border-bottom:1px solid var(–border);display:flex;align-items:center;
-justify-content:space-between;padding:0 16px;z-index:100}
-.topbar-title{font-size:1.05rem;font-weight:700}
-.month-pill{display:flex;align-items:center;gap:6px;background:var(–card);
-border:1px solid var(–border);border-radius:99px;padding:6px 12px;
-font-size:.8rem;font-weight:500;color:var(–text2);cursor:pointer}
-.month-pill:active{opacity:.7}
-
-/* MONTH DRAWER */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;
-display:none;align-items:flex-end}
-.overlay.open{display:flex}
-.drawer{background:var(–card);border-radius:20px 20px 0 0;
-padding:20px 16px 40px;width:100%}
-.drawer-title{font-size:.75rem;font-weight:700;color:var(–text3);
-text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;text-align:center}
-.month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.m-btn{background:var(–card2);border:1px solid var(–border);border-radius:var(–r-sm);
-padding:10px 4px;text-align:center;font-size:.85rem;font-weight:500;
-color:var(–text2);cursor:pointer}
-.m-btn.active{background:var(–blue-bg);border-color:var(–blue);color:var(–blue)}
-.m-btn:active{opacity:.7}
-
-/* SCROLL */
-.scroll{position:fixed;top:var(–top-h);bottom:var(–nav-h);left:0;right:0;
-overflow-y:auto;-webkit-overflow-scrolling:touch}
-.inner{padding:14px 14px 80px}
-
-/* BOTTOM NAV */
-.bnav{position:fixed;bottom:0;left:0;right:0;height:var(–nav-h);background:var(–card);
-border-top:1px solid var(–border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:100}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-gap:3px;cursor:pointer;border:none;background:none;color:var(–text3);
-font-family:inherit;padding:8px 4px;transition:color .15s;position:relative}
-.nb.active{color:var(–blue)}
-.nb .ni{font-size:1.4rem;line-height:1;font-weight:300}
-.nb .nl{font-size:.62rem;font-weight:600}
-.nbadge{position:absolute;top:5px;right:calc(50% - 22px);background:var(–red);
-color:#fff;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:99px}
-
-/* PAGE */
-.page{display:none}
-.page.active{display:block}
-
-/* SECTION LABEL */
-.slabel{font-size:.7rem;font-weight:700;color:var(–text3);
-text-transform:uppercase;letter-spacing:.08em;margin:18px 0 9px}
-
-/* STAT CARDS */
-.srow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.sc{background:var(–card);border:1px solid var(–border);border-radius:var(–r);padding:14px 13px}
-.sc.full{grid-column:1/-1}
-.sc.g{border-color:var(–green);background:var(–green-bg)}
-.sc.r{border-color:var(–red);background:var(–red-bg)}
-.sc.o{border-color:var(–orange);background:var(–orange-bg)}
-.sc.b{border-color:var(–blue);background:var(–blue-bg)}
-.sc-label{font-size:.72rem;color:var(–text2);font-weight:500;margin-bottom:4px}
-.sc-val{font-size:1.1rem;font-weight:700;font-variant-numeric:tabular-nums}
-.sc-val.gv{color:var(–green)}.sc-val.rv{color:var(–red)}
-.sc-val.ov{color:var(–orange)}.sc-val.bv{color:var(–blue)}
-
-/* LIST CARD */
-.lcard{background:var(–card);border:1px solid var(–border);
-border-radius:var(–r);overflow:hidden;margin-bottom:10px}
-.li{display:flex;align-items:center;gap:11px;padding:12px 13px;
-border-bottom:1px solid var(–border)}
-.li:last-child{border-bottom:none}
-.li-icon{width:36px;height:36px;border-radius:var(–r-sm);flex-shrink:0;
-display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;overflow:hidden;letter-spacing:-.5px}
-.li-body{flex:1;min-width:0}
-.li-title{font-size:.88rem;font-weight:600;white-space:nowrap;
-overflow:hidden;text-overflow:ellipsis}
-.li-sub{font-size:.72rem;color:var(–text2);margin-top:2px}
-.li-r{text-align:right;flex-shrink:0}
-.li-val{font-size:.92rem;font-weight:700;font-variant-numeric:tabular-nums}
-.li-meta{font-size:.7rem;color:var(–text2);margin-top:2px}
-
-/* BADGE */
-.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:99px;
-font-size:.68rem;font-weight:700;cursor:pointer;user-select:none}
-.badge:active{opacity:.7}
-.badge.pendente{background:var(–orange-bg);color:var(–orange)}
-.badge.pago{background:var(–green-bg);color:var(–green)}
-.badge.vencido{background:var(–red-bg);color:var(–red)}
-.badge.cancelado{background:var(–border);color:var(–text3)}
-
-/* FAB */
-.fab{position:fixed;bottom:calc(var(–nav-h)+14px);right:14px;
-width:50px;height:50px;border-radius:50%;background:var(–blue);color:#fff;
-border:none;font-size:1.7rem;font-weight:300;cursor:pointer;
-display:flex;align-items:center;justify-content:center;
-box-shadow:0 4px 18px rgba(79,142,247,.45);z-index:90}
-.fab:active{transform:scale(.9)}
-.fab.hidden{display:none}
-
-/* INPUTS */
-.inp{width:100%;background:var(–card2);border:1.5px solid var(–border);
-border-radius:var(–r-sm);padding:11px 12px;font-family:inherit;font-size:.9rem;
-color:var(–text);outline:none;transition:border-color .15s;
--webkit-appearance:none;appearance:none}
-.inp:focus{border-color:var(–blue)}
-.inp::placeholder{color:var(–text3)}
-select.inp option{background:var(–card2)}
-.ilabel{font-size:.72rem;font-weight:600;color:var(–text2);display:block;
-margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
-.fg{margin-bottom:13px}
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-
-/* SHEET */
-.sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;
-display:none;align-items:flex-end}
-.sheet-ov.open{display:flex}
-.sheet{background:var(–card);border-radius:20px 20px 0 0;padding:16px 16px 36px;
-width:100%;max-height:92vh;overflow-y:auto;animation:sup .22s ease}
-@keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.shandle{width:36px;height:4px;background:var(–border);border-radius:99px;margin:0 auto 14px}
-.stitle{font-size:1rem;font-weight:700;margin-bottom:16px}
-.sactions{display:flex;gap:10px;margin-top:6px}
-.btn{flex:1;padding:13px;border-radius:var(–r-sm);border:none;
-font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer}
-.btn:active{opacity:.8}
-.btn-p{background:var(–blue);color:#fff}
-.btn-g{background:var(–card2);color:var(–text2)}
-
-/* REC INPUTS */
-.ri{display:flex;align-items:center;gap:11px;padding:12px 13px;
-border-bottom:1px solid var(–border)}
-.ri:last-child{border-bottom:none}
-.ri-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.ri-label{font-size:.88rem;font-weight:600;flex:1}
-.ri-wrap{display:flex;align-items:center;gap:4px}
-.ri-wrap span{font-size:.78rem;color:var(–text3);font-weight:500}
-.ri-inp{width:105px;background:var(–card2);border:1.5px solid var(–border);
-border-radius:var(–r-sm);padding:8px 9px;font-family:inherit;
-font-size:.87rem;font-weight:600;color:var(–text);outline:none;text-align:right;
--webkit-appearance:none;appearance:none}
-.ri-inp:focus{border-color:var(–blue)}
-.save-bar{padding:12px 0 2px}
-.save-btn{width:100%;padding:13px;border-radius:var(–r);border:none;
-background:var(–blue);color:#fff;font-family:inherit;font-size:.93rem;
-font-weight:700;cursor:pointer}
-.save-btn:active{opacity:.8}
-
-/* FUNC CARD */
-.fc{background:var(–card);border:1px solid var(–border);border-radius:var(–r);
-padding:13px;margin-bottom:10px}
-.fc-top{display:flex;align-items:center;gap:11px;margin-bottom:11px}
-.fc-av{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:var(–blue-bg);
-color:var(–blue);display:flex;align-items:center;justify-content:center;
-font-weight:700;font-size:.95rem}
-.fc-name{font-weight:700;font-size:.9rem}
-.fc-cargo{font-size:.73rem;color:var(–text2);margin-top:1px}
-.fc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;
-font-size:.76rem;color:var(–text2)}
-.fc-grid span{font-weight:600;color:var(–text)}
-.fc-bot{margin-top:11px;padding-top:11px;border-top:1px solid var(–border);
-display:flex;align-items:center;justify-content:space-between}
-.fc-total-l{font-size:.75rem;color:var(–text2)}
-.fc-total-v{font-size:.98rem;font-weight:700;color:var(–teal)}
-.fc-del{background:var(–red-bg);color:var(–red);border:none;border-radius:var(–r-sm);
-padding:6px 12px;font-family:inherit;font-size:.73rem;font-weight:600;cursor:pointer}
-
-/* PROGRESS */
-.prog{height:3px;background:var(–border);border-radius:99px;margin-top:5px;overflow:hidden}
-.prog-f{height:100%;border-radius:99px}
-
-/* EMPTY */
-.empty{text-align:center;padding:36px 20px;color:var(–text3)}
-.empty .ei{font-size:2.2rem;margin-bottom:8px}
-.empty p{font-size:.83rem}
-
-/* DEL BTN */
-.del-btn{background:none;border:none;color:var(–text3);cursor:pointer;
-padding:5px;font-size:.95rem;flex-shrink:0}
-.del-btn:active{color:var(–red)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,sans-serif;background:#111;color:#fff;height:100vh;overflow:hidden}
 
 /* LOGIN */
-.login-screen{position:fixed;inset:0;background:var(–bg);z-index:999;
-display:flex;flex-direction:column;align-items:center;justify-content:center;
-padding:32px 24px}
+#login{position:fixed;inset:0;background:#111;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+#login.off{display:none}
+#login h1{font-size:1.6rem;font-weight:700;margin-bottom:4px}
+#login p{color:#888;font-size:.85rem;margin-bottom:28px}
+.u-list{width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.u-item{display:flex;align-items:center;gap:12px;padding:12px;background:#1e1e1e;border:2px solid #333;border-radius:12px;cursor:pointer;width:100%}
+.u-item.sel{border-color:#4f8ef7;background:#4f8ef720}
+.u-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0}
+.u-info .name{font-size:.9rem;font-weight:600;color:#fff;text-align:left}
+.u-info .role{font-size:.72rem;color:#888;text-align:left}
+.pw-wrap{width:100%;max-width:340px;position:relative;margin-bottom:10px}
+.pw-wrap input{width:100%;padding:13px 42px 13px 14px;background:#1e1e1e;border:2px solid #333;border-radius:10px;color:#fff;font-size:.95rem;outline:none;-webkit-appearance:none}
+.pw-wrap input:focus{border-color:#4f8ef7}
+.pw-wrap button{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:1rem;cursor:pointer}
+#login-err{color:#f43f5e;font-size:.82rem;min-height:18px;margin-bottom:8px;width:100%;max-width:340px;text-align:center}
+.l-btn{width:100%;max-width:340px;padding:14px;background:#4f8ef7;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer}
 
-.login-logo{font-size:2.4rem;margin-bottom:6px}
-.login-title{font-size:1.5rem;font-weight:700;margin-bottom:4px}
-.login-sub{font-size:.85rem;color:var(–text2);margin-bottom:36px}
-.login-box{width:100%;max-width:360px}
-.login-user-btns{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
-.user-btn{display:flex;align-items:center;gap:12px;padding:13px 14px;
-background:var(–card);border:1.5px solid var(–border);border-radius:var(–r);
-cursor:pointer;transition:border-color .15s;width:100%}
-.user-btn:active{opacity:.7}
-.user-btn.selected{border-color:var(–blue);background:var(–blue-bg)}
-.user-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
-justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
-.user-info{text-align:left}
-.user-name{font-size:.92rem;font-weight:600;color:var(–text)}
-.user-role{font-size:.72rem;color:var(–text2);margin-top:1px}
-.login-inp-wrap{position:relative;margin-bottom:14px}
-.login-inp{width:100%;background:var(–card2);border:1.5px solid var(–border);
-border-radius:var(–r-sm);padding:13px 44px 13px 14px;font-family:inherit;
-font-size:.95rem;color:var(–text);outline:none;transition:border-color .15s;
--webkit-appearance:none}
-.login-inp:focus{border-color:var(–blue)}
-.login-inp::placeholder{color:var(–text3)}
-.toggle-pw{position:absolute;right:13px;top:50%;transform:translateY(-50%);
-background:none;border:none;color:var(–text3);cursor:pointer;font-size:1rem;padding:2px}
-.login-btn{width:100%;padding:14px;border-radius:var(–r-sm);border:none;
-background:var(–blue);color:#fff;font-family:inherit;font-size:.97rem;
-font-weight:700;cursor:pointer;margin-bottom:10px}
-.login-btn:active{opacity:.8}
-.login-err{font-size:.82rem;color:var(–red);text-align:center;
-min-height:20px;margin-bottom:4px}
-.login-footer{font-size:.72rem;color:var(–text3);text-align:center;margin-top:20px}
+/* APP */
+#app{display:none;flex-direction:column;height:100vh}
+#app.on{display:flex}
+.topbar{height:52px;background:#111;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex-shrink:0}
+.topbar .t-title{font-size:1rem;font-weight:700}
+.topbar .t-right{display:flex;align-items:center;gap:8px}
+.mpill{background:#1e1e1e;border:1px solid #333;border-radius:99px;padding:5px 10px;font-size:.78rem;color:#aaa;cursor:pointer}
+.cfg{background:none;border:none;color:#aaa;font-size:1rem;cursor:pointer;padding:2px}
+.ro-bar{background:#f59e0b20;border-bottom:1px solid #f59e0b;padding:5px;font-size:.72rem;color:#f59e0b;text-align:center;flex-shrink:0;display:none}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 90px}
+.bnav{height:60px;background:#1a1a1a;border-top:1px solid #222;display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:#555;cursor:pointer;font-size:.6rem;font-weight:600;position:relative}
+.nb.on{color:#4f8ef7}
+.nb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nbadge{position:absolute;top:4px;right:calc(50% - 18px);background:#f43f5e;color:#fff;font-size:.55rem;font-weight:700;padding:1px 4px;border-radius:99px;display:none}
 
-/* READ-ONLY overlay hint */
-.ro-banner{background:var(–orange-bg);border-bottom:1px solid var(–orange);
-padding:6px 16px;font-size:.75rem;color:var(–orange);font-weight:600;
-text-align:center;position:fixed;top:var(–top-h);left:0;right:0;z-index:99}
-.ro-banner~.scroll{top:calc(var(–top-h) + 28px)}
+/* PAGES */
+.page{display:none}.page.on{display:block}
+.slabel{font-size:.68rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:13px}
+.card.full{grid-column:1/-1}
+.card.green{border-color:#22c55e;background:#22c55e12}
+.card.red{border-color:#f43f5e;background:#f43f5e12}
+.card.orange{border-color:#f59e0b;background:#f59e0b12}
+.card.blue{border-color:#4f8ef7;background:#4f8ef712}
+.card .cl{font-size:.7rem;color:#777;margin-bottom:4px}
+.card .cv{font-size:1.1rem;font-weight:700}
+.cv.g{color:#22c55e}.cv.r{color:#f43f5e}.cv.o{color:#f59e0b}.cv.b{color:#4f8ef7}
 
-/* ADMIN badge in topbar */
-.role-pill{font-size:.68rem;font-weight:600;padding:3px 8px;border-radius:99px;
-margin-left:8px}
-.role-pill.admin{background:var(–blue-bg);color:var(–blue)}
-.role-pill.viewer{background:var(–orange-bg);color:var(–orange)}
+.lcard{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:10px;padding:12px 13px;border-bottom:1px solid #222}
+.li:last-child{border-bottom:none}
+.li-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.li-b{flex:1;min-width:0}
+.li-t{font-size:.87rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li-s{font-size:.72rem;color:#666;margin-top:2px}
+.li-r{text-align:right;flex-shrink:0}
+.li-v{font-size:.9rem;font-weight:700}
+.li-m{font-size:.7rem;color:#666;margin-top:2px}
+.prog{height:3px;background:#2a2a2a;border-radius:99px;margin-top:5px;overflow:hidden}
+.prog-f{height:100%;border-radius:99px}
 
-/* Settings sheet */
-.settings-btn{background:none;border:none;color:var(–text2);cursor:pointer;
-font-size:1.1rem;padding:4px;margin-left:6px}
-.settings-item{display:flex;align-items:center;justify-content:space-between;
-padding:13px 0;border-bottom:1px solid var(–border)}
-.settings-item:last-child{border-bottom:none}
-.settings-label{font-size:.9rem;font-weight:500}
-.settings-sub{font-size:.74rem;color:var(–text2);margin-top:2px}
-.danger-btn{background:var(–red-bg);color:var(–red);border:1px solid var(–red);
-border-radius:var(–r-sm);padding:7px 14px;font-family:inherit;
-font-size:.82rem;font-weight:600;cursor:pointer}
-.danger-btn:active{opacity:.7}
+.badge{display:inline-flex;padding:3px 8px;border-radius:99px;font-size:.68rem;font-weight:700;cursor:pointer}
+.badge.pendente{background:#f59e0b20;color:#f59e0b}
+.badge.pago{background:#22c55e20;color:#22c55e}
+.badge.vencido{background:#f43f5e20;color:#f43f5e}
+.badge.cancelado{background:#33333a;color:#666}
+
+/* RECEBIMENTOS */
+.ri{display:flex;align-items:center;gap:10px;padding:12px 13px;border-bottom:1px solid #222}
+.ri:last-child{border-bottom:none}
+.ri-label{flex:1;font-size:.87rem;font-weight:600}
+.ri-val{display:flex;align-items:center;gap:4px}
+.ri-val span{font-size:.78rem;color:#666}
+.ri-val input{width:110px;background:#222;border:1.5px solid #333;border-radius:8px;padding:7px 9px;color:#fff;font-size:.87rem;font-weight:600;outline:none;text-align:right;-webkit-appearance:none}
+.ri-val input:focus{border-color:#4f8ef7}
+.save-btn{width:100%;padding:14px;background:#4f8ef7;color:#fff;border:none;border-radius:12px;font-size:.93rem;font-weight:700;cursor:pointer;margin-top:14px}
+
+/* FAB */
+.fab{position:fixed;bottom:72px;right:16px;width:50px;height:50px;border-radius:50%;background:#4f8ef7;color:#fff;border:none;font-size:1.6rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px #4f8ef760;z-index:50}
+.fab.off{display:none}
+
+/* FUNC CARD */
+.fc{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:13px;margin-bottom:10px}
+.fc-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fc-av{width:40px;height:40px;border-radius:50%;background:#4f8ef720;color:#4f8ef7;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.fc-name{font-weight:700;font-size:.9rem}
+.fc-cargo{font-size:.72rem;color:#666;margin-top:1px}
+.fc-rows{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.75rem;color:#777}
+.fc-rows span{font-weight:600;color:#ddd}
+.fc-bot{margin-top:10px;padding-top:10px;border-top:1px solid #222;display:flex;align-items:center;justify-content:space-between}
+.fc-total{font-size:.98rem;font-weight:700;color:#2dd4bf}
+.del-btn{background:#f43f5e20;color:#f43f5e;border:none;border-radius:8px;padding:6px 12px;font-size:.75rem;font-weight:600;cursor:pointer}
+.empty-s{text-align:center;padding:32px 20px;color:#444;font-size:.85rem}
+
+/* SHEET */
+.sov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end}
+.sov.on{display:flex}
+.sheet{background:#1a1a1a;border-radius:20px 20px 0 0;padding:16px 16px 40px;width:100%;max-height:90vh;overflow-y:auto}
+.sh{width:36px;height:4px;background:#333;border-radius:99px;margin:0 auto 14px}
+.stitle{font-size:1rem;font-weight:700;margin-bottom:16px}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:.7rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.fg input,.fg select{width:100%;background:#222;border:1.5px solid #333;border-radius:8px;padding:11px 12px;color:#fff;font-size:.9rem;outline:none;-webkit-appearance:none;appearance:none;font-family:inherit}
+.fg input:focus,.fg select:focus{border-color:#4f8ef7}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sactions{display:flex;gap:10px;margin-top:6px}
+.sactions button{flex:1;padding:13px;border-radius:10px;border:none;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit}
+.s-cancel{background:#222;color:#aaa}
+.s-ok{background:#4f8ef7;color:#fff}
+
+/* MONTH DRAWER */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:flex-end}
+.mov.on{display:flex}
+.mdrawer{background:#1a1a1a;border-radius:20px 20px 0 0;padding:16px 16px 40px;width:100%}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.mbtn{background:#222;border:1px solid #333;border-radius:8px;padding:10px 4px;text-align:center;font-size:.85rem;font-weight:500;color:#aaa;cursor:pointer}
+.mbtn.on{background:#4f8ef720;border-color:#4f8ef7;color:#4f8ef7}
+
+/* SETTINGS */
+.seti{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #222}
+.seti:last-child{border-bottom:none}
+.seti .sl2{font-size:.9rem;font-weight:500}
+.seti .ss{font-size:.72rem;color:#666;margin-top:2px}
+.seti-r{display:flex;gap:6px;align-items:center}
+.seti-r input{width:120px;background:#222;border:1.5px solid #333;border-radius:8px;padding:7px 10px;color:#fff;font-size:.82rem;outline:none;-webkit-appearance:none}
+.seti-r input:focus{border-color:#4f8ef7}
+.seti-r button{background:#4f8ef7;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:.8rem;font-weight:600;cursor:pointer}
+.logout-btn{background:#f43f5e20;color:#f43f5e;border:1px solid #f43f5e;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer}
 
 /* TOAST */
-.toast-w{position:fixed;top:calc(var(–top-h)+8px);left:14px;right:14px;
-z-index:999;pointer-events:none}
-.toast{background:var(–card);border:1px solid var(–border);border-radius:var(–r-sm);
-padding:10px 13px;font-size:.83rem;font-weight:500;display:flex;
-align-items:center;gap:7px;margin-bottom:5px;box-shadow:0 6px 20px rgba(0,0,0,.5);
-animation:tin .2s ease}
+.tw{position:fixed;top:60px;left:14px;right:14px;z-index:999;pointer-events:none}
+.toast{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:10px 13px;font-size:.83rem;font-weight:500;display:flex;align-items:center;gap:7px;margin-bottom:5px;box-shadow:0 4px 16px #0008;animation:tin .2s ease}
 @keyframes tin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.toast.ok{border-left:3px solid var(–green)}
-.toast.err{border-left:3px solid var(–red)}
-.toast.inf{border-left:3px solid var(–blue)}
+.toast.ok{border-left:3px solid #22c55e}
+.toast.err{border-left:3px solid #f43f5e}
+.toast.inf{border-left:3px solid #4f8ef7}
 </style>
-
-  <!-- Firebase compat SDK (works on all iOS versions) -->
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 
-<div id="login-screen" style="position:fixed;inset:0;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:#0f1117;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;">
-  <div style="font-size:2.4rem;margin-bottom:8px">💼</div>
-  <div style="font-size:1.5rem;font-weight:700;color:#f0f2f8;margin-bottom:4px">FinControl 2026</div>
-  <div style="font-size:.85rem;color:#8b90a8;margin-bottom:28px">Gestão Financeira</div>
-  <div style="width:100%;max-width:360px">
-    <div id="user-btns" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
-    <div style="position:relative;margin-bottom:12px">
-      <input id="pw-inp" type="password" placeholder="Senha"
-        onkeydown="if(event.key==='Enter')doLogin()"
-        style="width:100%;background:#22253a;border:1.5px solid #2a2d3e;border-radius:10px;padding:13px 44px 13px 14px;font-size:.95rem;color:#f0f2f8;outline:none;-webkit-appearance:none;appearance:none;box-sizing:border-box;font-family:inherit"/>
-      <button onclick="togglePw()" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8b90a8;cursor:pointer;font-size:1rem;padding:2px">👁</button>
+<div id="login">
+  <div style="font-size:2rem;margin-bottom:8px">💼</div>
+  <h1>FinControl 2026</h1>
+  <p>Gestão Financeira</p>
+  <div class="u-list" id="user-btns"></div>
+  <div class="pw-wrap">
+    <input id="pw-inp" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="togglePw()">👁</button>
+  </div>
+  <div id="login-err"></div>
+  <button class="l-btn" onclick="doLogin()">Entrar</button>
+</div>
+
+<!-- APP -->
+
+<div id="app">
+  <div class="topbar">
+    <div class="t-title" id="ttitle">Resumo</div>
+    <div class="t-right">
+      <div class="mpill" onclick="openMov()" id="mlabel">Março 2026</div>
+      <button class="cfg" onclick="openSheet('s-cfg')">⚙️</button>
     </div>
-    <div id="login-err" style="font-size:.82rem;color:#f43f5e;text-align:center;min-height:18px;margin-bottom:8px"></div>
-    <button onclick="doLogin()" style="width:100%;padding:14px;border-radius:10px;border:none;background:#4f8ef7;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;-webkit-appearance:none;appearance:none;font-family:inherit">Entrar</button>
-    <div style="font-size:.72rem;color:#4a4f68;text-align:center;margin-top:16px">Os dados são salvos na nuvem</div>
   </div>
-</div>
-
-<!-- READ-ONLY BANNER -->
-
-<div class="ro-banner" id="ro-banner" style="display:none">
-  👁 Modo visualização — apenas o administrador pode editar
-</div>
-
-<!-- SETTINGS SHEET -->
-
-<div class="sheet-ov" id="s-settings" onclick="if(event.target===this)cs('s-settings')">
-  <div class="sheet">
-    <div class="shandle"></div>
-    <div class="stitle">⚙️ Configurações</div>
-    <div id="settings-content"></div>
-  </div>
-</div>
-
-<div class="topbar">
-  <div style="display:flex;align-items:center;gap:6px">
-    <div class="topbar-title" id="ttitle">Resumo</div>
-    <span class="role-pill" id="role-pill"></span>
-  </div>
-  <div style="display:flex;align-items:center;gap:6px">
-    <div class="month-pill" onclick="openMD()">📅 <span id="mlabel">Março 2026</span></div>
-    <button class="settings-btn" onclick="os('s-settings')">⚙️</button>
-  </div>
-</div>
-
-<!-- Month Drawer -->
-
-<div class="overlay" id="moverlay" onclick="if(event.target===this)closeMD()">
-  <div class="drawer">
-    <div class="drawer-title">Selecionar Mês — 2026</div>
-    <div class="month-grid" id="mgrid"></div>
-  </div>
-</div>
-
-<div class="scroll">
-  <div class="inner">
+  <div class="ro-bar" id="ro-bar">👁 Modo visualização — somente leitura</div>
+  <div class="scroll" id="scroll">
 
 ```
 <!-- RESUMO -->
-<div class="page active" id="page-resumo">
+<div class="page on" id="page-resumo">
   <div class="slabel">Visão Geral</div>
-  <div class="srow" id="d-cards"></div>
-  <div class="slabel">Recebimentos por Categoria</div>
+  <div class="grid2" id="d-cards"></div>
+  <div class="slabel">Recebimentos</div>
   <div class="lcard" id="d-rec"></div>
   <div class="slabel">Últimos Boletos</div>
   <div class="lcard" id="d-bol"></div>
 </div>
 
 <!-- RECEBIMENTOS -->
-<div class="page" id="page-recebimentos">
-  <div class="slabel">Lançar — <span id="rmes"></span></div>
+<div class="page" id="page-rec">
+  <div class="slabel" id="rec-mes-label">Janeiro</div>
   <div class="lcard" id="r-list"></div>
-  <div class="save-bar">
-    <button class="save-btn" onclick="saveRec()">Salvar</button>
-  </div>
+  <button class="save-btn" onclick="saveRec()">Salvar</button>
 </div>
 
 <!-- BOLETOS -->
-<div class="page" id="page-boletos">
-  <div class="srow" id="b-cards"></div>
+<div class="page" id="page-bol">
+  <div class="grid2" id="b-cards"></div>
   <div class="slabel">Lançamentos</div>
   <div id="b-list"></div>
 </div>
 
-<!-- CUSTOS -->
-<div class="page" id="page-custos">
-  <div class="srow" id="cf-cards"></div>
-  <div class="slabel">Despesas Recorrentes</div>
-  <div id="cf-list"></div>
+<!-- FIXOS -->
+<div class="page" id="page-fix">
+  <div class="grid2" id="f-cards"></div>
+  <div class="slabel">Despesas</div>
+  <div id="f-list"></div>
 </div>
 
-<!-- FUNCIONÁRIOS -->
-<div class="page" id="page-funcionarios">
-  <div class="srow" id="fn-cards"></div>
+<!-- EQUIPE -->
+<div class="page" id="page-eq">
+  <div class="grid2" id="e-cards"></div>
   <div class="slabel">Equipe</div>
-  <div id="fn-list"></div>
+  <div id="e-list"></div>
 </div>
 ```
 
-  </div>
+  </div><!-- /scroll -->
+
+  <nav class="bnav">
+    <button class="nb on" id="nb-resumo" onclick="go('resumo')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Resumo
+    </button>
+    <button class="nb" id="nb-rec" onclick="go('rec')">
+      <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Recebidos
+    </button>
+    <button class="nb" id="nb-bol" onclick="go('bol')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Boletos
+      <span class="nbadge" id="bpend">0</span>
+    </button>
+    <button class="nb" id="nb-fix" onclick="go('fix')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Fixos
+    </button>
+    <button class="nb" id="nb-eq" onclick="go('eq')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Equipe
+    </button>
+  </nav>
 </div>
 
-<button class="fab hidden" id="fab" onclick="openAdd()">+</button>
+<button class="fab off" id="fab" onclick="openAdd()">+</button>
 
-<nav class="bnav">
-  <button class="nb active" id="nav-resumo" onclick="go('resumo')">
-    <span class="ni">▦</span><span class="nl">Resumo</span>
-  </button>
-  <button class="nb" id="nav-recebimentos" onclick="go('recebimentos')">
-    <span class="ni">↑</span><span class="nl">Recebidos</span>
-  </button>
-  <button class="nb" id="nav-boletos" onclick="go('boletos')">
-    <span class="ni">≡</span><span class="nl">Boletos</span>
-    <span class="nbadge" id="bpend" style="display:none">0</span>
-  </button>
-  <button class="nb" id="nav-custos" onclick="go('custos')">
-    <span class="ni">◈</span><span class="nl">Fixos</span>
-  </button>
-  <button class="nb" id="nav-funcionarios" onclick="go('funcionarios')">
-    <span class="ni">◉</span><span class="nl">Equipe</span>
-  </button>
-</nav>
+<!-- MONTH DRAWER -->
+
+<div class="mov" id="mov" onclick="if(event.target===this)closeMov()">
+  <div class="mdrawer">
+    <div class="sh"></div>
+    <div style="font-size:.75rem;font-weight:700;color:#555;text-align:center;text-transform:uppercase;letter-spacing:.08em">Selecionar Mês — 2026</div>
+    <div class="mgrid" id="mgrid"></div>
+  </div>
+</div>
 
 <!-- SHEET: BOLETO -->
 
-<div class="sheet-ov" id="s-bol" onclick="if(event.target===this)cs('s-bol')">
+<div class="sov" id="s-bol" onclick="if(event.target===this)closeSheet('s-bol')">
   <div class="sheet">
-    <div class="shandle"></div>
-    <div class="stitle">📄 Novo Boleto</div>
-    <div class="fg"><label class="ilabel">Descrição</label>
-      <input class="inp" id="b-desc" placeholder="Ex: Aluguel, Fornecedor..."/></div>
+    <div class="sh"></div>
+    <div class="stitle">Novo Boleto</div>
+    <div class="fg"><label>Descrição</label><input id="b-desc" placeholder="Ex: Fornecedor..."/></div>
     <div class="frow">
-      <div class="fg"><label class="ilabel">Vencimento</label>
-        <input class="inp" id="b-venc" type="date"/></div>
-      <div class="fg"><label class="ilabel">Valor (R$)</label>
-        <input class="inp" id="b-val" type="number" inputmode="decimal" placeholder="0,00"/></div>
+      <div class="fg"><label>Vencimento</label><input id="b-venc" type="date"/></div>
+      <div class="fg"><label>Valor (R$)</label><input id="b-val" type="number" inputmode="decimal" placeholder="0,00"/></div>
     </div>
     <div class="frow">
-      <div class="fg"><label class="ilabel">Categoria</label>
-        <select class="inp" id="b-cat">
-          <option>Aluguel</option><option>Energia</option><option>Água</option>
-          <option>Internet</option><option>Telefone</option><option>Folha</option>
-          <option>Imposto</option><option>Fornecedor</option><option>Outros</option>
-        </select></div>
-      <div class="fg"><label class="ilabel">Forma Pagto.</label>
-        <select class="inp" id="b-forma">
-          <option>Boleto</option><option>PIX</option><option>Cartão Crédito</option>
-          <option>Cartão Débito</option><option>Dinheiro</option><option>Transferência</option>
-        </select></div>
+      <div class="fg"><label>Categoria</label>
+        <select id="b-cat"><option>Aluguel</option><option>Energia</option><option>Água</option><option>Internet</option><option>Imposto</option><option>Fornecedor</option><option>Outros</option></select></div>
+      <div class="fg"><label>Forma</label>
+        <select id="b-forma"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Dinheiro</option><option>Transferência</option></select></div>
     </div>
     <div class="sactions">
-      <button class="btn btn-g" onclick="cs('s-bol')">Cancelar</button>
-      <button class="btn btn-p" onclick="addBol()">Adicionar</button>
+      <button class="s-cancel" onclick="closeSheet('s-bol')">Cancelar</button>
+      <button class="s-ok" onclick="addBol()">Adicionar</button>
     </div>
   </div>
 </div>
 
-<!-- SHEET: CUSTO -->
+<!-- SHEET: FIXO -->
 
-<div class="sheet-ov" id="s-cf" onclick="if(event.target===this)cs('s-cf')">
+<div class="sov" id="s-fix" onclick="if(event.target===this)closeSheet('s-fix')">
   <div class="sheet">
-    <div class="shandle"></div>
-    <div class="stitle">🏢 Novo Custo Fixo</div>
-    <div class="fg"><label class="ilabel">Descrição</label>
-      <input class="inp" id="cf-desc" placeholder="Ex: Aluguel, Internet..."/></div>
+    <div class="sh"></div>
+    <div class="stitle">Novo Custo Fixo</div>
+    <div class="fg"><label>Descrição</label><input id="f-desc" placeholder="Ex: Aluguel..."/></div>
     <div class="frow">
-      <div class="fg"><label class="ilabel">Valor Mensal (R$)</label>
-        <input class="inp" id="cf-val" type="number" inputmode="decimal" placeholder="0,00"/></div>
-      <div class="fg"><label class="ilabel">Dia Vencimento</label>
-        <input class="inp" id="cf-dia" type="number" inputmode="numeric" min="1" max="31" placeholder="10"/></div>
+      <div class="fg"><label>Valor (R$)</label><input id="f-val" type="number" inputmode="decimal" placeholder="0,00"/></div>
+      <div class="fg"><label>Dia Vencimento</label><input id="f-dia" type="number" inputmode="numeric" placeholder="10"/></div>
     </div>
-    <div class="frow">
-      <div class="fg"><label class="ilabel">Categoria</label>
-        <select class="inp" id="cf-cat">
-          <option>Imóvel</option><option>Utilidades</option><option>Comunicação</option>
-          <option>Software</option><option>Serviços</option><option>Seguros</option>
-          <option>Marketing</option><option>Manutenção</option><option>Outros</option>
-        </select></div>
-      <div class="fg"><label class="ilabel">Forma Pagto.</label>
-        <select class="inp" id="cf-forma">
-          <option>Boleto</option><option>Débito Auto</option><option>Cartão Crédito</option>
-          <option>PIX</option><option>Transferência</option>
-        </select></div>
-    </div>
+    <div class="fg"><label>Forma</label>
+      <select id="f-forma"><option>Boleto</option><option>Débito Auto</option><option>Cartão</option><option>PIX</option><option>Transferência</option></select></div>
     <div class="sactions">
-      <button class="btn btn-g" onclick="cs('s-cf')">Cancelar</button>
-      <button class="btn btn-p" onclick="addCf()">Adicionar</button>
+      <button class="s-cancel" onclick="closeSheet('s-fix')">Cancelar</button>
+      <button class="s-ok" onclick="addFix()">Adicionar</button>
     </div>
   </div>
 </div>
 
 <!-- SHEET: FUNCIONÁRIO -->
 
-<div class="sheet-ov" id="s-fn" onclick="if(event.target===this)cs('s-fn')">
+<div class="sov" id="s-fn" onclick="if(event.target===this)closeSheet('s-fn')">
   <div class="sheet">
-    <div class="shandle"></div>
-    <div class="stitle">👤 Novo Funcionário</div>
+    <div class="sh"></div>
+    <div class="stitle">Novo Funcionário</div>
     <div class="frow">
-      <div class="fg"><label class="ilabel">Nome</label>
-        <input class="inp" id="fn-nome" placeholder="Nome"/></div>
-      <div class="fg"><label class="ilabel">Cargo</label>
-        <input class="inp" id="fn-cargo" placeholder="Cargo"/></div>
+      <div class="fg"><label>Nome</label><input id="fn-nome" placeholder="Nome"/></div>
+      <div class="fg"><label>Cargo</label><input id="fn-cargo" placeholder="Cargo"/></div>
     </div>
     <div class="frow">
-      <div class="fg"><label class="ilabel">Salário Base (R$)</label>
-        <input class="inp" id="fn-sal" type="number" inputmode="decimal" placeholder="0,00"/></div>
-      <div class="fg"><label class="ilabel">Vale Transporte</label>
-        <input class="inp" id="fn-vt" type="number" inputmode="decimal" placeholder="0,00"/></div>
+      <div class="fg"><label>Salário (R$)</label><input id="fn-sal" type="number" inputmode="decimal" placeholder="0,00"/></div>
+      <div class="fg"><label>Vale Transporte</label><input id="fn-vt" type="number" inputmode="decimal" placeholder="0,00"/></div>
     </div>
-    <div class="fg"><label class="ilabel">Vale Refeição (R$)</label>
-      <input class="inp" id="fn-vr" type="number" inputmode="decimal" placeholder="0,00"/></div>
+    <div class="fg"><label>Vale Refeição (R$)</label><input id="fn-vr" type="number" inputmode="decimal" placeholder="0,00"/></div>
     <div class="sactions">
-      <button class="btn btn-g" onclick="cs('s-fn')">Cancelar</button>
-      <button class="btn btn-p" onclick="addFn()">Adicionar</button>
+      <button class="s-cancel" onclick="closeSheet('s-fn')">Cancelar</button>
+      <button class="s-ok" onclick="addFn()">Adicionar</button>
     </div>
   </div>
 </div>
 
-<div class="toast-w" id="toasts"></div>
+<!-- SHEET: CONFIGURAÇÕES -->
+
+<div class="sov" id="s-cfg" onclick="if(event.target===this)closeSheet('s-cfg')">
+  <div class="sheet">
+    <div class="sh"></div>
+    <div class="stitle">⚙️ Configurações</div>
+    <div id="cfg-content"></div>
+  </div>
+</div>
+
+<div class="tw" id="tw"></div>
 
 <script>
-const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-             'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const FORMAS=[
-  {k:'cartao_credito',l:'Cartão Crédito',ic:'CC',c:'#4f8ef7'},
-  {k:'cartao_debito', l:'Cartão Débito', ic:'CD',c:'#818cf8'},
-  {k:'pix',          l:'PIX',           ic:'PIX',c:'#2dd4bf'},
-  {k:'dinheiro',     l:'Dinheiro',      ic:'R$',c:'#22c55e'},
-  {k:'crediario',    l:'Crediário',     ic:'CR',c:'#a78bfa'},
-];
-const PAGE_TITLES={resumo:'Resumo',recebimentos:'Recebimentos',
-  boletos:'Boletos',custos:'Custos Fixos',funcionarios:'Funcionários'};
-const FAB_PAGES=['boletos','custos','funcionarios'];
-
-let curPage='resumo';
-let curM=new Date().getMonth();
-
-// ── FIREBASE (via compat SDK - loaded in <head>) ─────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyB6ZJi8fWvkheRqHm3EmgdkokM8irNfqQ4",
-  authDomain: "bigfarma-2026.firebaseapp.com",
-  projectId: "bigfarma-2026",
-  storageBucket: "bigfarma-2026.firebasestorage.app",
-  messagingSenderId: "925149243217",
-  appId: "1:925149243217:web:38941da6346a8855945570"
-};
-firebase.initializeApp(firebaseConfig);
+// ── CONFIG ──────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyB6ZJi8fWvkheRqHm3EmgdkokM8irNfqQ4",
+  authDomain:"bigfarma-2026.firebaseapp.com",
+  projectId:"bigfarma-2026",
+  storageBucket:"bigfarma-2026.firebasestorage.app",
+  messagingSenderId:"925149243217",
+  appId:"1:925149243217:web:38941da6346a8855945570"
+});
 const db = firebase.firestore();
 
-// ── DB HELPERS ──────────────────────────────────────────────
-// All data lives in Firestore under collection "data", doc = key
-// Shape: { value: <JSON string> }
-const mk=(t,m)=>`fc26_${t}_${m!==undefined?'m'+m:'g'}`;
+// ── USERS ──────────────────────────────────────────────
+const USERS = [
+  {id:'admin', name:'Administrador', role:'admin',  color:'#4f8ef7', av:'AD'},
+  {id:'u1',    name:'Funcionário 1', role:'viewer', color:'#22c55e', av:'F1'},
+  {id:'u2',    name:'Funcionário 2', role:'viewer', color:'#a78bfa', av:'F2'},
+  {id:'u3',    name:'Funcionário 3', role:'viewer', color:'#f59e0b', av:'F3'},
+];
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const FORMAS = [
+  {k:'cc', l:'Cartão Crédito', c:'#4f8ef7'},
+  {k:'cd', l:'Cartão Débito',  c:'#818cf8'},
+  {k:'pix',l:'PIX',            c:'#2dd4bf'},
+  {k:'din',l:'Dinheiro',       c:'#22c55e'},
+  {k:'cre',l:'Crediário',      c:'#a78bfa'},
+];
 
-// In-memory cache so UI stays snappy
+let curUser = null;
+let selUid = 'admin';
+let curM = new Date().getMonth();
 const cache = {};
 
-async function sv(key, val) {
+// ── FIREBASE ─────────────────────────────────────────────
+async function dbSet(key, val) {
   cache[key] = val;
-  try {
-    await db.collection('data').doc(key).set({value: JSON.stringify(val)});
-  } catch(e) {
-    // fallback to localStorage if offline
-    localStorage.setItem(key, JSON.stringify(val));
-    console.warn('Firestore write failed, saved locally:', e.message);
-  }
+  try { await db.collection('data').doc(key).set({v: JSON.stringify(val)}); }
+  catch(e) { localStorage.setItem(key, JSON.stringify(val)); }
 }
-
-async function ld(key) {
+async function dbGet(key) {
   if (cache[key] !== undefined) return cache[key];
   try {
-    const snap = await db.collection('data').doc(key).get();
-    if (snap.exists()) {
-      const val = JSON.parse(snap.data().value);
-      cache[key] = val;
-      return val;
-    }
-    return null;
+    const s = await db.collection('data').doc(key).get();
+    const val = s.exists ? JSON.parse(s.data().v) : null;
+    cache[key] = val;
+    return val;
   } catch(e) {
-    // fallback to localStorage
     try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
   }
 }
+const mk = (t,m) => m!==undefined ? `bf26_${t}_m${m}` : `bf26_${t}`;
+const getRec  = m => dbGet(mk('rec',m)).then(v=>v||{});
+const getBols = m => dbGet(mk('bol',m)).then(v=>v||[]);
+const getFix  = ()=> dbGet(mk('fix')).then(v=>v||[]);
+const getFns  = ()=> dbGet(mk('fns')).then(v=>v||[]);
+const getCfSt = m => dbGet(mk('cfst',m)).then(v=>v||{});
+const getFnSt = m => dbGet(mk('fnst',m)).then(v=>v||{});
 
-// Async getters — return cached or fetch
-async function getRec(m)   { return (await ld(mk('rec',m)))  || {}; }
-async function getBols(m)  { return (await ld(mk('bol',m)))  || []; }
-async function getCfs()    { return (await ld(mk('cfs')))    || []; }
-async function getFns()    { return (await ld(mk('fns')))    || []; }
-async function getCfSt(m)  { return (await ld(mk('cfst',m))) || {}; }
-async function getFnSt(m)  { return (await ld(mk('fnst',m))) || {}; }
-
-// Preload all data for current month into cache (called on login + month change)
-async function preloadMonth(m) {
-  showLoader(true);
-  const keys = [mk('rec',m), mk('bol',m), mk('cfst',m), mk('fnst',m), mk('cfs'), mk('fns')];
-  await Promise.all(keys.map(k => ld(k)));
-  showLoader(false);
+async function preload(m) {
+  await Promise.all([
+    dbGet(mk('rec',m)), dbGet(mk('bol',m)),
+    dbGet(mk('fix')),   dbGet(mk('fns')),
+    dbGet(mk('cfst',m)),dbGet(mk('fnst',m))
+  ]);
 }
 
-function showLoader(on) {
-  let el = document.getElementById('loader');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'loader';
-    el.style.cssText = 'position:fixed;top:0;left:0;right:0;height:3px;background:var(--blue);z-index:9999;transition:opacity .3s';
-    document.body.appendChild(el);
-  }
-  el.style.opacity = on ? '1' : '0';
+// ── UTILS ────────────────────────────────────────────────
+const brl = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+const fd  = d => { if(!d)return'—'; const p=d.split('-'); return`${p[2]}/${p[1]}`; };
+const uid = () => Math.random().toString(36).slice(2,9);
+
+function toast(msg, type='ok') {
+  const w = document.getElementById('tw');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = (type==='ok'?'✓ ':type==='err'?'✕ ':'• ') + msg;
+  w.appendChild(el);
+  setTimeout(() => el.remove(), 2800);
 }
 
-const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
-const fd=d=>{if(!d)return'—';const p=d.split('-');return`${p[2]}/${p[1]}`};
-const uid=()=>Math.random().toString(36).slice(2,9);
-
-function toast(msg,type='ok'){
-  const w=document.getElementById('toasts');
-  const el=document.createElement('div');
-  el.className=`toast ${type}`;
-  el.innerHTML=(type==='ok'?'✅':type==='err'?'❌':'ℹ️')+' '+msg;
-  w.appendChild(el);setTimeout(()=>el.remove(),2800);
+function nextSt(s) {
+  const c = ['PENDENTE','PAGO','VENCIDO','CANCELADO'];
+  return c[(c.indexOf(s||'PENDENTE')+1)%c.length];
+}
+function badge(s, oc) {
+  const cls = (s||'PENDENTE').toLowerCase();
+  return `<span class="badge ${cls}" onclick="${oc}">${s||'PENDENTE'}</span>`;
 }
 
-// MONTH
-function renderMG(){
-  document.getElementById('mgrid').innerHTML=MESES.map((m,i)=>
-    `<div class="m-btn${i===curM?' active':''}" onclick="setM(${i})">${m.slice(0,3)}</div>`).join('');
-  document.getElementById('mlabel').textContent=MESES[curM]+' 2026';
-  const r=document.getElementById('rmes');if(r)r.textContent=MESES[curM];
+// ── AUTH ─────────────────────────────────────────────────
+async function sha(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function openMD(){document.getElementById('moverlay').classList.add('open')}
-function closeMD(){document.getElementById('moverlay').classList.remove('open')}
-async function setM(i){curM=i;closeMD();renderMG();await preloadMonth(i);render(curPage);}
-
-// NAV
-function go(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  document.getElementById('nav-'+id).classList.add('active');
-  document.getElementById('ttitle').textContent=PAGE_TITLES[id];
-  const fab=document.getElementById('fab');
-  fab.className=FAB_PAGES.includes(id)?'fab':'fab hidden';
-  curPage=id;render(id);
-  document.querySelector('.scroll').scrollTo(0,0);
+async function checkPw(uid, pw) {
+  const stored = localStorage.getItem('pw_'+uid);
+  const hash = await sha(pw);
+  if (stored) return stored === hash;
+  const def = {admin:'admin123',u1:'1234',u2:'1234',u3:'1234'};
+  return hash === await sha(def[uid]||'');
+}
+async function setPw(uid, pw) {
+  localStorage.setItem('pw_'+uid, await sha(pw));
 }
 
-async function render(id){
-  if(id==='resumo')await rResumo();
-  if(id==='recebimentos')await rRec();
-  if(id==='boletos')await rBols();
-  if(id==='custos')await rCfs();
-  if(id==='funcionarios')await rFns();
+function renderUsers() {
+  document.getElementById('user-btns').innerHTML = USERS.map(u =>
+    `<button class="u-item${u.id===selUid?' sel':''}" onclick="selUser('${u.id}')">
+      <div class="u-av" style="background:${u.color}25;color:${u.color}">${u.av}</div>
+      <div class="u-info"><div class="name">${u.name}</div><div class="role">${u.role==='admin'?'Administrador':'Visualizador'}</div></div>
+    </button>`).join('');
+}
+
+function selUser(id) {
+  selUid = id;
+  renderUsers();
+  document.getElementById('pw-inp').focus();
+  document.getElementById('login-err').textContent = '';
+}
+
+function togglePw() {
+  const inp = document.getElementById('pw-inp');
+  inp.type = inp.type==='password'?'text':'password';
+}
+
+async function doLogin() {
+  const pw = document.getElementById('pw-inp').value;
+  const err = document.getElementById('login-err');
+  if (!pw) { err.textContent='Digite a senha'; return; }
+  const ok = await checkPw(selUid, pw);
+  if (!ok) { err.textContent='Senha incorreta'; document.getElementById('pw-inp').value=''; return; }
+  curUser = USERS.find(u=>u.id===selUid);
+  document.getElementById('login').classList.add('off');
+  document.getElementById('app').classList.add('on');
+  document.getElementById('pw-inp').value='';
+  err.textContent='';
+  applyRole();
+  renderMG();
+  await preload(curM);
+  await renderPage('resumo');
   updateBadge();
 }
 
-function openAdd(){
-  if(curPage==='boletos')os('s-bol');
-  if(curPage==='custos')os('s-cf');
-  if(curPage==='funcionarios')os('s-fn');
+function applyRole() {
+  const adm = curUser.role==='admin';
+  document.getElementById('ro-bar').style.display = adm?'none':'block';
 }
-function os(id){document.getElementById(id).classList.add('open')}
-function cs(id){document.getElementById(id).classList.remove('open')}
+function isAdmin() { return curUser?.role==='admin'; }
+function guard() { if(!isAdmin()){toast('Apenas o admin pode editar','err');return false;} return true; }
 
-async function updateBadge(){
-  const n=(await getBols(curM)).filter(b=>b.s==='PENDENTE'||b.s==='VENCIDO').length;
-  const el=document.getElementById('bpend');el.textContent=n;el.style.display=n?'':'none';
+// ── NAV ──────────────────────────────────────────────────
+const PAGE_TITLES = {resumo:'Resumo',rec:'Recebimentos',bol:'Boletos',fix:'Custos Fixos',eq:'Equipe'};
+const FAB_PAGES = ['bol','fix','eq'];
+
+async function go(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  document.getElementById('nb-'+id).classList.add('on');
+  document.getElementById('ttitle').textContent = PAGE_TITLES[id];
+  document.getElementById('fab').className = FAB_PAGES.includes(id)&&isAdmin()?'fab':'fab off';
+  document.getElementById('scroll').scrollTo(0,0);
+  await renderPage(id);
 }
 
-function nextSt(s){
-  const c=['PENDENTE','PAGO','VENCIDO','CANCELADO'];
-  return c[(c.indexOf(s||'PENDENTE')+1)%c.length];
-}
-function badge(s,oc){
-  const cls=(s||'PENDENTE').toLowerCase();
-  return`<span class="badge ${cls}" onclick="${oc}">${s||'PENDENTE'}</span>`;
+async function renderPage(id) {
+  if(id==='resumo') await rResumo();
+  if(id==='rec')    await rRec();
+  if(id==='bol')    await rBol();
+  if(id==='fix')    await rFix();
+  if(id==='eq')     await rEq();
+  updateBadge();
 }
 
-// RESUMO
-async function rResumo(){
-  const m=curM,rec=await getRec(m),bols=await getBols(m),cfs=await getCfs(),fns=await getFns();
-  const tRec=FORMAS.reduce((s,f)=>s+(parseFloat(rec[f.k])||0),0);
-  const bPago=bols.filter(b=>b.s==='PAGO').reduce((s,b)=>s+b.v,0);
-  const bPend=bols.filter(b=>b.s==='PENDENTE').reduce((s,b)=>s+b.v,0);
-  const tCf=cfs.reduce((s,c)=>s+c.v,0);
-  const tFn=fns.reduce((s,f)=>s+f.sal*(1.19)+(f.vt||0)+(f.vr||0),0);
-  const saldo=tRec-bPago-tCf-tFn;
+function openAdd() {
+  const p = document.querySelector('.nb.on')?.id?.replace('nb-','');
+  if(p==='bol') openSheet('s-bol');
+  if(p==='fix') openSheet('s-fix');
+  if(p==='eq')  openSheet('s-fn');
+}
+function openSheet(id) { document.getElementById(id).classList.add('on'); }
+function closeSheet(id){ document.getElementById(id).classList.remove('on'); }
+async function updateBadge() {
+  const n = (await getBols(curM)).filter(b=>b.s==='PENDENTE'||b.s==='VENCIDO').length;
+  const el = document.getElementById('bpend');
+  el.textContent=n; el.style.display=n?'':'none';
+}
+
+// ── MONTH ────────────────────────────────────────────────
+function renderMG() {
+  document.getElementById('mgrid').innerHTML = MESES.map((m,i)=>
+    `<div class="mbtn${i===curM?' on':''}" onclick="setM(${i})">${m.slice(0,3)}</div>`).join('');
+  document.getElementById('mlabel').textContent = MESES[curM]+' 2026';
+  const rl = document.getElementById('rec-mes-label');
+  if(rl) rl.textContent = MESES[curM];
+}
+function openMov() { document.getElementById('mov').classList.add('on'); }
+function closeMov(){ document.getElementById('mov').classList.remove('on'); }
+async function setM(i) { curM=i; closeMov(); renderMG(); await preload(i); await renderPage(document.querySelector('.nb.on')?.id?.replace('nb-','')||'resumo'); }
+
+// ── RESUMO ───────────────────────────────────────────────
+async function rResumo() {
+  const [rec,bols,fix,fns] = await Promise.all([getRec(curM),getBols(curM),getFix(),getFns()]);
+  const tRec = FORMAS.reduce((s,f)=>s+(parseFloat(rec[f.k])||0),0);
+  const bPago= bols.filter(b=>b.s==='PAGO').reduce((s,b)=>s+b.v,0);
+  const bPend= bols.filter(b=>b.s==='PENDENTE').reduce((s,b)=>s+b.v,0);
+  const tFix = fix.reduce((s,f)=>s+f.v,0);
+  const tFn  = fns.reduce((s,f)=>s+f.sal*1.19+(f.vt||0)+(f.vr||0),0);
+  const saldo= tRec-bPago-tFix-tFn;
 
   document.getElementById('d-cards').innerHTML=`
-    <div class="sc g"><div class="sc-label">💰 Total Recebido</div><div class="sc-val gv">${brl(tRec)}</div></div>
-    <div class="sc ${saldo>=0?'b':'r'}"><div class="sc-label">📊 Saldo</div><div class="sc-val ${saldo>=0?'bv':'rv'}">${brl(saldo)}</div></div>
-    <div class="sc o full"><div class="sc-label">⏳ Boletos Pendentes</div><div class="sc-val ov">${brl(bPend)}</div></div>`;
+    <div class="card green"><div class="cl">💰 Recebido</div><div class="cv g">${brl(tRec)}</div></div>
+    <div class="card ${saldo>=0?'blue':'red'}"><div class="cl">📊 Saldo</div><div class="cv ${saldo>=0?'b':'r'}">${brl(saldo)}</div></div>
+    <div class="card orange full"><div class="cl">⏳ Boletos Pendentes</div><div class="cv o">${brl(bPend)}</div></div>`;
 
-  document.getElementById('d-rec').innerHTML=FORMAS.map(f=>{
-    const v=parseFloat(rec[f.k])||0;
-    const pct=tRec>0?(v/tRec*100).toFixed(0):0;
+  document.getElementById('d-rec').innerHTML = FORMAS.map(f=>{
+    const v = parseFloat(rec[f.k])||0;
+    const pct = tRec>0?(v/tRec*100).toFixed(0):0;
     return`<div class="li">
-      <div class="li-icon" style="background:${f.c}20;color:${f.c}">${f.ic}</div>
-      <div class="li-body">
-        <div class="li-title">${f.l}</div>
-        <div class="prog"><div class="prog-f" style="width:${pct}%;background:${f.c}"></div></div>
-      </div>
-      <div class="li-r"><div class="li-val">${brl(v)}</div><div class="li-meta">${pct}%</div></div>
+      <div class="li-dot" style="background:${f.c}"></div>
+      <div class="li-b"><div class="li-t">${f.l}</div>
+        <div class="prog"><div class="prog-f" style="width:${pct}%;background:${f.c}"></div></div></div>
+      <div class="li-r"><div class="li-v">${brl(v)}</div><div class="li-m">${pct}%</div></div>
     </div>`;}).join('');
 
-  const rec5=bols.slice(-4).reverse();
-  document.getElementById('d-bol').innerHTML=rec5.length?
-    rec5.map((b,i)=>`<div class="li">
-      <div class="li-body">
-        <div class="li-title">${b.d}</div>
-        <div class="li-sub">${b.cat} · Vence ${fd(b.venc)}</div>
-        <div style="margin-top:5px">${badge(b.s,`tBol(${bols.indexOf(b)})`)}</div>
-      </div>
-      <div class="li-r"><div class="li-val">${brl(b.v)}</div></div>
-    </div>`).join(''):
-    '<div class="empty" style="padding:30px 20px;text-align:center;color:var(--text3)"><div style="font-size:1.8rem;margin-bottom:6px">📭</div><p style="font-size:.83rem">Nenhum boleto lançado</p></div>';
+  const rec5 = bols.slice(-4).reverse();
+  document.getElementById('d-bol').innerHTML = rec5.length
+    ? rec5.map(b=>`<div class="li">
+        <div class="li-b"><div class="li-t">${b.d}</div><div class="li-s">${b.cat} · ${fd(b.venc)}</div>
+          <div style="margin-top:5px">${badge(b.s,`tBol(${bols.indexOf(b)})`)}</div></div>
+        <div class="li-r"><div class="li-v">${brl(b.v)}</div></div></div>`).join('')
+    : '<div class="empty-s">Nenhum boleto lançado</div>';
 }
 
-// RECEBIMENTOS
-async function rRec(){
-  const rec=await getRec(curM);
-  const rmesEl=document.getElementById('rmes');if(rmesEl)rmesEl.textContent=MESES[curM];
-  document.getElementById('r-list').innerHTML=FORMAS.map(f=>`
+// ── RECEBIMENTOS ─────────────────────────────────────────
+async function rRec() {
+  const rec = await getRec(curM);
+  document.getElementById('rec-mes-label').textContent = MESES[curM];
+  document.getElementById('r-list').innerHTML = FORMAS.map(f=>`
     <div class="ri">
-      <div class="ri-dot" style="background:${f.c}"></div>
+      <div class="li-dot" style="background:${f.c}"></div>
       <div class="ri-label">${f.l}</div>
-      <div class="ri-wrap">
-        <span>R$</span>
-        <input class="ri-inp" id="ri-${f.k}" type="number" inputmode="decimal"
-          placeholder="0,00" value="${rec[f.k]||''}"/>
+      <div class="ri-val"><span>R$</span>
+        <input id="ri-${f.k}" type="number" inputmode="decimal" placeholder="0,00" value="${rec[f.k]||''}"/>
       </div>
     </div>`).join('');
 }
-async function saveRec(){
-  if(!guardEdit())return;
+async function saveRec() {
+  if(!guard())return;
   const d={};
-  FORMAS.forEach(f=>{d[f.k]=parseFloat(document.getElementById('ri-'+f.k)?.value)||0});
-  await sv(mk('rec',curM),d);cache[mk('rec',curM)]=d;toast('Recebimentos salvos!');updateBadge();
+  FORMAS.forEach(f=>{d[f.k]=parseFloat(document.getElementById('ri-'+f.k)?.value)||0;});
+  await dbSet(mk('rec',curM),d);
+  toast('Recebimentos salvos!');
 }
 
-// BOLETOS
-async function _addBolImpl(){
+// ── BOLETOS ──────────────────────────────────────────────
+async function addBol() {
+  if(!guard())return;
   const d=document.getElementById('b-desc').value.trim();
   const venc=document.getElementById('b-venc').value;
   const v=parseFloat(document.getElementById('b-val').value)||0;
   const cat=document.getElementById('b-cat').value;
   const forma=document.getElementById('b-forma').value;
-  if(!d||!v){toast('Preencha descrição e valor','err');return}
+  if(!d||!v){toast('Preencha descrição e valor','err');return;}
   const bols=await getBols(curM);
   bols.push({id:uid(),d,venc,v,cat,forma,s:'PENDENTE'});
-  await sv(mk('bol',curM),bols);
-  cs('s-bol');
-  ['b-desc','b-venc','b-val'].forEach(id=>document.getElementById(id).value='');
-  toast('Boleto adicionado!');await rBols();updateBadge();
+  await dbSet(mk('bol',curM),bols);
+  closeSheet('s-bol');
+  ['b-desc','b-venc','b-val'].forEach(i=>document.getElementById(i).value='');
+  toast('Boleto adicionado!');
+  await rBol(); updateBadge();
 }
-async function _tBolImpl(i){
-  const bols=await getBols(curM);if(!bols[i])return;
+async function tBol(i) {
+  if(!guard())return;
+  const bols=await getBols(curM); if(!bols[i])return;
   bols[i].s=nextSt(bols[i].s);
-  await sv(mk('bol',curM),bols);
-  if(bols[i].s==='PAGO')toast(`"${bols[i].d}" marcado como PAGO`);
-  await rBols();if(curPage==='resumo')await rResumo();updateBadge();
+  await dbSet(mk('bol',curM),bols);
+  if(bols[i].s==='PAGO') toast(`"${bols[i].d}" pago!`);
+  await rBol(); await rResumo(); updateBadge();
 }
-async function _dBolImpl(i){
+async function dBol(i) {
+  if(!guard())return;
   const bols=await getBols(curM);
   if(!confirm(`Remover "${bols[i]?.d}"?`))return;
-  bols.splice(i,1);await sv(mk('bol',curM),bols);toast('Removido','inf');await rBols();updateBadge();
+  bols.splice(i,1); await dbSet(mk('bol',curM),bols);
+  toast('Removido','inf'); await rBol(); updateBadge();
 }
-async function rBols(){
+async function rBol() {
   const bols=await getBols(curM);
   const pg=bols.filter(b=>b.s==='PAGO').reduce((s,b)=>s+b.v,0);
   const pd=bols.filter(b=>b.s==='PENDENTE').reduce((s,b)=>s+b.v,0);
   const vc=bols.filter(b=>b.s==='VENCIDO').reduce((s,b)=>s+b.v,0);
   document.getElementById('b-cards').innerHTML=`
-    <div class="sc g"><div class="sc-label">✅ Pagos</div><div class="sc-val gv">${brl(pg)}</div></div>
-    <div class="sc o"><div class="sc-label">⏳ Pendentes</div><div class="sc-val ov">${brl(pd)}</div></div>
-    <div class="sc r full"><div class="sc-label">❌ Vencidos</div><div class="sc-val rv">${brl(vc)}</div></div>`;
-  document.getElementById('b-list').innerHTML=bols.length?
-    `<div class="lcard">${bols.map((b,i)=>`
-      <div class="li">
-        <div class="li-body">
-          <div class="li-title">${b.d}</div>
-          <div class="li-sub">${b.cat} · ${b.forma} · Vence ${fd(b.venc)}</div>
-          <div style="margin-top:5px">${badge(b.s,`tBol(${i})`)}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
-          <div class="li-val">${brl(b.v)}</div>
+    <div class="card green"><div class="cl">✅ Pagos</div><div class="cv g">${brl(pg)}</div></div>
+    <div class="card orange"><div class="cl">⏳ Pendentes</div><div class="cv o">${brl(pd)}</div></div>
+    <div class="card red full"><div class="cl">❌ Vencidos</div><div class="cv r">${brl(vc)}</div></div>`;
+  document.getElementById('b-list').innerHTML = bols.length
+    ? `<div class="lcard">${bols.map((b,i)=>`<div class="li">
+        <div class="li-b"><div class="li-t">${b.d}</div><div class="li-s">${b.cat} · ${b.forma} · ${fd(b.venc)}</div>
+          <div style="margin-top:5px">${badge(b.s,`tBol(${i})`)}</div></div>
+        <div class="li-r" style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+          <div class="li-v">${brl(b.v)}</div>
           <button class="del-btn" onclick="dBol(${i})">🗑</button>
-        </div>
-      </div>`).join('')}</div>`:
-    '<div class="empty"><div class="ei">📭</div><p>Toque em + para adicionar um boleto</p></div>';
+        </div></div>`).join('')}</div>`
+    : '<div class="empty-s">Nenhum boleto — toque em + para adicionar</div>';
 }
 
-// CUSTOS FIXOS
-async function _addCfImpl(){
-  const d=document.getElementById('cf-desc').value.trim();
-  const v=parseFloat(document.getElementById('cf-val').value)||0;
-  const dia=document.getElementById('cf-dia').value||'—';
-  const cat=document.getElementById('cf-cat').value;
-  const forma=document.getElementById('cf-forma').value;
-  if(!d||!v){toast('Preencha descrição e valor','err');return}
-  const c=await getCfs();c.push({id:uid(),d,v,dia,cat,forma});
-  await sv(mk('cfs'),c);cs('s-cf');
-  ['cf-desc','cf-val','cf-dia'].forEach(id=>document.getElementById(id).value='');
-  toast('Custo adicionado!');await rCfs();
+// ── CUSTOS FIXOS ─────────────────────────────────────────
+async function addFix() {
+  if(!guard())return;
+  const d=document.getElementById('f-desc').value.trim();
+  const v=parseFloat(document.getElementById('f-val').value)||0;
+  const dia=document.getElementById('f-dia').value||'—';
+  const forma=document.getElementById('f-forma').value;
+  if(!d||!v){toast('Preencha descrição e valor','err');return;}
+  const fix=await getFix();
+  fix.push({id:uid(),d,v,dia,forma});
+  await dbSet(mk('fix'),fix);
+  closeSheet('s-fix');
+  ['f-desc','f-val','f-dia'].forEach(i=>document.getElementById(i).value='');
+  toast('Custo adicionado!'); await rFix();
 }
-async function _tCfImpl(i){
-  const m=curM,st=await getCfSt(m),c=await getCfs();
-  const id=c[i]?.id;if(!id)return;
-  st[id]=nextSt(st[id]||'PENDENTE');await sv(mk('cfst',m),st);
-  if(st[id]==='PAGO')toast(`"${c[i].d}" pago!`);await rCfs();
+async function tFix(i) {
+  if(!guard())return;
+  const m=curM, st=await getCfSt(m), fix=await getFix();
+  const id=fix[i]?.id; if(!id)return;
+  st[id]=nextSt(st[id]||'PENDENTE');
+  await dbSet(mk('cfst',m),st);
+  if(st[id]==='PAGO') toast(`"${fix[i].d}" pago!`);
+  await rFix();
 }
-async function _dCfImpl(i){
-  const c=await getCfs();if(!confirm(`Remover "${c[i]?.d}"?`))return;
-  c.splice(i,1);await sv(mk('cfs'),c);toast('Removido','inf');await rCfs();
+async function dFix(i) {
+  if(!guard())return;
+  const fix=await getFix();
+  if(!confirm(`Remover "${fix[i]?.d}"?`))return;
+  fix.splice(i,1); await dbSet(mk('fix'),fix);
+  toast('Removido','inf'); await rFix();
 }
-async function rCfs(){
-  const m=curM,cfs=await getCfs(),st=await getCfSt(m);
-  const total=cfs.reduce((s,c)=>s+c.v,0);
-  const pg=cfs.filter(c=>st[c.id]==='PAGO').reduce((s,c)=>s+c.v,0);
-  document.getElementById('cf-cards').innerHTML=`
-    <div class="sc full"><div class="sc-label">Total Mensal</div><div class="sc-val">${brl(total)}</div></div>
-    <div class="sc g"><div class="sc-label">✅ Pagos</div><div class="sc-val gv">${brl(pg)}</div></div>
-    <div class="sc o"><div class="sc-label">⏳ Em aberto</div><div class="sc-val ov">${brl(total-pg)}</div></div>`;
-  document.getElementById('cf-list').innerHTML=cfs.length?
-    `<div class="lcard">${cfs.map((c,i)=>`
-      <div class="li">
-        <div class="li-body">
-          <div class="li-title">${c.d}</div>
-          <div class="li-sub">${c.cat} · ${c.forma} · Dia ${c.dia}</div>
-          <div style="margin-top:5px">${badge(st[c.id]||'PENDENTE',`tCf(${i})`)}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
-          <div class="li-val">${brl(c.v)}</div>
-          <button class="del-btn" onclick="dCf(${i})">🗑</button>
-        </div>
-      </div>`).join('')}</div>`:
-    '<div class="empty"><div class="ei">🏢</div><p>Toque em + para adicionar um custo fixo</p></div>';
+async function rFix() {
+  const fix=await getFix(), st=await getCfSt(curM);
+  const total=fix.reduce((s,f)=>s+f.v,0);
+  const pg=fix.filter(f=>st[f.id]==='PAGO').reduce((s,f)=>s+f.v,0);
+  document.getElementById('f-cards').innerHTML=`
+    <div class="card full"><div class="cl">Total Mensal</div><div class="cv">${brl(total)}</div></div>
+    <div class="card green"><div class="cl">✅ Pagos</div><div class="cv g">${brl(pg)}</div></div>
+    <div class="card orange"><div class="cl">⏳ Em aberto</div><div class="cv o">${brl(total-pg)}</div></div>`;
+  document.getElementById('f-list').innerHTML = fix.length
+    ? `<div class="lcard">${fix.map((f,i)=>`<div class="li">
+        <div class="li-b"><div class="li-t">${f.d}</div><div class="li-s">${f.forma} · Dia ${f.dia}</div>
+          <div style="margin-top:5px">${badge(st[f.id]||'PENDENTE',`tFix(${i})`)}</div></div>
+        <div class="li-r" style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+          <div class="li-v">${brl(f.v)}</div>
+          <button class="del-btn" onclick="dFix(${i})">🗑</button>
+        </div></div>`).join('')}</div>`
+    : '<div class="empty-s">Nenhum custo fixo — toque em + para adicionar</div>';
 }
 
-// FUNCIONÁRIOS
-async function _addFnImpl(){
+// ── EQUIPE ───────────────────────────────────────────────
+async function addFn() {
+  if(!guard())return;
   const nome=document.getElementById('fn-nome').value.trim();
   const cargo=document.getElementById('fn-cargo').value.trim();
   const sal=parseFloat(document.getElementById('fn-sal').value)||0;
   const vt=parseFloat(document.getElementById('fn-vt').value)||0;
   const vr=parseFloat(document.getElementById('fn-vr').value)||0;
-  if(!nome||!sal){toast('Preencha nome e salário','err');return}
-  const f=await getFns();f.push({id:uid(),nome,cargo,sal,vt,vr});
-  await sv(mk('fns'),f);cs('s-fn');
-  ['fn-nome','fn-cargo','fn-sal','fn-vt','fn-vr'].forEach(id=>document.getElementById(id).value='');
-  toast('Funcionário adicionado!');await rFns();
+  if(!nome||!sal){toast('Preencha nome e salário','err');return;}
+  const fns=await getFns();
+  fns.push({id:uid(),nome,cargo,sal,vt,vr});
+  await dbSet(mk('fns'),fns);
+  closeSheet('s-fn');
+  ['fn-nome','fn-cargo','fn-sal','fn-vt','fn-vr'].forEach(i=>document.getElementById(i).value='');
+  toast('Funcionário adicionado!'); await rEq();
 }
-async function _tFnImpl(i){
-  const m=curM,st=await getFnSt(m),f=await getFns();
-  const id=f[i]?.id;if(!id)return;
-  st[id]=nextSt(st[id]||'PENDENTE');await sv(mk('fnst',m),st);
-  if(st[id]==='PAGO')toast(`Salário de "${f[i].nome}" pago!`);await rFns();
+async function tFn(i) {
+  if(!guard())return;
+  const m=curM, st=await getFnSt(m), fns=await getFns();
+  const id=fns[i]?.id; if(!id)return;
+  st[id]=nextSt(st[id]||'PENDENTE');
+  await dbSet(mk('fnst',m),st);
+  if(st[id]==='PAGO') toast(`Salário de "${fns[i].nome}" pago!`);
+  await rEq();
 }
-async function _dFnImpl(i){
-  const f=await getFns();if(!confirm(`Remover "${f[i]?.nome}"?`))return;
-  f.splice(i,1);await sv(mk('fns'),f);toast('Removido','inf');await rFns();
+async function dFn(i) {
+  if(!guard())return;
+  const fns=await getFns();
+  if(!confirm(`Remover "${fns[i]?.nome}"?`))return;
+  fns.splice(i,1); await dbSet(mk('fns'),fns);
+  toast('Removido','inf'); await rEq();
 }
-async function rFns(){
-  const m=curM,fns=await getFns(),st=await getFnSt(m);
+async function rEq() {
+  const fns=await getFns(), st=await getFnSt(curM);
   const tSal=fns.reduce((s,f)=>s+f.sal,0);
   const tCusto=fns.reduce((s,f)=>s+f.sal*1.19+(f.vt||0)+(f.vr||0),0);
-  document.getElementById('fn-cards').innerHTML=`
-    <div class="sc"><div class="sc-label">👥 Funcionários</div><div class="sc-val">${fns.length}</div></div>
-    <div class="sc"><div class="sc-label">💼 Total Salários</div><div class="sc-val">${brl(tSal)}</div></div>
-    <div class="sc b full"><div class="sc-label">💰 Custo Total (c/ INSS + FGTS)</div><div class="sc-val bv">${brl(tCusto)}</div></div>`;
-  const wrap=document.getElementById('fn-list');
-  if(!fns.length){wrap.innerHTML='<div class="empty"><div class="ei">👥</div><p>Toque em + para adicionar funcionário</p></div>';return}
+  document.getElementById('e-cards').innerHTML=`
+    <div class="card"><div class="cl">👥 Funcionários</div><div class="cv">${fns.length}</div></div>
+    <div class="card"><div class="cl">💼 Total Salários</div><div class="cv">${brl(tSal)}</div></div>
+    <div class="card blue full"><div class="cl">💰 Custo Total (c/ encargos)</div><div class="cv b">${brl(tCusto)}</div></div>`;
+  const wrap=document.getElementById('e-list');
+  if(!fns.length){wrap.innerHTML='<div class="empty-s">Nenhum funcionário — toque em + para adicionar</div>';return;}
   wrap.innerHTML=fns.map((f,i)=>{
-    const inss=f.sal*.11,fgts=f.sal*.08,custo=f.sal+inss+fgts+(f.vt||0)+(f.vr||0);
+    const inss=f.sal*.11, fgts=f.sal*.08, custo=f.sal+inss+fgts+(f.vt||0)+(f.vr||0);
     const av=f.nome.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const s=st[f.id]||'PENDENTE';
     return`<div class="fc">
@@ -870,238 +747,61 @@ async function rFns(){
         <div style="flex:1;min-width:0"><div class="fc-name">${f.nome}</div><div class="fc-cargo">${f.cargo||'—'}</div></div>
         ${badge(s,`tFn(${i})`)}
       </div>
-      <div class="fc-grid">
-        <div>Salário Base<br><span>${brl(f.sal)}</span></div>
-        <div>INSS (11%)<br><span>${brl(inss)}</span></div>
-        <div>FGTS (8%)<br><span>${brl(fgts)}</span></div>
-        <div>Vale Transp.<br><span>${brl(f.vt)}</span></div>
-        <div>Vale Refeição<br><span>${brl(f.vr)}</span></div>
+      <div class="fc-rows">
+        <div>Salário<br><span>${brl(f.sal)}</span></div>
+        <div>INSS 11%<br><span>${brl(inss)}</span></div>
+        <div>FGTS 8%<br><span>${brl(fgts)}</span></div>
+        <div>V. Transp.<br><span>${brl(f.vt)}</span></div>
+        <div>V. Refeição<br><span>${brl(f.vr)}</span></div>
       </div>
       <div class="fc-bot">
-        <div><div class="fc-total-l">Custo Total</div><div class="fc-total-v">${brl(custo)}</div></div>
-        <button class="fc-del" onclick="dFn(${i})">Remover</button>
+        <div><div style="font-size:.72rem;color:#666">Custo Total</div><div class="fc-total">${brl(custo)}</div></div>
+        <button class="del-btn" onclick="dFn(${i})">Remover</button>
       </div>
     </div>`;}).join('');
 }
 
-// ══════════════════════════════════════════════════════
-// AUTH SYSTEM
-// ══════════════════════════════════════════════════════
-
-// Default users — admin can change passwords in settings
-// Passwords stored as simple hash (SHA-256 hex) in localStorage
-// Default: admin=admin123, others=1234
-
-const DEFAULT_USERS = [
-  {id:'admin', name:'Administrador', role:'admin', color:'#4f8ef7', initials:'AD'},
-  {id:'user1', name:'Funcionário 1', role:'viewer', color:'#22c55e', initials:'F1'},
-  {id:'user2', name:'Funcionário 2', role:'viewer', color:'#a78bfa', initials:'F2'},
-  {id:'user3', name:'Funcionário 3', role:'viewer', color:'#f59e0b', initials:'F3'},
-];
-
-let curUser = null; // set on login
-let selectedUserId = 'admin';
-
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+// ── SETTINGS ─────────────────────────────────────────────
+function openSheet(id) {
+  if(id==='s-cfg') renderCfg();
+  document.getElementById(id).classList.add('on');
 }
-
-function getUsers() {
-  try{return JSON.parse(localStorage.getItem('fc26_users'))||DEFAULT_USERS;}catch{return DEFAULT_USERS;}
-}
-
-function getPwHash(userId) {
-  const stored = localStorage.getItem('fc26_pw_' + userId);
-  if (stored) return stored;
-  // defaults
-  return null; // will compare against defaults
-}
-
-async function checkPassword(userId, pw) {
-  const hash = await sha256(pw);
-  const stored = localStorage.getItem('fc26_pw_' + userId);
-  if (stored) return stored === hash;
-  // default passwords
-  const defaults = {admin: 'admin123', user1:'1234', user2:'1234', user3:'1234'};
-  const defHash = await sha256(defaults[userId] || '');
-  return hash === defHash;
-}
-
-async function setPassword(userId, newPw) {
-  const hash = await sha256(newPw);
-  localStorage.setItem('fc26_pw_' + userId, hash);
-}
-
-function renderUserBtns() {
-  const users = getUsers();
-  document.getElementById('user-btns').innerHTML = users.map(u => `
-    <button onclick="selectUser('${u.id}')"
-      style="display:flex;align-items:center;gap:12px;padding:12px 14px;
-        background:${u.id===selectedUserId?u.color+'18':'#1a1d27'};
-        border:1.5px solid ${u.id===selectedUserId?u.color:'#2a2d3e'};
-        border-radius:14px;cursor:pointer;width:100%;text-align:left;
-        -webkit-appearance:none;appearance:none;box-sizing:border-box;font-family:inherit">
-      <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;
-        background:${u.color}22;color:${u.color};display:flex;align-items:center;
-        justify-content:center;font-weight:700;font-size:.9rem">${u.initials}</div>
-      <div>
-        <div style="font-size:.9rem;font-weight:600;color:#f0f2f8">${u.name}</div>
-        <div style="font-size:.72rem;color:#8b90a8;margin-top:1px">${u.role==='admin'?'Administrador':'Visualizador'}</div>
-      </div>
-    </button>`).join('');
-}
-
-function selectUser(id) {
-  selectedUserId = id;
-  renderUserBtns();
-  document.getElementById('pw-inp').focus();
-  document.getElementById('login-err').textContent = '';
-}
-
-function togglePw() {
-  const inp = document.getElementById('pw-inp');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
-
-async function doLogin() {
-  const pw = document.getElementById('pw-inp').value;
-  const err = document.getElementById('login-err');
-  if (!pw) { err.textContent = 'Digite a senha'; return; }
-
-  const ok = await checkPassword(selectedUserId, pw);
-  if (!ok) {
-    err.textContent = 'Senha incorreta. Tente novamente.';
-    document.getElementById('pw-inp').value = '';
-    document.getElementById('pw-inp').focus();
-    return;
-  }
-
-  const users = getUsers();
-  curUser = users.find(u => u.id === selectedUserId);
-  localStorage.setItem('fc26_session', selectedUserId);
-
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('pw-inp').value = '';
-  err.textContent = '';
-
-  applyRole();
-  renderMG();
-  await preloadMonth(curM);
-  await rResumo();
-  updateBadge();
-}
-
-function applyRole() {
-  const isAdmin = curUser?.role === 'admin';
-  const pill = document.getElementById('role-pill');
-  pill.textContent = isAdmin ? 'Admin' : 'Visualizador';
-  pill.className = 'role-pill ' + (isAdmin ? 'admin' : 'viewer');
-
-  const roBanner = document.getElementById('ro-banner');
-  roBanner.style.display = isAdmin ? 'none' : 'block';
-
-  // FAB only for admin
-  if (!isAdmin) {
-    document.getElementById('fab').className = 'fab hidden';
-  }
-}
-
-function isAdmin() { return curUser?.role === 'admin'; }
-
-// Guard edit actions
-function guardEdit() {
-  if (!isAdmin()) { toast('Apenas o admin pode editar', 'err'); return false; }
-  return true;
-}
-
-// Settings sheet
-function renderSettings() {
-  const users = getUsers();
-  document.getElementById('settings-content').innerHTML = `
-    <div style="margin-bottom:16px">
-      <div class="settings-item">
-        <div><div class="settings-label">👤 Logado como</div>
-          <div class="settings-sub">${curUser?.name} · ${curUser?.role==='admin'?'Administrador':'Visualizador'}</div></div>
-      </div>
+function renderCfg() {
+  document.getElementById('cfg-content').innerHTML=`
+    <div class="seti">
+      <div><div class="sl2">Usuário</div><div class="ss">${curUser.name} · ${curUser.role==='admin'?'Admin':'Visualizador'}</div></div>
     </div>
-    ${isAdmin() ? `
-    <div class="slabel" style="margin-top:0">Alterar Senhas</div>
-    ${users.map(u=>`
-      <div class="settings-item">
-        <div>
-          <div class="settings-label">${u.name}</div>
-          <div class="settings-sub">${u.role==='admin'?'Administrador':'Visualizador'}</div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <input class="inp" id="newpw-${u.id}" type="password" placeholder="Nova senha"
-            style="width:130px;padding:7px 10px;font-size:.82rem"/>
-          <button class="btn btn-p" style="flex:none;padding:7px 12px;font-size:.8rem"
-            onclick="changePw('${u.id}')">Salvar</button>
-        </div>
-      </div>`).join('')}
-    <div class="slabel">Sessão</div>` : ''}
-    <div class="settings-item">
-      <div><div class="settings-label">Sair</div>
-        <div class="settings-sub">Voltar para a tela de login</div></div>
-      <button class="danger-btn" onclick="logout()">Sair</button>
+    ${isAdmin()?`<div class="slabel">Alterar Senhas</div>
+    ${USERS.map(u=>`<div class="seti">
+      <div><div class="sl2">${u.name}</div></div>
+      <div class="seti-r">
+        <input id="npw-${u.id}" type="password" placeholder="Nova senha"/>
+        <button onclick="changePw('${u.id}')">Salvar</button>
+      </div></div>`).join('')}`:''}
+    <div class="slabel">Sessão</div>
+    <div class="seti">
+      <div><div class="sl2">Sair</div><div class="ss">Voltar ao login</div></div>
+      <button class="logout-btn" onclick="logout()">Sair</button>
     </div>`;
 }
-
-async function changePw(userId) {
-  const inp = document.getElementById('newpw-'+userId);
-  const pw = inp?.value?.trim();
-  if (!pw || pw.length < 4) { toast('Senha deve ter ao menos 4 caracteres', 'err'); return; }
-  await setPassword(userId, pw);
-  inp.value = '';
+async function changePw(uid) {
+  const pw=document.getElementById('npw-'+uid)?.value?.trim();
+  if(!pw||pw.length<4){toast('Mínimo 4 caracteres','err');return;}
+  await setPw(uid,pw);
+  document.getElementById('npw-'+uid).value='';
   toast('Senha alterada!');
 }
-
 function logout() {
-  curUser = null;
-  localStorage.removeItem('fc26_session');
-  cs('s-settings');
-  document.getElementById('login-screen').style.display='flex';
-  selectedUserId = 'admin';
-  renderUserBtns();
+  curUser=null;
+  closeSheet('s-cfg');
+  document.getElementById('app').classList.remove('on');
+  document.getElementById('login').classList.remove('off');
+  selUid='admin';
+  renderUsers();
 }
 
-// Auth-guarded wrappers (async)
-function addBol()  { if(!guardEdit())return; _addBolImpl(); }
-function dBol(i)   { if(!guardEdit())return; _dBolImpl(i); }
-function addCf()   { if(!guardEdit())return; _addCfImpl(); }
-function dCf(i)    { if(!guardEdit())return; _dCfImpl(i); }
-function addFn()   { if(!guardEdit())return; _addFnImpl(); }
-function dFn(i)    { if(!guardEdit())return; _dFnImpl(i); }
-function tBol(i)   { if(!guardEdit())return; _tBolImpl(i); }
-function tCf(i)    { if(!guardEdit())return; _tCfImpl(i); }
-function tFn(i)    { if(!guardEdit())return; _tFnImpl(i); }
-
-// Open settings with content
-const _os = os;
-os = function(id) {
-  if(id==='s-settings') renderSettings();
-  _os(id);
-};
-
-// FAB guard
-document.getElementById('fab').addEventListener('click', function(e) {
-  if(!isAdmin()) { e.stopImmediatePropagation(); toast('Apenas o admin pode adicionar','err'); }
-}, true);
-
-// INIT
-renderUserBtns();
-document.getElementById('login-screen').style.display='flex';
-
-// Make window functions available from inline onclick handlers
-window.selectUser=selectUser;window.togglePw=togglePw;window.doLogin=doLogin;
-window.go=go;window.openMD=openMD;window.closeMD=closeMD;window.setM=setM;
-window.openAdd=openAdd;window.os=os;window.cs=cs;
-window.saveRec=saveRec;
-window.addBol=addBol;window.tBol=tBol;window.dBol=dBol;
-window.addCf=addCf;window.tCf=tCf;window.dCf=dCf;
-window.addFn=addFn;window.tFn=tFn;window.dFn=dFn;
-window.changePw=changePw;window.logout=logout;
+// ── INIT ─────────────────────────────────────────────────
+renderUsers();
 </script>
 
 </body>
