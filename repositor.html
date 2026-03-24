@@ -133,8 +133,8 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
     <table class="ref-table">
       <tr><th>Produto</th><th>Concentracao</th><th>Volume</th><th>mEq / unidade</th><th>Via</th></tr>
       <tr><td>KCl 19,1%</td><td>2,5 mEq/mL</td><td>10 mL</td><td><strong>25 mEq/amp</strong></td><td><span class="badge badge-cvc">CVC</span></td></tr>
-      <tr><td>KCl 10%</td><td>1,34 mEq/mL</td><td>10 mL</td><td><strong>13,4 mEq/amp</strong></td><td><span class="badge badge-cvc">CVC</span></td></tr>
-      <tr><td>Bolsa SF + KCl pronto uso</td><td>20 mEq/100mL</td><td>100 mL</td><td><strong>20 mEq/bolsa</strong></td><td><span class="badge badge-pvp">PVP</span></td></tr>
+      <tr><td>KCl 10%</td><td>1,34 mEq/mL</td><td>10 mL</td><td><strong>13,4 mEq/amp</strong></td><td><span class="badge badge-cvc">CVC</span>&nbsp;<span class="badge badge-pvp">PVP</span></td></tr>
+      <tr><td>Bolsa SF + KCl pronto uso</td><td>20 mEq/100mL</td><td>100 mL</td><td><strong>20 mEq/bolsa</strong></td><td><span class="badge badge-cvc">CVC</span></td></tr>
       <tr><td>Ionclor (xarope KCl 6%)</td><td>0,8 mEq/mL</td><td>frasco 150mL</td><td><strong>8 mEq/10mL</strong></td><td><span class="badge badge-vo">VO</span></td></tr>
       <tr><td>Slow-K comprimido</td><td>8 mEq/dragea</td><td>&mdash;</td><td><strong>8 mEq/dragea</strong></td><td><span class="badge badge-vo">VO</span></td></tr>
     </table>
@@ -152,7 +152,7 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
         <select id="kv" onchange="calcK()">
           <option value="cvc25">EV CVC &mdash; KCl 19,1% (25 mEq/amp)</option>
           <option value="cvc10">EV CVC &mdash; KCl 10% (13,4 mEq/amp)</option>
-          <option value="pvp20">EV PVP &mdash; Bolsa pronta 20 mEq/100mL</option>
+          <option value="pvp20">EV CVC &mdash; Bolsa pronta 20 mEq/100mL</option>
           <option value="pvpdil">EV PVP &mdash; KCl 10% diluido em SF (max 40 mEq/L)</option>
           <option value="vox">VO &mdash; Ionclor xarope 6% (8 mEq/10mL)</option>
           <option value="vos">VO &mdash; Slow-K (8 mEq/dragea)</option>
@@ -263,8 +263,8 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
     <div class="card-title">Apresentacoes disponíveis no Brasil</div>
     <table class="ref-table">
       <tr><th>Produto</th><th>Concentracao</th><th>Volume</th><th>g / mEq por unidade</th><th>Via</th></tr>
-      <tr><td>MgSO4 50%</td><td>500mg/mL = 4,05 mEq/mL</td><td>10 mL</td><td><strong>5g = 40,5 mEq/amp</strong></td><td><span class="badge badge-cvc">CVC</span>&nbsp;<span class="badge badge-pvp">PVP dil.</span></td></tr>
-      <tr><td>MgSO4 25%</td><td>250mg/mL = 2,03 mEq/mL</td><td>10 mL</td><td><strong>2,5g = 20,3 mEq/amp</strong></td><td><span class="badge badge-pvp">PVP dil.</span></td></tr>
+      <tr><td>MgSO4 50%</td><td>500mg/mL = 4,05 mEq/mL</td><td>10 mL</td><td><strong>5g = 40,5 mEq/amp</strong></td><td><span class="badge badge-cvc">CVC</span>&nbsp;<span class="badge badge-pvp">PVP</span></td></tr>
+      <tr><td>MgSO4 25%</td><td>250mg/mL = 2,03 mEq/mL</td><td>10 mL</td><td><strong>2,5g = 20,3 mEq/amp</strong></td><td><span class="badge badge-pvp">PVP</span></td></tr>
       <tr><td>MgSO4 10%</td><td>100mg/mL = 0,81 mEq/mL</td><td>10 mL</td><td><strong>1g = 8,1 mEq/amp</strong></td><td><span class="badge badge-pvp">PVP OK</span></td></tr>
       <tr><td>Oxido de Mg 400mg (cp)</td><td>240mg Mg elem/cp</td><td>&mdash;</td><td><strong>~19,8 mEq/cp</strong></td><td><span class="badge badge-vo">VO</span></td></tr>
       <tr><td>Citrato de Mg (sache)</td><td>300mg Mg elem</td><td>&mdash;</td><td><strong>~24,7 mEq/sache</strong></td><td><span class="badge badge-vo">VO</span></td></tr>
@@ -440,10 +440,30 @@ function calcK(){
   var limDia  = renal === 'g' ? 40 : renal === 'a' ? 80 : 300;
   var dose    = Math.min(deficit, limDia);
 
+  /* Calcular mEq que sera de fato infundido conforme a via/bolsa */
+  var doseInfundida = dose; /* default: igual ao deficit/dose calculada */
+  if(via === 'pvpdil'){
+    /* Antecipar calculo da bolsa para mostrar mEq correto */
+    var _TIPOS = [
+      {meq:40.2,maxN:3},{meq:20.1,maxN:3},{meq:13.4,maxN:2}
+    ];
+    var _melhor = null, _bestScore = Infinity;
+    for(var _ti=0;_ti<_TIPOS.length;_ti++){
+      var _tp=_TIPOS[_ti];
+      for(var _n=1;_n<=_tp.maxN;_n++){
+        var _tot=Math.round(_n*_tp.meq*10)/10;
+        var _diff=Math.abs(_tot-dose);
+        var _sc=_diff*1000+_n*10+_ti;
+        if(_sc<_bestScore){_bestScore=_sc;_melhor={total:_tot};}
+      }
+    }
+    if(_melhor) doseInfundida = _melhor.total;
+  }
+
   var h = dblock([
     dr('K+ atual', kA + ' mEq/L'),
     dr('Deficit calculado', fmt(deficit,0) + ' mEq &mdash; [(' + alvo + ' - ' + kA + ') x ' + peso + 'kg x 0,4]'),
-    dr('Dose 1a etapa', fmt(dose,0) + ' mEq')
+    dr('Dose a infundir', fmt(doseInfundida,1) + ' mEq')
   ]);
 
   if(via === 'cvc25'){
@@ -477,36 +497,73 @@ function calcK(){
   else if(via === 'pvp20'){
     var n2 = Math.ceil(dose / 20);
     h += rb('green',
-      'Prescricao &mdash; EV PVP &mdash; Bolsa 20 mEq/100mL',
+      'Prescricao &mdash; EV CVC &mdash; Bolsa 20 mEq/100mL',
       n2 + ' bolsa(s) de 100mL &rarr; 50 mL/h por bolsa (2h/bolsa)',
       'Velocidade maxima: <strong>10 mEq/h</strong> via PVP<br>' +
-      'Limite conservador: 40 mEq/L &mdash; a bolsa 20 mEq/100mL e aceita clinicamente em veia calibrosa<br>' +
+      'Concentracao: 200 mEq/L &mdash; uso EXCLUSIVO via CVC (20 mEq/100mL = 200 mEq/L, acima do limite PVP de 40 mEq/L)<br>' +
       'Para dose &gt; 80 mEq: migrar para CVC<br>' +
       'Re-dosar K+ apos cada ciclo antes de repetir'
     );
   }
   else if(via === 'pvpdil'){
-    /* KCl 10% diluido em SF para PVP: limite 40 mEq/L, max 10 mEq/h */
-    var nAmpPvp   = Math.ceil(dose / 13.4);
-    var meqReal   = nAmpPvp * 13.4;
-    /* volume minimo de SF para nao ultrapassar 40 mEq/L */
-    var volMinSF  = Math.ceil(meqReal / 40 * 1000 / 100) * 100;
-    volMinSF = Math.max(volMinSF, 100);
-    var concFinal = meqReal / volMinSF * 1000;
-    var tempo     = Math.max(1, meqReal / 10);
-    var taxaMlh   = volMinSF / tempo;
+    /*
+     * Bolsas padronizadas PVP (KCl 10% = 13,4 mEq/amp):
+     *   P: 1 amp   + 250mL  = 13,4 mEq | 187 mL/h | 1,3h
+     *   M: 1,5 amp + 500mL  = 20,1 mEq | 249 mL/h | 2,0h
+     *   G: 3 amp   + 1000mL = 40,2 mEq | 249 mL/h | 4,0h
+     * Logica: escolher bolsa (tipo + quantidade) com menor diferenca absoluta.
+     * Desempate: menos bolsas, depois tipo maior.
+     */
+    var TIPOS = [
+      {nome:'G', meq:40.2, vol:1000, mlh:249, t:4.0, amp:'3 amp',   maxN:3},
+      {nome:'M', meq:20.1, vol:500,  mlh:249, t:2.0, amp:'1,5 amp', maxN:3},
+      {nome:'P', meq:13.4, vol:250,  mlh:187, t:1.3, amp:'1 amp',   maxN:2}
+    ];
+    var prioridade = {G:0, M:1, P:2};
+    var melhor = null;
+    for(var ti=0; ti<TIPOS.length; ti++){
+      var tp = TIPOS[ti];
+      for(var n=1; n<=tp.maxN; n++){
+        var total = Math.round(n * tp.meq * 10) / 10;
+        var diff  = Math.abs(total - dose);
+        var score = diff * 1000 + n * 10 + prioridade[tp.nome];
+        if(melhor === null || score < melhor.score){
+          melhor = {score:score, n:n, tp:tp, total:total,
+            exc: Math.round((total-dose)*10)/10,
+            vtot:n*tp.vol, ttot:n*tp.t};
+        }
+      }
+    }
+
+    var tp2 = melhor.tp;
+    var exc  = melhor.exc;
+    var checarTxt;
+    if(exc < -5){
+      checarTxt = 'Gap de ' + Math.abs(exc).toFixed(1) + ' mEq n\u00e3o cobertos &mdash; checar K+ ao final e repetir 1 bolsa se ainda abaixo da meta.';
+    } else if(exc > 0.05){
+      checarTxt = 'Bolsa arredondada (+' + exc.toFixed(1) + ' mEq acima do deficit). Checar K+ ao final.';
+    } else {
+      checarTxt = 'Checar K+ ao final. Repetir se ainda abaixo da meta.';
+    }
+
     h += rb('green',
-      'Prescricao &mdash; EV PVP &mdash; KCl 10% diluido em SF',
-      fmt(nAmpPvp,0) + ' amp KCl 10% em ' + volMinSF + 'mL SF 0,9% &rarr; ' + fmt(concFinal,0) + ' mEq/L &rarr; ' + fmt(taxaMlh,0) + ' mL/h',
-      'Diluicao: ' + fmt(nAmpPvp,0) + ' amp (13,4 mEq/amp) + SF 0,9% q.s.p. ' + volMinSF + 'mL<br>' +
-      'Velocidade maxima PVP: <strong>10 mEq/h</strong> &rarr; ' + fmt(taxaMlh,0) + ' mL/h por ' + fmt(tempo,1) + 'h<br>' +
-      'Concentracao final: ' + fmt(concFinal,0) + ' mEq/L &mdash; limite maximo PVP: 40 mEq/L<br>' +
+      'Prescricao &mdash; EV PVP &mdash; Bolsa ' + tp2.nome + ' (' + tp2.amp + ' KCl 10% + SF ' + tp2.vol + 'mL)',
+      melhor.n + 'x Bolsa ' + tp2.nome + ' \u2192 ' + melhor.vtot + ' mL | ' + melhor.ttot.toFixed(1) + 'h',
+      tp2.amp + ' KCl 10% + SF ' + tp2.vol + 'mL &rarr; ' + tp2.mlh + ' mL/h por ' + tp2.t.toFixed(1) + 'h/bolsa<br>' +
+      'Quantidade: <strong>' + melhor.n + ' bolsa(s)</strong> | ' +
+      'Volume total: <strong>' + melhor.vtot + ' mL</strong> | ' +
+      'Tempo total: <strong>' + melhor.ttot.toFixed(1) + 'h</strong><br>' +
+      'Velocidade: 10 mEq/h<br>' +
+      checarTxt + '<br>' +
       'Infundir em veia calibrosa (antecubital). Monitorar sinais de flebite.'
     );
-    if(meqReal > 80){
-      h += al('w', 'Dose &gt; 80 mEq: tempo de infusao ' + fmt(tempo,1) + 'h via PVP. Considerar CVC para maior comodidade.');
-    }
-    h += al('w', 'PVP: concentracao maxima 40 mEq/L. Acima disso risco de flebite e dor intensa. Re-dosar K+ apos cada ciclo.');
+    h += al('i',
+      'Bolsas PVP: ' +
+      'P = 1 amp + 250mL (13,4 mEq | 187 mL/h | 1,3h) &nbsp;|&nbsp; ' +
+      'M = 1,5 amp + 500mL (20,1 mEq | 249 mL/h | 2,0h) &nbsp;|&nbsp; ' +
+      'G = 3 amp + 1000mL (40,2 mEq | 249 mL/h | 4,0h)'
+    );
+    h += al('w', 'PVP: monitorar sinais de flebite e dor no trajeto venoso. Dose &gt; 80 mEq: considerar CVC.');
   }
   else {
     var meqMap = {vox:8, vos:8};
