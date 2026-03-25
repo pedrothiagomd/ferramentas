@@ -849,14 +849,14 @@ function calcCa(){
   var grav = sv('cag');
   var via  = sv('cav');
 
-  if(!caT){ g('r-ca').innerHTML=''; return; }
+  if(caT === null && caIon === null){ g('r-ca').innerHTML=''; return; }
 
-  var caCorr = caT + 0.8 * (4 - alb);
+  var caCorr = caT ? caT + 0.8 * (4 - alb) : null;
 
   /* Se Ca ionizado disponivel: usar como referencia principal */
   /* Ca ionizado normal: 1,15-1,35 mmol/L | alvo de reposicao: 1,15 mmol/L */
   var nAmp = 1;
-  var usandoIon = (caIon !== null && caIon !== undefined);
+  var usandoIon = (caIon !== null);
   var deficit, defLabel, refLabel;
 
   if(usandoIon){
@@ -869,7 +869,7 @@ function calcCa(){
     refLabel = 'Ca2+ ionizado (referencia principal)';
   } else {
     /* Sem ionizado: usar Ca corrigido pela albumina */
-    var defCorr = Math.max(0, 9.0 - caCorr);
+    var defCorr = caCorr !== null ? Math.max(0, 9.0 - caCorr) : 0;
     nAmp = Math.max(1, Math.round(defCorr / 0.5));
     deficit = defCorr;
     defLabel = fmt(defCorr,1) + ' mg/dL';
@@ -880,9 +880,9 @@ function calcCa(){
   var isVO   = (via === 'carb' || via === 'citr');
 
   var h = dblock([
-    dr('Ca2+ total medido', caT + ' mg/dL'),
+    caT !== null ? dr('Ca2+ total medido', caT + ' mg/dL') : '',
     dr('Albumina', alb + ' g/dL'),
-    dr('Ca2+ corrigido [Ca + 0,8 x (4 - ' + alb + ')]', fmt(caCorr,1) + ' mg/dL'),
+    caCorr !== null ? dr('Ca2+ corrigido [Ca + 0,8 x (4 - ' + alb + ')]', fmt(caCorr,1) + ' mg/dL') : '',
     usandoIon
       ? dr('Ca2+ ionizado <strong>(referencia principal)</strong>', caIon + ' mmol/L &mdash; ref: 1,15&ndash;1,35 mmol/L')
       : dr('Ca2+ ionizado', 'n&atilde;o informado &mdash; usando Ca corrigido como estimativa'),
