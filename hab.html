@@ -379,6 +379,11 @@ mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
       <div class="f"><label>K (mEq/L)</label><input id="f-k" placeholder="—"/></div>
       <div class="f"><label>Cl (mEq/L)</label><input id="f-cl" placeholder="—"/></div>
       <div class="f"><label>Ca total (mg/dL)</label><input id="f-ca" placeholder="—"/></div>
+      <div class="f">
+        <label>Ca iônico (mmol/L)</label>
+        <input id="f-cai" placeholder="—" oninput="checkCaI(this)"/>
+        <div id="cai-flag" style="display:none;font-size:10.5px;font-weight:600;margin-top:3px"></div>
+      </div>
       <div class="f"><label>P (mg/dL)</label><input id="f-p" placeholder="—"/></div>
       <div class="f"><label>Mg (mg/dL)</label><input id="f-mg" placeholder="—"/></div>
     </div>
@@ -567,7 +572,7 @@ const COL='pacientes';
 let pts=[],curTab='all',editId=null,curSec=null,curSex=null;
 const SL={enf:'Enfermaria',uti:'UTI',ps:'P.Socorro',par:'Parecer'};
 const FIELDS=['leito','nome','idade','sexo','diag','hb','ht','leuc','bast','plaq','retic',
-  'ur','cr','tfg','au','na','k','cl','ca','p','mg','bh','diur','ph','bic','pco2','lac',
+  'ur','cr','tfg','au','na','k','cl','ca','cai','p','mg','bh','diur','ph','bic','pco2','lac',
   'pcr','pct','alb','pth','vitd','ferr','tsat','falc','tgo',
   'fe','img','conduta','obs'];
 
@@ -649,7 +654,19 @@ window.render=function(){
     })()}
     ${nc(p.na,  {min:136,max:145,aL:125,aH:155})}
     ${nc(p.k,   {min:3.5,max:5.0,aL:2.5,aH:6.5})}
-    ${nc(p.ca,  {min:8.4,max:10, aL:7,  aH:12})}
+    ${(function(){
+      // Show Ca iônico if filled, otherwise Ca total
+      if(p.cai&&p.cai!==''){
+        const v=parseFloat(p.cai);
+        const cl=isNaN(v)?'':v<1.0?'al':v<1.15?'w':v<=1.30?'ok':v<=1.40?'w':'al';
+        return '<td class="n '+cl+'" title="Ca iônico">'+p.cai+'ⁱ</td>';
+      } else {
+        if(!p.ca&&p.ca!==0)return '<td class="n em">—</td>';
+        const v=parseFloat(p.ca);
+        const cl=isNaN(v)?'':v<7?'al':v<8.4?'w':v<=10?'ok':v<=12?'w':'al';
+        return '<td class="n '+cl+'" title="Ca total">'+p.ca+'</td>';
+      }
+    })()}
     ${nc(p.p,   {min:2.5,max:4.5,aL:1,  aH:8})}
     ${nc(p.mg,  {min:1.7,max:2.4,aL:1,  aH:4})}
     <td class="n ${p.bh?(Math.abs(parseFloat(p.bh))>1500?'al':'ok'):'em'}">${p.bh||'—'}</td>
@@ -756,6 +773,24 @@ window.tfgManual=function(){
 window.pickSec=function(s){
   curSec=s;
   document.querySelectorAll('.sb').forEach(b=>b.className='sb'+(b.dataset.s===s?' e-'+s:''));
+};
+
+// Ca iônico — identificação automática por valor
+window.checkCaI=function(el){
+  const v=parseFloat(el.value);
+  const flag=document.getElementById('cai-flag');
+  if(!flag)return;
+  if(isNaN(v)||el.value.trim()===''){flag.style.display='none';return;}
+  // Referência: 1.15–1.30 mmol/L
+  let txt='', color='';
+  if(v<1.0)      {txt='⚠ Hipocalcemia grave (<1.0)'; color='#dc2626';}
+  else if(v<1.15){txt='⚠ Hipocalcemia (1.0–1.14)';   color='#d97706';}
+  else if(v<=1.30){txt='✓ Normal (1.15–1.30)';        color='#15803d';}
+  else if(v<=1.40){txt='⚠ Hipercalcemia leve (1.31–1.40)'; color:'#d97706'; color='#d97706';}
+  else            {txt='⚠ Hipercalcemia (>1.40)';     color='#dc2626';}
+  flag.textContent=txt;
+  flag.style.color=color;
+  flag.style.display='block';
 };
 window.toInitials=function(){
   const el=document.getElementById('f-nome');
