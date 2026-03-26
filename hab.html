@@ -172,8 +172,54 @@ td:last-child{border-right:none}
 @keyframes la{0%{background-position:200%}100%{background-position:-200%}}
 
 mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
-</style>
 
+/* modal tabs */
+.mtabs{display:flex;gap:0;border-bottom:1px solid #eee;margin-bottom:16px}
+.mtab{padding:7px 16px;font-size:13px;font-weight:500;color:#999;cursor:pointer;border-bottom:2px solid transparent;transition:.1s}
+.mtab:hover{color:#555}
+.mtab.active{color:#1a1a18;border-bottom-color:#1a1a18}
+.mtab-panel{display:none}
+.mtab-panel.active{display:block}
+
+/* chip grid — ATB, DVA */
+.chip-group{margin-bottom:14px}
+.chip-group-lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid #eee}
+.chip-group-lbl.atb{color:#0891b2;border-color:#a5f3fc}
+.chip-group-lbl.dva{color:#dc2626;border-color:#fca5a5}
+.chip-group-lbl.hd {color:#7c3aed;border-color:#c4b5fd}
+.chip-group-lbl.epx{color:#16a34a;border-color:#86efac}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:5px 12px;border-radius:99px;font-size:12.5px;font-weight:500;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#666;font-family:inherit;transition:.12s;white-space:nowrap}
+.chip:hover{border-color:#aaa;color:#1a1a18}
+.chip.on{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.chip.on-atb{background:#ecfeff;border-color:#67e8f9;color:#164e63}
+.chip.on-dva{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+.chip.on-hd {background:#faf5ff;border-color:#c4b5fd;color:#5b21b6}
+.chip.on-epx{background:#f0fdf4;border-color:#86efac;color:#14532d}
+
+/* ATB alert box */
+.atb-alert{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:9px 12px;margin-top:8px;font-size:12px;color:#78350f;line-height:1.6;display:none}
+.atb-alert.show{display:block}
+.atb-alert b{font-weight:600}
+
+/* DVA dose input */
+.dva-dose-row{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.dva-dose-row label{font-size:11.5px;color:#888;white-space:nowrap}
+.dva-dose-row input{width:90px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fafaf8;outline:none;transition:.12s}
+.dva-dose-row input:focus{border-color:#888;background:#fff}
+.dva-dose-row .unit{font-size:11.5px;color:#aaa}
+
+/* HD toggle row */
+.hd-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.hd-toggle{padding:5px 14px;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#999;font-family:inherit;transition:.12s}
+.hd-toggle:hover{background:#f5f5f3}
+.hd-toggle.on{background:#faf5ff;border-color:#c4b5fd;color:#5b21b6;font-weight:600}
+
+/* resumo box */
+.resumo-box{background:#fafaf8;border:1px solid #e8e8e5;border-radius:9px;padding:13px 15px;font-family:‘DM Mono’,monospace;font-size:12px;color:#1a1a18;line-height:1.9;white-space:pre-wrap;min-height:80px;margin-top:10px}
+.resumo-empty{color:#ccc;font-family:‘DM Sans’,sans-serif;font-style:italic;font-size:12.5px}
+
+</style>
 </head>
 <body>
 <div class="lbar" id="lbar"></div>
@@ -265,35 +311,39 @@ mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
   <div class="modal">
     <div class="mh"><h2 id="mTitle">Novo paciente</h2><button class="mcl" onclick="closeModal()">×</button></div>
     <div class="mb">
+      <div class="mtabs">
+        <div class="mtab active" onclick="switchMTab('dados')">Dados Laboratoriais</div>
+        <div class="mtab" onclick="switchMTab('rx')">Prescrição</div>
+      </div>
+      <div class="mtab-panel active" id="mpanel-dados">
+      <!-- IDENTIFICAÇÃO -->
+      <div class="fsec">
+        <div class="fsec-ttl">Identificação</div>
+        <div class="fg w">
+          <div class="f"><label>Leito</label><input id="f-leito" placeholder="Ex: 12A, UTI-3, PS-1" oninput="updPrev()"/></div>
+          <div class="f"><label>Iniciais</label><input id="f-nome" placeholder="Ex: J.S.O" oninput="updPrev()"/><div class="hint">Ponto entre iniciais</div></div>
+          <div class="f" style="justify-content:flex-end;padding-top:14px"><div class="prev-box" id="prev">Leito — Iniciais</div><div class="hint" style="margin-top:3px">Prévia</div></div>
+          <div class="f"><label>Idade (anos)</label><input id="f-idade" type="number" placeholder="—" oninput="calcTFG()"/></div>
+          <div class="f">
+            <label>Sexo</label>
+            <div class="sex-btns">
+              <button class="sex-btn" data-sx="M" onclick="pickSex('M')">♂ Masc.</button>
+              <button class="sex-btn" data-sx="F" onclick="pickSex('F')">♀ Fem.</button>
+            </div>
+          </div>
+          <div class="f ff">
+            <label>Setor</label>
+            <div class="sb-wrap">
+              <button class="sb" data-s="enf" onclick="pickSec('enf')">Enfermaria</button>
+              <button class="sb" data-s="uti" onclick="pickSec('uti')">UTI</button>
+              <button class="sb" data-s="ps"  onclick="pickSec('ps')">Pronto Socorro</button>
+              <button class="sb" data-s="par" onclick="pickSec('par')">Parecer</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
 ```
-  <!-- IDENTIFICAÇÃO -->
-  <div class="fsec">
-    <div class="fsec-ttl">Identificação</div>
-    <div class="fg w">
-      <div class="f"><label>Leito</label><input id="f-leito" placeholder="Ex: 12A, UTI-3, PS-1" oninput="updPrev()"/></div>
-      <div class="f"><label>Iniciais</label><input id="f-nome" placeholder="Ex: J.S.O" oninput="updPrev()"/><div class="hint">Ponto entre iniciais</div></div>
-      <div class="f" style="justify-content:flex-end;padding-top:14px"><div class="prev-box" id="prev">Leito — Iniciais</div><div class="hint" style="margin-top:3px">Prévia</div></div>
-      <div class="f"><label>Idade (anos)</label><input id="f-idade" type="number" placeholder="—" oninput="calcTFG()"/></div>
-      <div class="f">
-        <label>Sexo</label>
-        <div class="sex-btns">
-          <button class="sex-btn" data-sx="M" onclick="pickSex('M')">♂ Masc.</button>
-          <button class="sex-btn" data-sx="F" onclick="pickSex('F')">♀ Fem.</button>
-        </div>
-      </div>
-      <div class="f ff">
-        <label>Setor</label>
-        <div class="sb-wrap">
-          <button class="sb" data-s="enf" onclick="pickSec('enf')">Enfermaria</button>
-          <button class="sb" data-s="uti" onclick="pickSec('uti')">UTI</button>
-          <button class="sb" data-s="ps"  onclick="pickSec('ps')">Pronto Socorro</button>
-          <button class="sb" data-s="par" onclick="pickSec('par')">Parecer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- HEMOGRAMA -->
   <div class="fsec">
     <div class="fsec-ttl h">Hemograma</div>
@@ -373,7 +423,111 @@ mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
     </div>
   </div>
 
-</div>
+  </div><!-- /mpanel-dados -->
+
+  <!-- PRESCRIÇÃO PANEL -->
+  <div class="mtab-panel" id="mpanel-rx">
+
+    <!-- ANTIBIÓTICOS -->
+    <div class="chip-group">
+      <div class="chip-group-lbl atb">Antibióticos — Guia HAB</div>
+      <div class="chips" id="atb-chips">
+        <!-- Beta-lactâmicos -->
+        <span class="chip" data-atb="pip-tazo" onclick="togAtb(this)">Pip-Tazo 4,5g</span>
+        <span class="chip" data-atb="meropenem" onclick="togAtb(this)">Meropenem 1g</span>
+        <span class="chip" data-atb="cefepime" onclick="togAtb(this)">Cefepime 2g</span>
+        <span class="chip" data-atb="ceftriaxona" onclick="togAtb(this)">Ceftriaxona 2g</span>
+        <span class="chip" data-atb="cefazolina" onclick="togAtb(this)">Cefazolina 2g</span>
+        <span class="chip" data-atb="ampicilina-sulbactam" onclick="togAtb(this)">Amp-Sulbactam 3g</span>
+        <span class="chip" data-atb="ertapenem" onclick="togAtb(this)">Ertapenem 1g</span>
+        <!-- Glicopeptídeos -->
+        <span class="chip" data-atb="vancomicina" onclick="togAtb(this)">Vancomicina</span>
+        <span class="chip" data-atb="teicoplanina" onclick="togAtb(this)">Teicoplanina</span>
+        <!-- Aminoglicosídeos -->
+        <span class="chip" data-atb="amicacina" onclick="togAtb(this)">Amicacina</span>
+        <span class="chip" data-atb="gentamicina" onclick="togAtb(this)">Gentamicina</span>
+        <!-- Quinolonas -->
+        <span class="chip" data-atb="ciprofloxacino" onclick="togAtb(this)">Ciprofloxacino 400mg</span>
+        <span class="chip" data-atb="levofloxacino" onclick="togAtb(this)">Levofloxacino 500mg</span>
+        <!-- Outros -->
+        <span class="chip" data-atb="metronidazol" onclick="togAtb(this)">Metronidazol 500mg</span>
+        <span class="chip" data-atb="clindamicina" onclick="togAtb(this)">Clindamicina 600mg</span>
+        <span class="chip" data-atb="azitromicina" onclick="togAtb(this)">Azitromicina 500mg</span>
+        <span class="chip" data-atb="fluconazol" onclick="togAtb(this)">Fluconazol 400mg</span>
+        <span class="chip" data-atb="smx-tmp" onclick="togAtb(this)">SMX-TMP 960mg</span>
+        <span class="chip" data-atb="polimixina-b" onclick="togAtb(this)">Polimixina B</span>
+        <span class="chip" data-atb="linezolida" onclick="togAtb(this)">Linezolida 600mg</span>
+        <span class="chip" data-atb="daptomicina" onclick="togAtb(this)">Daptomicina</span>
+      </div>
+      <div class="atb-alert" id="atb-alert"></div>
+    </div>
+
+    <!-- DVA -->
+    <div class="chip-group">
+      <div class="chip-group-lbl dva">Drogas Vasoativas</div>
+      <div id="dva-area">
+        <div class="chips" style="margin-bottom:8px">
+          <span class="chip" data-dva="norepi" onclick="togDva(this)">Norepinefrina</span>
+          <span class="chip" data-dva="vasop"  onclick="togDva(this)">Vasopressina</span>
+          <span class="chip" data-dva="dopamina" onclick="togDva(this)">Dopamina</span>
+          <span class="chip" data-dva="dobutamina" onclick="togDva(this)">Dobutamina</span>
+          <span class="chip" data-dva="epinefrina" onclick="togDva(this)">Epinefrina</span>
+          <span class="chip" data-dva="milrinona" onclick="togDva(this)">Milrinona</span>
+        </div>
+        <div id="dva-doses"></div>
+      </div>
+    </div>
+
+    <!-- HD -->
+    <div class="chip-group">
+      <div class="chip-group-lbl hd">Hemodiálise</div>
+      <div class="hd-row">
+        <button class="hd-toggle" id="hd-hoje" onclick="togHD()">HD Hoje</button>
+        <span id="hd-modal-label" style="font-size:12px;color:#aaa;display:none">Modalidade:</span>
+        <span class="chip" data-hd="hd-conv" onclick="togHdMod(this)" id="hd-mod-area" style="display:none">HD Convencional</span>
+        <span class="chip" data-hd="hdf-ol"  onclick="togHdMod(this)" style="display:none">HDF Online</span>
+        <span class="chip" data-hd="sled"    onclick="togHdMod(this)" style="display:none">SLED</span>
+        <span class="chip" data-hd="crrt"    onclick="togHdMod(this)" style="display:none">CRRT</span>
+      </div>
+      <div class="f" style="max-width:320px;margin-top:4px">
+        <label>Observação HD</label>
+        <input id="f-hd-obs" placeholder="Ex: Acesso femoral Kt/V 1.4..." style="font-size:13px;padding:6px 9px;border-radius:6px;border:1px solid #ddd;background:#fafaf8;color:#1a1a18;font-family:inherit;outline:none"/>
+      </div>
+    </div>
+
+    <!-- DROGAS HD / OUTRAS -->
+    <div class="chip-group">
+      <div class="chip-group-lbl epx">Drogas Nefrológicas</div>
+      <div class="chips" id="rx-chips">
+        <span class="chip" data-rx="epo" onclick="togRx(this)">EPO</span>
+        <span class="chip" data-rx="noripurum" onclick="togRx(this)">Noripurum EV</span>
+        <span class="chip" data-rx="sevelamer" onclick="togRx(this)">Sevelamer</span>
+        <span class="chip" data-rx="carbonato" onclick="togRx(this)">Carbonato Ca</span>
+        <span class="chip" data-rx="cinacalcete" onclick="togRx(this)">Cinacalcete</span>
+        <span class="chip" data-rx="paricalcitol" onclick="togRx(this)">Paricalcitol</span>
+        <span class="chip" data-rx="calcitriol" onclick="togRx(this)">Calcitriol</span>
+        <span class="chip" data-rx="vitd" onclick="togRx(this)">Vit D (colecalciferol)</span>
+        <span class="chip" data-rx="heparina" onclick="togRx(this)">Heparina (HD)</span>
+        <span class="chip" data-rx="tpa" onclick="togRx(this)">tPA cateter</span>
+        <span class="chip" data-rx="taurolock" onclick="togRx(this)">Taurolock</span>
+        <span class="chip" data-rx="ktv" onclick="togRx(this)">Kt/V pendente</span>
+      </div>
+      <div id="rx-doses" style="margin-top:8px"></div>
+    </div>
+
+    <!-- RESUMO -->
+    <div class="chip-group">
+      <div class="chip-group-lbl" style="color:#1a1a18;border-color:#e8e8e5">Resumo da Prescrição</div>
+      <div id="resumo-box" class="resumo-box"><span class="resumo-empty">Selecione os itens acima para gerar o resumo</span></div>
+      <div style="display:flex;gap:7px;margin-top:8px;justify-content:flex-end">
+        <button class="btn btn-out btn-sm" onclick="clearRx()">Limpar</button>
+        <button class="btn btn-dark btn-sm" onclick="copyResumo()">Copiar resumo</button>
+      </div>
+    </div>
+
+  </div><!-- /mpanel-rx -->
+
+</div><!-- /mb -->
 <div class="mf">
   <button class="btn btn-out btn-sm" onclick="closeModal()">Cancelar</button>
   <button class="btn btn-danger btn-sm" id="delBtn" onclick="doDel()" style="display:none">Excluir</button>
@@ -659,6 +813,233 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='n'){e.preventDefault();window.openModal();}
   if((e.ctrlKey||e.metaKey)&&e.key==='f'){e.preventDefault();$('srch').focus();}
 });
+
+// ── Modal tab switching ────────────────────────────────────
+window.switchMTab=function(tab){
+  document.querySelectorAll('.mtab').forEach((t,i)=>t.classList.toggle('active',['dados','rx'][i]===tab));
+  document.querySelectorAll('.mtab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('mpanel-'+tab)?.classList.add('active');
+};
+
+// ── ATB data — doses normais + ajuste renal (CKD-EPI) ─────
+const ATB_DATA={
+  'pip-tazo':    {nome:'Pip-Tazo 4,5g EV',  freq:'6/6h', ajuste:{15:'2,25g 8/8h',30:'3,375g 8/8h',60:'dose plena'}},
+  'meropenem':   {nome:'Meropenem 1g EV',   freq:'8/8h', ajuste:{15:'0,5g 12/12h',30:'1g 12/12h',60:'dose plena'}},
+  'cefepime':    {nome:'Cefepime 2g EV',    freq:'8/8h', ajuste:{15:'1g 24/24h',30:'1g 12/12h',60:'dose plena'}},
+  'ceftriaxona': {nome:'Ceftriaxona 2g EV', freq:'24/24h',ajuste:{}},
+  'cefazolina':  {nome:'Cefazolina 2g EV',  freq:'8/8h', ajuste:{15:'1g 24/24h',30:'1g 12/12h',60:'dose plena'}},
+  'ampicilina-sulbactam':{nome:'Amp-Sulbactam 3g EV',freq:'6/6h',ajuste:{15:'1,5g 12/12h',30:'1,5g 8/8h',60:'dose plena'}},
+  'ertapenem':   {nome:'Ertapenem 1g EV',   freq:'24/24h',ajuste:{30:'0,5g 24/24h',60:'dose plena'}},
+  'vancomicina': {nome:'Vancomicina EV',     freq:'12/12h (ajustar por nível)',ajuste:{15:'monitorar nível — intervalo estendido',30:'12/12h com monitorização',60:'dose plena'}},
+  'teicoplanina':{nome:'Teicoplanina EV',    freq:'24/24h (após ataque)',ajuste:{30:'manter dose — reduzir frequência em IR grave',60:'dose plena'}},
+  'amicacina':   {nome:'Amicacina EV',       freq:'dose única diária',ajuste:{15:'CONTRAINDICADA — nefrotóxico em IR',30:'intervalo estendido — dose única 72/72h',60:'dose única 48/48h — monitorar nível'}},
+  'gentamicina': {nome:'Gentamicina EV',     freq:'dose única diária',ajuste:{15:'CONTRAINDICADA — nefrotóxico em IR',30:'intervalo estendido 72/72h',60:'intervalo 48/48h — monitorar nível'}},
+  'ciprofloxacino':{nome:'Ciprofloxacino 400mg EV',freq:'12/12h',ajuste:{30:'200mg 12/12h',60:'dose plena'}},
+  'levofloxacino': {nome:'Levofloxacino 500mg EV/VO',freq:'24/24h',ajuste:{20:'250mg 48/48h',50:'250mg 24/24h',60:'dose plena'}},
+  'metronidazol':  {nome:'Metronidazol 500mg EV',freq:'8/8h',ajuste:{}},
+  'clindamicina':  {nome:'Clindamicina 600mg EV',freq:'8/8h',ajuste:{}},
+  'azitromicina':  {nome:'Azitromicina 500mg VO/EV',freq:'24/24h',ajuste:{}},
+  'fluconazol':    {nome:'Fluconazol 400mg EV/VO',freq:'24/24h',ajuste:{50:'200mg 24/24h',60:'dose plena'}},
+  'smx-tmp':       {nome:'SMX-TMP 960mg EV/VO',freq:'12/12h',ajuste:{15:'EVITAR — risco de hipercalemia e nefrotoxicidade',30:'50% da dose 18/18h',60:'dose plena'}},
+  'polimixina-b':  {nome:'Polimixina B EV',freq:'12/12h (dose por peso)',ajuste:{15:'reduzir 50% — monitorar função renal residual',60:'dose plena'}},
+  'linezolida':    {nome:'Linezolida 600mg EV/VO',freq:'12/12h',ajuste:{}},
+  'daptomicina':   {nome:'Daptomicina EV',freq:'24/24h (dose por peso)',ajuste:{30:'dose plena — monitorar CK',60:'dose plena'}},
+};
+
+const DVA_UNIDADE={
+  'norepi':'mcg/kg/min','vasop':'UI/min','dopamina':'mcg/kg/min',
+  'dobutamina':'mcg/kg/min','epinefrina':'mcg/kg/min','milrinona':'mcg/kg/min'
+};
+const DVA_NOME={
+  'norepi':'Norepinefrina','vasop':'Vasopressina','dopamina':'Dopamina',
+  'dobutamina':'Dobutamina','epinefrina':'Epinefrina','milrinona':'Milrinona'
+};
+const RX_NOME={
+  'epo':'EPO','noripurum':'Noripurum EV','sevelamer':'Sevelamer',
+  'carbonato':'Carbonato de Cálcio','cinacalcete':'Cinacalcete',
+  'paricalcitol':'Paricalcitol','calcitriol':'Calcitriol',
+  'vitd':'Vitamina D (colecalciferol)','heparina':'Heparina intradialítica',
+  'tpa':'tPA cateter','taurolock':'Taurolock HEP 500','ktv':'Kt/V pendente'
+};
+
+let selAtb=new Set(), selDva=new Set(), selRx=new Set(), hdHoje=false, hdMod='';
+
+// ATB toggle
+window.togAtb=function(el){
+  const k=el.dataset.atb;
+  if(selAtb.has(k)){selAtb.delete(k);el.className='chip';}
+  else{selAtb.add(k);el.className='chip on-atb';}
+  renderAtbAlert();updResumo();
+};
+
+function renderAtbAlert(){
+  const alert=document.getElementById('atb-alert');
+  if(!alert)return;
+  if(!selAtb.size){alert.className='atb-alert';return;}
+  // get TFG from f-tfg field
+  const tfgVal=parseFloat(document.getElementById('f-tfg')?.value||'');
+  const tfg=isNaN(tfgVal)?null:tfgVal;
+  let lines=[];
+  selAtb.forEach(k=>{
+    const d=ATB_DATA[k];if(!d)return;
+    let dose=d.nome+' — '+d.freq;
+    if(tfg!==null&&Object.keys(d.ajuste).length){
+      const thresholds=Object.keys(d.ajuste).map(Number).sort((a,b)=>a-b);
+      let adj=null;
+      for(const t of thresholds){if(tfg<t){adj=d.ajuste[t];break;}}
+      if(adj&&adj!=='dose plena'){
+        dose+='\n  ⚠ Ajuste IR (TFG '+Math.round(tfg)+' mL/min): '+adj;
+      }
+    } else if(tfg===null&&Object.keys(d.ajuste).length){
+      dose+='\n  ℹ Informe TFG/Cr+Idade para ver ajuste renal';
+    }
+    lines.push(dose);
+  });
+  if(lines.length){
+    alert.innerHTML='<b>Antibióticos selecionados'+(tfg?' (TFG '+Math.round(tfg)+' mL/min)':'')+':</b><br>'+lines.join('<br>');
+    alert.className='atb-alert show';
+  } else {alert.className='atb-alert';}
+}
+
+// DVA toggle
+window.togDva=function(el){
+  const k=el.dataset.dva;
+  if(selDva.has(k)){selDva.delete(k);el.className='chip';}
+  else{selDva.add(k);el.className='chip on-dva';}
+  renderDvaDoses();updResumo();
+};
+function renderDvaDoses(){
+  const div=document.getElementById('dva-doses');if(!div)return;
+  div.innerHTML=[...selDva].map(k=>`
+    <div class="dva-dose-row">
+      <label>${DVA_NOME[k]||k}:</label>
+      <input id="dva-${k}" type="number" step="0.01" placeholder="dose" oninput="updResumo()" style="width:90px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fafaf8;outline:none"/>
+      <span class="unit">${DVA_UNIDADE[k]||''}</span>
+    </div>`).join('');
+}
+
+// HD toggle
+window.togHD=function(){
+  hdHoje=!hdHoje;
+  document.getElementById('hd-hoje').className='hd-toggle'+(hdHoje?' on':'');
+  const mods=document.querySelectorAll('[data-hd]');
+  const lbl=document.getElementById('hd-modal-label');
+  mods.forEach(m=>m.style.display=hdHoje?'inline-flex':'none');
+  if(lbl)lbl.style.display=hdHoje?'inline':'none';
+  if(!hdHoje){hdMod='';mods.forEach(m=>m.className='chip');}
+  updResumo();
+};
+window.togHdMod=function(el){
+  document.querySelectorAll('[data-hd]').forEach(m=>m.className='chip');
+  hdMod=el.dataset.hd;el.className='chip on-hd';updResumo();
+};
+
+// Drogas nefrológicas toggle
+window.togRx=function(el){
+  const k=el.dataset.rx;
+  if(selRx.has(k)){selRx.delete(k);el.className='chip';}
+  else{selRx.add(k);el.className='chip on-epx';}
+  renderRxDoses();updResumo();
+};
+function renderRxDoses(){
+  const div=document.getElementById('rx-doses');if(!div)return;
+  const needDose=['epo','noripurum','cinacalcete','paricalcitol','calcitriol','vitd'];
+  const fields=[...selRx].filter(k=>needDose.includes(k));
+  div.innerHTML=fields.map(k=>`
+    <div class="dva-dose-row" style="margin-bottom:5px">
+      <label>${RX_NOME[k]||k}:</label>
+      <input id="rx-${k}" placeholder="dose" oninput="updResumo()" style="width:130px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;background:#fafaf8;outline:none"/>
+      <span class="unit">dose/freq</span>
+    </div>`).join('');
+}
+
+// RESUMO
+window.updResumo=function(){
+  const box=document.getElementById('resumo-box');if(!box)return;
+  const nome=document.getElementById('f-nome')?.value.trim()||'Paciente';
+  const leito=document.getElementById('f-leito')?.value.trim()||'—';
+  const tfgVal=parseFloat(document.getElementById('f-tfg')?.value||'');
+  const tfg=isNaN(tfgVal)?null:tfgVal;
+  const lines=[];
+
+  lines.push('=== '+leito+' — '+nome+' ===');
+  const dt=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  lines.push('Data: '+dt);
+  lines.push('');
+
+  // HD
+  if(hdHoje){
+    const modLabel={'hd-conv':'HD Convencional','hdf-ol':'HDF Online','sled':'SLED','crrt':'CRRT'};
+    const obs=document.getElementById('f-hd-obs')?.value.trim();
+    lines.push('[ HD HOJE ] '+(hdMod?modLabel[hdMod]:'modalidade não selecionada')+(obs?' — '+obs:''));
+  }
+
+  // DVA
+  if(selDva.size){
+    lines.push('');lines.push('DVA EM USO:');
+    selDva.forEach(k=>{
+      const dose=document.getElementById('dva-'+k)?.value.trim();
+      lines.push('  • '+DVA_NOME[k]+(dose?' '+dose+' '+DVA_UNIDADE[k]:''));
+    });
+  }
+
+  // ATB
+  if(selAtb.size){
+    lines.push('');lines.push('ANTIBIÓTICOS'+(tfg?' (TFG ~'+Math.round(tfg)+' mL/min)':'')+'<br>');
+    selAtb.forEach(k=>{
+      const d=ATB_DATA[k];if(!d)return;
+      let linha='  • '+d.nome+' '+d.freq;
+      if(tfg!==null&&Object.keys(d.ajuste).length){
+        const ts=Object.keys(d.ajuste).map(Number).sort((a,b)=>a-b);
+        let adj=null;
+        for(const t of ts){if(tfg<t){adj=d.ajuste[t];break;}}
+        if(adj&&adj!=='dose plena')linha+='\n    ⚠ Ajuste IR: '+adj;
+      }
+      lines.push(linha);
+    });
+  }
+
+  // Drogas nefrológicas
+  if(selRx.size){
+    lines.push('');lines.push('DROGAS NEFROLÓGICAS:');
+    selRx.forEach(k=>{
+      const dose=document.getElementById('rx-'+k)?.value.trim();
+      lines.push('  • '+RX_NOME[k]+(dose?' — '+dose:''));
+    });
+  }
+
+  const text=lines.join('\n');
+  const isEmpty=!hdHoje&&!selDva.size&&!selAtb.size&&!selRx.size;
+  if(isEmpty){box.innerHTML='<span class="resumo-empty">Selecione os itens acima para gerar o resumo</span>';return;}
+  box.textContent=text;
+};
+
+window.copyResumo=function(){
+  const box=document.getElementById('resumo-box');if(!box)return;
+  const text=box.textContent;
+  if(text.includes('Selecione os itens')){toast('Nada selecionado','err');return;}
+  navigator.clipboard.writeText(text).then(()=>toast('Resumo copiado ✓')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Resumo copiado ✓');
+  });
+};
+
+window.clearRx=function(){
+  selAtb.clear();selDva.clear();selRx.clear();hdHoje=false;hdMod='';
+  document.querySelectorAll('.chip').forEach(c=>c.className='chip');
+  document.getElementById('hd-hoje')?.classList.remove('on');
+  const mods=document.querySelectorAll('[data-hd]');
+  mods.forEach(m=>m.style.display='none');
+  const lbl=document.getElementById('hd-modal-label');if(lbl)lbl.style.display='none';
+  document.getElementById('dva-doses').innerHTML='';
+  document.getElementById('rx-doses').innerHTML='';
+  document.getElementById('atb-alert').className='atb-alert';
+  const f=document.getElementById('f-hd-obs');if(f)f.value='';
+  updResumo();
+};
+
+// Re-render atb alert when TFG changes
+const origCalcTFG=window.calcTFG;
+window.calcTFG=function(){origCalcTFG&&origCalcTFG();renderAtbAlert();};
 </script>
 
 </body>
