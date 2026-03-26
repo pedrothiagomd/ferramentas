@@ -709,6 +709,17 @@ window.render=function(){
     if(!q)return true;
     return[p.leito,p.nome,p.diag,p.conduta,p.obs].filter(Boolean).some(v=>v.toLowerCase().includes(q));
   });
+  // Sort by leito numerically (ex: 1, 2A, 10, 12B, UTI-1, PS-2)
+  list.sort((a,b)=>{
+    const la=(a.leito||'').trim(), lb=(b.leito||'').trim();
+    // Extract leading number for natural sort
+    const na=la.match(/^(\d+)/), nb=lb.match(/^(\d+)/);
+    if(na&&nb){
+      const diff=parseInt(na[1])-parseInt(nb[1]);
+      if(diff!==0)return diff;
+    }
+    return la.localeCompare(lb,undefined,{numeric:true,sensitivity:'base'});
+  });
   $('cnt').textContent=list.length+' paciente'+(list.length!==1?'s':'');
 
   const tb=$('tbody'),em=$('empty');
