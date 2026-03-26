@@ -286,20 +286,20 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
       <thead>
         <tr class="gh">
           <th class="id-col" rowspan="2" style="padding:8px 10px;min-width:120px">Leito / Paciente</th>
-          <th class="g-h"  colspan="4">Hemograma</th>
+          <th class="g-h"  colspan="3">Hemograma</th>
           <th class="g-e"  colspan="3">Escórias</th>
-          <th class="g-el" colspan="5">Eletrólitos</th>
+          <th class="g-el" colspan="4">Eletrólitos</th>
           <th class="g-b"  colspan="3">BH / Gasometria</th>
-          <th class="g-c"  colspan="4">Complementares</th>
+          <th class="g-c"  colspan="2">Complementares</th>
           <th class="g-cd" colspan="2">Conduta</th>
           <th rowspan="2" style="background:#fafaf8;border-bottom:1px solid #eee;width:62px"></th>
         </tr>
         <tr class="sh">
-          <th>Hb</th><th>Ht</th><th>Leuc</th><th>Plaq</th>
+          <th>Hb</th><th>Leuc</th><th>Plaq</th>
           <th>Ur</th><th>Cr</th><th>TFG</th>
-          <th>Na</th><th>K</th><th>Ca</th><th>P</th><th>Mg</th>
+          <th>Na</th><th>K</th><th>Ca</th><th>Mg</th>
           <th>BH 24h</th><th>pH</th><th>HCO₃</th>
-          <th>PCR</th><th>Alb</th><th>PTH</th><th>Ferr</th>
+          <th>PCR</th><th>FE VE</th>
           <th>Diagnóstico</th><th>Conduta</th>
         </tr>
       </thead>
@@ -737,7 +737,6 @@ window.render=function(){
       <div class="p-sub">${p.idade?p.idade+'a · ':''} ${SL[p.setor]||''}</div>
     </td>
     ${nc(p.hb,  {min:12,max:16,  aL:7,  aH:19})}
-    ${nc(p.ht,  {min:35,max:47,  aL:20, aH:55})}
     ${nc(p.leuc,{min:4, max:10,  aL:2,  aH:30})}
     ${nc(p.plaq,{min:150,max:400,aL:50, aH:900})}
     ${nc(p.ur,  {min:10,max:50,  aL:5,  aH:300})}
@@ -763,15 +762,17 @@ window.render=function(){
         return '<td class="n '+cl+'" title="Ca total">'+p.ca+'</td>';
       }
     })()}
-    ${nc(p.p,   {min:2.5,max:4.5,aL:1,  aH:8})}
     ${nc(p.mg,  {min:1.7,max:2.4,aL:1,  aH:4})}
     <td class="n ${p.bh?(Math.abs(parseFloat(p.bh))>1500?'al':'ok'):'em'}">${p.bh||'—'}</td>
     ${nc(p.ph,  {min:7.35,max:7.45,aL:7.1,aH:7.6})}
     ${nc(p.bic, {min:22,max:28,  aL:12, aH:36})}
     ${nc(p.pcr)}
-    ${nc(p.alb, {min:3.5,max:5.0,aL:2.0,aH:6})}
-    ${nc(p.pth)}
-    ${nc(p.ferr)}
+    ${(function(){
+      if(!p.fe&&p.fe!==0)return '<td class="n em">—</td>';
+      const v=parseFloat(p.fe);
+      const cl=isNaN(v)?'':v<40?'al':v<50?'w':'ok';
+      return '<td class="n '+cl+'">'+p.fe+'%</td>';
+    })()}
     <td class="dg">${hl(p.diag,q)||'—'}</td>
     <td class="cd">${hl(p.conduta,q)||'—'}</td>
     <td><div class="acts" onclick="event.stopPropagation()">
@@ -1550,37 +1551,65 @@ window.updResumo=function(){
   if(obs){lines.push('');lines.push('Considerações:');lines.push(obs);}
 
   // ── Exames laboratoriais / Imagem ────────────────────────
-  const hemo=[['Hb',gf('hb'),'g/dL'],['Ht',gf('ht'),'%'],['Leuc',gf('leuc'),'mil/µL'],
-    ['Bast',gf('bast'),'%'],['Plaq',gf('plaq'),'mil/µL'],['Retic',gf('retic'),'%']].filter(x=>x[1]);
-  if(hemo.length) lines.push('Hemograma: '+hemo.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
+  // Helper: isAbnormal(value, min, max)
+  function isAbn(v,min,max){const n=parseFloat(v);return !isNaN(n)&&(n<min||n>max);}
 
-  const esc=[['Ur',gf('ur'),'mg/dL'],['Cr',gf('cr'),'mg/dL'],
+  // Hemograma — só alterados
+  const hemoAll=[
+    {l:'Hb',  v:gf('hb'),  u:'g/dL', min:12,  max:16},
+    {l:'Leuc',v:gf('leuc'),u:'mil/µL',min:4,   max:10},
+    {l:'Bast',v:gf('bast'),u:'%',     min:0,   max:5},
+    {l:'Plaq',v:gf('plaq'),u:'mil/µL',min:150, max:400},
+    {l:'Retic',v:gf('retic'),u:'%',   min:0.5, max:2.5},
+  ].filter(x=>x.v&&isAbn(x.v,x.min,x.max));
+  if(hemoAll.length) lines.push('Hemograma: '+hemoAll.map(x=>x.l+' '+x.v+' '+x.u).join(' | '));
+
+  // Escórias — Ur/Cr/TFG sempre aparecem se preenchidos (são os principais)
+  const escAll=[['Ur',gf('ur'),'mg/dL'],['Cr',gf('cr'),'mg/dL'],
     ['TFG',gf('tfg'),'mL/min'+(tfg?' (CKD-EPI)':'')],['Au',gf('au'),'mg/dL']].filter(x=>x[1]);
-  if(esc.length) lines.push('Escórias: '+esc.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
+  if(escAll.length) lines.push('Escórias: '+escAll.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
 
+  // Eletrólitos — só alterados
   const caiVal=gf('cai');
-  const elet=[['Na',gf('na'),'mEq/L'],['K',gf('k'),'mEq/L'],['Cl',gf('cl'),'mEq/L'],
-    [caiVal?'Ca⁺⁺':'Ca',caiVal||gf('ca'),caiVal?'mmol/L':'mg/dL'],
-    ['P',gf('p'),'mg/dL'],['Mg',gf('mg'),'mg/dL']].filter(x=>x[1]);
-  if(elet.length) lines.push('Eletrólitos: '+elet.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
+  const eletAll=[
+    {l:'Na', v:gf('na'), u:'mEq/L', min:136, max:145},
+    {l:'K',  v:gf('k'),  u:'mEq/L', min:3.5, max:5.0},
+    {l:'Cl', v:gf('cl'), u:'mEq/L', min:98,  max:106},
+    {l:caiVal?'Ca++':'Ca', v:caiVal||gf('ca'), u:caiVal?'mmol/L':'mg/dL', min:caiVal?1.15:8.4, max:caiVal?1.30:10},
+    {l:'P',  v:gf('p'),  u:'mg/dL', min:2.5, max:4.5},
+    {l:'Mg', v:gf('mg'), u:'mg/dL', min:1.7, max:2.4},
+  ].filter(x=>x.v&&isAbn(x.v,x.min,x.max));
+  if(eletAll.length) lines.push('Eletrólitos: '+eletAll.map(x=>x.l+' '+x.v+' '+x.u).join(' | '));
 
+  // BH/Gaso — sempre aparecem se preenchidos
   const bh=[['BH 24h',gf('bh'),'mL'],['Diurese',gf('diur'),'mL/24h'],
-    ['pH',gf('ph'),''],['HCO₃',gf('bic'),'mEq/L'],['pCO₂',gf('pco2'),'mmHg'],
+    ['pH',gf('ph'),''],['HCO3',gf('bic'),'mEq/L'],['pCO2',gf('pco2'),'mmHg'],
     ['AG',gf('ag'),''],['Lactato',gf('lac'),'']].filter(x=>x[1]);
   if(bh.length) lines.push('BH/Gaso: '+bh.map(x=>x[0]+' '+x[1]+(x[2]?' '+x[2]:'')).join(' | '));
 
+  // Urina — só campos preenchidos (já são seletivos por natureza)
   const urF=[['pH',gf('ur-ph')],['Nitrito',gf('ur-nit')],['Leuc',gf('ur-leuc')],
     ['Hem',gf('ur-hem')],['Bact',gf('ur-bact')],['Prot',gf('ur-prot')],
     ['Cil',gf('ur-cil')],['Lev',gf('ur-lev')],['Outros',gf('ur-rot')]].filter(x=>x[1]);
   if(urF.length) lines.push('Urina: '+urF.map(x=>x[0]+' '+x[1]).join(' | '));
 
-  const comp=[['PCR',gf('pcr'),'mg/L'],['PCT',gf('pct'),'ng/mL'],['Alb',gf('alb'),'g/dL'],
-    ['PTH',gf('pth'),'pg/mL'],['VitD',gf('vitd'),''],['Ferr',gf('ferr'),'ng/mL'],
-    ['TSAT',gf('tsat'),'%'],['FA',gf('falc'),''],['TGO/TGP',gf('tgo'),'']].filter(x=>x[1]);
-  if(comp.length) lines.push('Complementares: '+comp.map(x=>x[0]+' '+x[1]+(x[2]?' '+x[2]:'')).join(' | '));
+  // Complementares — só alterados
+  const compAll=[
+    {l:'PCR',  v:gf('pcr'),  u:'mg/L',  min:0,   max:5},
+    {l:'PCT',  v:gf('pct'),  u:'ng/mL', min:0,   max:0.5},
+    {l:'Alb',  v:gf('alb'),  u:'g/dL',  min:3.5, max:5.0},
+    {l:'PTH',  v:gf('pth'),  u:'pg/mL', min:150, max:600},
+    {l:'VitD', v:gf('vitd'), u:'',      min:30,  max:100},
+    {l:'Ferr', v:gf('ferr'), u:'ng/mL', min:30,  max:500},
+    {l:'TSAT', v:gf('tsat'), u:'%',     min:20,  max:40},
+    {l:'FA',   v:gf('falc'), u:'',      min:0,   max:120},
+    {l:'TGO/TGP',v:gf('tgo'),u:'',     min:0,   max:40},
+  ].filter(x=>x.v&&isAbn(x.v,x.min,x.max));
+  if(compAll.length) lines.push('Complementares: '+compAll.map(x=>x.l+' '+x.v+(x.u?' '+x.u:'')).join(' | '));
   const compOu=gf('comp-outros');
-  if(compOu) lines.push('  Outros: '+compOu);
+  if(compOu) lines.push('Complementares: '+compOu);
 
+  // Imagem / FE
   const fe=gf('fe'), img=gf('img');
   if(fe||img){
     lines.push('Imagem:');
