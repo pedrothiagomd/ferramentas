@@ -320,7 +320,7 @@ mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
         <div class="fsec-ttl">Identificação</div>
         <div class="fg w">
           <div class="f"><label>Leito</label><input id="f-leito" placeholder="Ex: 12A, UTI-3, PS-1" oninput="updPrev()"/></div>
-          <div class="f"><label>Iniciais</label><input id="f-nome" placeholder="Ex: J.S.O" oninput="updPrev()"/><div class="hint">Ponto entre iniciais</div></div>
+          <div class="f"><label>Iniciais</label><input id="f-nome" placeholder="Ex: J.S.O" oninput="updPrev()" onblur="toInitials()"/><div class="hint">Ponto entre iniciais</div></div>
           <div class="f" style="justify-content:flex-end;padding-top:14px"><div class="prev-box" id="prev">Leito — Iniciais</div><div class="hint" style="margin-top:3px">Prévia</div></div>
           <div class="f"><label>Idade (anos)</label><input id="f-idade" type="number" placeholder="—" oninput="calcTFG()"/></div>
           <div class="f">
@@ -757,6 +757,21 @@ window.pickSec=function(s){
   curSec=s;
   document.querySelectorAll('.sb').forEach(b=>b.className='sb'+(b.dataset.s===s?' e-'+s:''));
 };
+window.toInitials=function(){
+  const el=document.getElementById('f-nome');
+  if(!el)return;
+  const val=el.value.trim();
+  // Only convert if it looks like a full name (has space and no dots)
+  if(val.includes(' ')&&!val.includes('.')){
+    const initials=val.split(/\s+/)
+      .filter(w=>w.length>0)
+      .map(w=>w[0].toUpperCase())
+      .join('.');
+    el.value=initials;
+    updPrev();
+  }
+};
+
 window.updPrev=function(){
   const l=$('f-leito')?.value.trim(),n=$('f-nome')?.value.trim();
   const el=$('prev');if(!el)return;
