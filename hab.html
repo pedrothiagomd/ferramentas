@@ -1476,21 +1476,25 @@ window.updResumo=function(){
     lines.push('');lines.push('DVA em uso:');
     selDva.forEach(k=>{
       const dose=document.getElementById('dva-'+k)?.value.trim();
-      lines.push('  • '+DVA_NOME[k]+(dose?' '+dose+' '+DVA_UNIDADE[k]:''));
+      lines.push('  - '+DVA_NOME[k]+(dose?' '+dose+' '+DVA_UNIDADE[k]:''));
     });
   }
 
   // ── ATB ──────────────────────────────────────────────────
   if(selAtb.size){
-    lines.push('');lines.push('Antibióticos'+(tfg?' (TFG ~'+Math.round(tfg)+' mL/min)':'')+ ':');
+    lines.push('');lines.push('Antibióticos'+(tfg?' (TFG '+Math.round(tfg)+' mL/min)':'')+ ':');
     selAtb.forEach(k=>{
       const d=ATB_DATA[k];if(!d)return;
-      let linha='  • '+d.nome+' '+d.freq;
+      let linha='  - '+d.nome+' '+d.freq;
       if(tfg!==null&&Object.keys(d.ajuste).length){
         const ts=Object.keys(d.ajuste).map(Number).filter(t=>t!==999).sort((a,b)=>a-b);
         let adj=null;
         for(const t of ts){if(tfg<t){adj=d.ajuste[t];break;}}
-        if(adj)linha+='\n    ⚠ Ajuste IR (TFG ~'+Math.round(tfg)+'): '+adj;
+        if(adj){
+          // Strip CrCl references and "monitorar" notes from adj
+          let adjClean=adj.replace(/\s*\(CrCl[^)]*\)/g,'').replace(/\s*—\s*monitorar[^.;]*/gi,'').trim();
+          linha+='\n    Ajuste: '+adjClean;
+        }
       }
       lines.push(linha);
     });
@@ -1506,7 +1510,7 @@ window.updResumo=function(){
 
   // ── Evolução ─────────────────────────────────────────────
   const obs=gf('obs');
-  if(obs){lines.push('');lines.push('Considerações:');lines.push('  '+obs);}
+  if(obs){lines.push('');lines.push('Considerações:');lines.push(obs);}
 
   // ── Exames laboratoriais / Imagem ────────────────────────
   const hemo=[['Hb',gf('hb'),'g/dL'],['Ht',gf('ht'),'%'],['Leuc',gf('leuc'),'mil/µL'],
@@ -1549,7 +1553,7 @@ window.updResumo=function(){
 
   // ── Conduta ──────────────────────────────────────────────
   const cond=gf('conduta');
-  if(cond){lines.push('');lines.push('Conduta:');lines.push('  '+cond);}
+  if(cond){lines.push('');lines.push('Conduta:');lines.push(cond);}
 
   // ── HD ───────────────────────────────────────────────────
   const hdObs=document.getElementById('f-hd-obs')?.value.trim();
@@ -1564,7 +1568,7 @@ window.updResumo=function(){
     lines.push('');lines.push('Drogas nefrológicas:');
     selRx.forEach(k=>{
       const dose=document.getElementById('rx-'+k)?.value.trim();
-      lines.push('  • '+RX_NOME[k]+(dose?' — '+dose:''));
+      lines.push('  - '+RX_NOME[k]+(dose?' - '+dose:''));
     });
   }
 
