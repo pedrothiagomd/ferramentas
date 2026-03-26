@@ -810,6 +810,11 @@ function fillF(p){
   if(tfgI&&p.tfg)tfgI._manual=true;
   updPrev();
   calcTFG();
+  calcUrCr();
+  calcCaP();
+  calcGaso();
+  const caiEl=document.getElementById('f-cai');
+  if(caiEl&&caiEl.value) window.checkCaI(caiEl);
 }
 // CKD-EPI 2021 (race-free)
 function ckdEpi2021(cr, age, sex) {
