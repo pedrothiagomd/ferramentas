@@ -322,7 +322,7 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
     <div class="mh"><h2 id="mTitle">Novo paciente</h2><button class="mcl" onclick="closeModal()">×</button></div>
     <div class="mb">
       <div class="mtabs">
-        <div class="mtab active" onclick="switchMTab('dados')">Dados Laboratoriais</div>
+        <div class="mtab active" onclick="switchMTab('dados')">Dados / Exames</div>
         <div class="mtab" onclick="switchMTab('rx')">Prescrição</div>
       </div>
       <div class="mtab-panel active" id="mpanel-dados">
@@ -480,30 +480,6 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
     <div class="fg">
       <div class="f"><label>Diagnóstico / CID</label><input id="f-diag" placeholder="Ex: DRC G5, LRA..."/></div>
 
-      <!-- DISPOSITIVOS -->
-      <div class="f ff">
-        <label>Dispositivos em uso</label>
-        <div class="chips" id="disp-chips" style="margin-top:4px">
-          <span class="chip" data-d="FAV-Nativa" onclick="togDisp(this)">FAV Nativa</span>
-          <span class="chip" data-d="CVC"      onclick="togDisp(this)">CVC</span>
-          <span class="chip" data-d="PICC"     onclick="togDisp(this)">PICC</span>
-          <span class="chip" data-d="FAV-Protese" onclick="togDisp(this)">FAV Prótese</span>
-          <span class="chip" data-d="Cat-Perm" onclick="togDisp(this)">Cateter Permanente</span>
-          <span class="chip" data-d="Cat-Temp" onclick="togDisp(this)">Cateter Temporário</span>
-          <span class="chip" data-d="IOT"      onclick="togDisp(this)">IOT</span>
-          <span class="chip" data-d="TQT"      onclick="togDisp(this)">TQT</span>
-          <span class="chip" data-d="SNE"      onclick="togDisp(this)">SNE</span>
-          <span class="chip" data-d="SVD"      onclick="togDisp(this)">SVD</span>
-          <span class="chip" data-d="SVA"      onclick="togDisp(this)">SVA</span>
-          <span class="chip" data-d="Dreno"    onclick="togDisp(this)">Dreno</span>
-          <span class="chip" data-d="NPT"      onclick="togDisp(this)">NPT</span>
-          <span class="chip" data-d="O2-CN"    onclick="togDisp(this)">O₂ cateter nasal</span>
-          <span class="chip" data-d="O2-Mask"  onclick="togDisp(this)">O₂ máscara</span>
-          <span class="chip" data-d="VNI"      onclick="togDisp(this)">VNI</span>
-        </div>
-        <input id="f-disp-outro" class="disp-other" placeholder="Outro dispositivo..." oninput="dispOutroSync()"/>
-      </div>
-
       <!-- ANTECEDENTES -->
       <div class="f ff"><label>Antecedentes</label><textarea id="f-antec" placeholder="Ex: HAS, DM2, DRC G5 em HD desde 2019, IRC pós-LRA, FA, ICC FE 35%..." style="min-height:54px"></textarea></div>
 
@@ -522,6 +498,31 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
 
   <!-- PRESCRIÇÃO PANEL -->
   <div class="mtab-panel" id="mpanel-rx">
+
+    <!-- DISPOSITIVOS -->
+    <div class="chip-group">
+      <div class="chip-group-lbl" style="color:#0891b2;border-color:#a5f3fc">Dispositivos em uso</div>
+      <div class="chips" id="disp-chips" style="margin-top:2px">
+        <span class="chip" data-d="FAV-Nativa"  onclick="togDisp(this)">FAV Nativa</span>
+        <span class="chip" data-d="CVC"         onclick="togDisp(this)">CVC</span>
+        <span class="chip" data-d="PICC"        onclick="togDisp(this)">PICC</span>
+        <span class="chip" data-d="FAV-Protese" onclick="togDisp(this)">FAV Prótese</span>
+        <span class="chip" data-d="Cat-Perm"    onclick="togDisp(this)">Cateter Permanente</span>
+        <span class="chip" data-d="Cat-Temp"    onclick="togDisp(this)">Cateter Temporário</span>
+        <span class="chip" data-d="IOT"         onclick="togDisp(this)">IOT</span>
+        <span class="chip" data-d="TQT"         onclick="togDisp(this)">TQT</span>
+        <span class="chip" data-d="SNE"         onclick="togDisp(this)">SNE</span>
+        <span class="chip" data-d="SVD"         onclick="togDisp(this)">SVD</span>
+        <span class="chip" data-d="SVA"         onclick="togDisp(this)">SVA</span>
+        <span class="chip" data-d="Dreno"       onclick="togDisp(this)">Dreno</span>
+        <span class="chip" data-d="NPT"         onclick="togDisp(this)">NPT</span>
+        <span class="chip" data-d="O2-CN"       onclick="togDisp(this)">O₂ cateter nasal</span>
+        <span class="chip" data-d="O2-Mask"     onclick="togDisp(this)">O₂ máscara</span>
+        <span class="chip" data-d="VNI"         onclick="togDisp(this)">VNI</span>
+      </div>
+      <input id="f-disp-outro" class="disp-other" placeholder="Outro dispositivo..." oninput="dispOutroSync()" style="margin-top:6px"/>
+      <input type="hidden" id="f-disp"/>
+    </div>
 
     <!-- ANTIBIÓTICOS -->
     <div class="chip-group">
@@ -1452,96 +1453,23 @@ window.updResumo=function(){
   const idade=gf('idade');
   lines.push('=== '+leito+' — '+nome+(sx?' '+sx:'')+(idade?' ('+idade+'a)':'')+'  ===');
   lines.push('Data: '+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  // diagnóstico movido para corpo do resumo
+
+  // ── Diagnóstico ──────────────────────────────────────────
   const diag=gf('diag');
-  if(diag) lines.push('Diagnóstico: '+diag);
+  if(diag){lines.push('');lines.push('Diagnóstico: '+diag);}
 
   // ── Antecedentes ─────────────────────────────────────────
   const antec=gf('antec');
   if(antec){lines.push('');lines.push('ANTECEDENTES: '+antec);}
 
-  // ── HD ───────────────────────────────────────────────────
-  const hdObs=document.getElementById('f-hd-obs')?.value.trim();
-  if(hdHoje){
-    lines.push('');
-    const modLabel={'hd-conv':'HD Convencional','hdf-ol':'HDF Online','sled':'SLED','crrt':'CRRT'};
-    lines.push('[ HD HOJE ] '+(hdMod?modLabel[hdMod]:'modalidade a definir')+(hdObs?' — '+hdObs:''));
-  }
-
-  // ── Drogas nefrológicas (logo após HD) ───────────────────
-  if(selRx.size){
-    lines.push('');lines.push('DROGAS NEFROLÓGICAS:');
-    selRx.forEach(k=>{
-      const dose=document.getElementById('rx-'+k)?.value.trim();
-      lines.push('  • '+RX_NOME[k]+(dose?' — '+dose:''));
-    });
-  }
-
   // ── Dispositivos ─────────────────────────────────────────
   const disp=gf('disp');
   if(disp){lines.push('');lines.push('DISPOSITIVOS: '+disp);}
 
-  // ── Hemograma ────────────────────────────────────────────
-  const hemo=[['Hb',gf('hb'),'g/dL'],['Ht',gf('ht'),'%'],['Leuc',gf('leuc'),'mil/µL'],
-    ['Bast',gf('bast'),'%'],['Plaq',gf('plaq'),'mil/µL'],['Retic',gf('retic'),'%']].filter(x=>x[1]);
-  if(hemo.length){
-    lines.push('');
-    lines.push('HEMOGRAMA: '+hemo.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
-  }
-
-  // ── Escórias ─────────────────────────────────────────────
-  const esc=[['Ur',gf('ur'),'mg/dL'],['Cr',gf('cr'),'mg/dL'],
-    ['TFG',gf('tfg'),'mL/min'+(tfg?' (CKD-EPI)':'')],['Au',gf('au'),'mg/dL']].filter(x=>x[1]);
-  if(esc.length) lines.push('ESCÓRIAS: '+esc.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
-
-  // ── Eletrólitos ──────────────────────────────────────────
-  const caiVal=gf('cai');
-  const caDisplay=caiVal?'Ca⁺⁺ '+caiVal+' mmol/L':'Ca '+gf('ca')+' mg/dL';
-  const elet=[['Na',gf('na'),'mEq/L'],['K',gf('k'),'mEq/L'],['Cl',gf('cl'),'mEq/L'],
-    [caiVal?'Ca⁺⁺':' Ca',caiVal||gf('ca'),caiVal?'mmol/L':'mg/dL'],
-    ['P',gf('p'),'mg/dL'],['Mg',gf('mg'),'mg/dL']].filter(x=>x[1]);
-  if(elet.length) lines.push('ELETRÓLITOS: '+elet.map(x=>x[0].trim()+' '+x[1]+' '+x[2]).join(' | '));
-
-  // ── BH / Gasometria ──────────────────────────────────────
-  const bh=[['BH 24h',gf('bh'),'mL'],['Diurese',gf('diur'),'mL/24h'],
-    ['pH',gf('ph'),''],['HCO₃',gf('bic'),'mEq/L'],['pCO₂',gf('pco2'),'mmHg'],
-    ['AG',gf('ag'),''],['Lactato',gf('lac'),'']].filter(x=>x[1]);
-  if(bh.length) lines.push('BH/GASO: '+bh.map(x=>x[0]+' '+x[1]+(x[2]?' '+x[2]:'')).join(' | '));
-
-  // ── Urina rotina ─────────────────────────────────────────
-  const urF=[['pH',gf('ur-ph')],['Nitrito',gf('ur-nit')],['Leuc',gf('ur-leuc')],
-    ['Hem',gf('ur-hem')],['Bact',gf('ur-bact')],['Prot',gf('ur-prot')],
-    ['Cil',gf('ur-cil')],['Lev',gf('ur-lev')],['Outros',gf('ur-rot')]].filter(x=>x[1]);
-  if(urF.length){
-    lines.push('');
-    lines.push('URINA ROTINA: '+urF.map(x=>x[0]+' '+x[1]).join(' | '));
-  }
-
-  // ── Complementares ───────────────────────────────────────
-  const comp=[['PCR',gf('pcr'),'mg/L'],['PCT',gf('pct'),'ng/mL'],['Alb',gf('alb'),'g/dL'],
-    ['PTH',gf('pth'),'pg/mL'],['VitD',gf('vitd'),''],['Ferr',gf('ferr'),'ng/mL'],
-    ['TSAT',gf('tsat'),'%'],['FA',gf('falc'),''],['TGO/TGP',gf('tgo'),'']].filter(x=>x[1]);
-  if(comp.length){
-    lines.push('');
-    lines.push('COMPLEMENT.: '+comp.map(x=>x[0]+' '+x[1]+(x[2]?' '+x[2]:'')).join(' | '));
-  }
-  const compOu=gf('comp-outros');
-  if(compOu) lines.push('  Outros: '+compOu);
-
-  // ── Culturas / Sorologias ────────────────────────────────
-  const cult=gf('cultura'), soro=gf('sorologia');
-  if(cult||soro){
-    lines.push('');lines.push('CULTURAS / SOROLOGIAS:');
-    if(cult) lines.push('  Cultura: '+cult);
-    if(soro) lines.push('  Sorologias: '+soro);
-  }
-
-  // ── Imagem / FE ──────────────────────────────────────────
-  const fe=gf('fe'), img=gf('img');
-  if(fe||img){
-    lines.push('');lines.push('IMAGEM / FUNÇÃO CARDÍACA:');
-    if(fe) lines.push('  FE VE: '+fe+'%');
-    if(img) lines.push('  '+img);
-  }
+  // ── Problemas ────────────────────────────────────────────
+  const prob=gf('prob');
+  if(prob){lines.push('');lines.push('PROBLEMAS:');prob.split('\n').forEach(l=>{if(l.trim())lines.push('  '+l.trim());});}
 
   // ── DVA ──────────────────────────────────────────────────
   if(selDva.size){
@@ -1568,11 +1496,77 @@ window.updResumo=function(){
     });
   }
 
-  // ── Problemas / Evolução / Conduta ───────────────────────
-  const prob=gf('prob'), obs=gf('obs'), cond=gf('conduta');
-  if(prob){lines.push('');lines.push('PROBLEMAS:');prob.split('\n').forEach(l=>{if(l.trim())lines.push('  '+l.trim());});}
+  // ── Culturas / Sorologias ────────────────────────────────
+  const cult=gf('cultura'), soro=gf('sorologia');
+  if(cult||soro){
+    lines.push('');lines.push('CULTURAS / SOROLOGIAS:');
+    if(cult) lines.push('  Cultura: '+cult);
+    if(soro) lines.push('  Sorologias: '+soro);
+  }
+
+  // ── Evolução ─────────────────────────────────────────────
+  const obs=gf('obs');
   if(obs){lines.push('');lines.push('EVOLUÇÃO:');lines.push('  '+obs);}
+
+  // ── Exames laboratoriais / Imagem ────────────────────────
+  const hemo=[['Hb',gf('hb'),'g/dL'],['Ht',gf('ht'),'%'],['Leuc',gf('leuc'),'mil/µL'],
+    ['Bast',gf('bast'),'%'],['Plaq',gf('plaq'),'mil/µL'],['Retic',gf('retic'),'%']].filter(x=>x[1]);
+  if(hemo.length) lines.push('HEMOGRAMA: '+hemo.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
+
+  const esc=[['Ur',gf('ur'),'mg/dL'],['Cr',gf('cr'),'mg/dL'],
+    ['TFG',gf('tfg'),'mL/min'+(tfg?' (CKD-EPI)':'')],['Au',gf('au'),'mg/dL']].filter(x=>x[1]);
+  if(esc.length) lines.push('ESCÓRIAS: '+esc.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
+
+  const caiVal=gf('cai');
+  const elet=[['Na',gf('na'),'mEq/L'],['K',gf('k'),'mEq/L'],['Cl',gf('cl'),'mEq/L'],
+    [caiVal?'Ca⁺⁺':'Ca',caiVal||gf('ca'),caiVal?'mmol/L':'mg/dL'],
+    ['P',gf('p'),'mg/dL'],['Mg',gf('mg'),'mg/dL']].filter(x=>x[1]);
+  if(elet.length) lines.push('ELETRÓLITOS: '+elet.map(x=>x[0]+' '+x[1]+' '+x[2]).join(' | '));
+
+  const bh=[['BH 24h',gf('bh'),'mL'],['Diurese',gf('diur'),'mL/24h'],
+    ['pH',gf('ph'),''],['HCO₃',gf('bic'),'mEq/L'],['pCO₂',gf('pco2'),'mmHg'],
+    ['AG',gf('ag'),''],['Lactato',gf('lac'),'']].filter(x=>x[1]);
+  if(bh.length) lines.push('BH/GASO: '+bh.map(x=>x[0]+' '+x[1]+(x[2]?' '+x[2]:'')).join(' | '));
+
+  const urF=[['pH',gf('ur-ph')],['Nitrito',gf('ur-nit')],['Leuc',gf('ur-leuc')],
+    ['Hem',gf('ur-hem')],['Bact',gf('ur-bact')],['Prot',gf('ur-prot')],
+    ['Cil',gf('ur-cil')],['Lev',gf('ur-lev')],['Outros',gf('ur-rot')]].filter(x=>x[1]);
+  if(urF.length) lines.push('URINA: '+urF.map(x=>x[0]+' '+x[1]).join(' | '));
+
+  const comp=[['PCR',gf('pcr'),'mg/L'],['PCT',gf('pct'),'ng/mL'],['Alb',gf('alb'),'g/dL'],
+    ['PTH',gf('pth'),'pg/mL'],['VitD',gf('vitd'),''],['Ferr',gf('ferr'),'ng/mL'],
+    ['TSAT',gf('tsat'),'%'],['FA',gf('falc'),''],['TGO/TGP',gf('tgo'),'']].filter(x=>x[1]);
+  if(comp.length) lines.push('COMPLEMENT.: '+comp.map(x=>x[0]+' '+x[1]+(x[2]?' '+x[2]:'')).join(' | '));
+  const compOu=gf('comp-outros');
+  if(compOu) lines.push('  Outros: '+compOu);
+
+  const fe=gf('fe'), img=gf('img');
+  if(fe||img){
+    lines.push('IMAGEM:');
+    if(fe) lines.push('  FE VE: '+fe+'%');
+    if(img) lines.push('  '+img);
+  }
+
+  // ── Conduta ──────────────────────────────────────────────
+  const cond=gf('conduta');
   if(cond){lines.push('');lines.push('CONDUTA:');lines.push('  '+cond);}
+
+  // ── HD ───────────────────────────────────────────────────
+  const hdObs=document.getElementById('f-hd-obs')?.value.trim();
+  if(hdHoje){
+    lines.push('');
+    const modLabel={'hd-conv':'HD Convencional','hdf-ol':'HDF Online','sled':'SLED','crrt':'CRRT'};
+    lines.push('[ HD HOJE ] '+(hdMod?modLabel[hdMod]:'modalidade a definir')+(hdObs?' — '+hdObs:''));
+  }
+
+  // ── Drogas nefrológicas ──────────────────────────────────
+  if(selRx.size){
+    lines.push('');lines.push('DROGAS NEFROLÓGICAS:');
+    selRx.forEach(k=>{
+      const dose=document.getElementById('rx-'+k)?.value.trim();
+      lines.push('  • '+RX_NOME[k]+(dose?' — '+dose:''));
+    });
+  }
 
   // ── Render ───────────────────────────────────────────────
   const text=lines.join('\n');
