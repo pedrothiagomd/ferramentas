@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nefrologia HAB — Pacientes</title>
+<title>Nefrologia — Pacientes</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
@@ -196,6 +196,10 @@ mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
 .chip.on-dva{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
 .chip.on-hd {background:#faf5ff;border-color:#c4b5fd;color:#5b21b6}
 .chip.on-epx{background:#f0fdf4;border-color:#86efac;color:#14532d}
+.chip.on-disp{background:#f0f4ff;border-color:#93c5fd;color:#1e40af}
+.disp-other{font-size:12.5px;padding:5px 9px;border:1px solid #ddd;border-radius:6px;
+background:#fafaf8;color:#1a1a18;font-family:inherit;outline:none;width:180px;transition:.12s;margin-top:6px}
+.disp-other:focus{border-color:#888;background:#fff}
 
 /* ATB alert box */
 .atb-alert{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:9px 12px;margin-top:8px;font-size:12px;color:#78350f;line-height:1.6;display:none}
@@ -228,7 +232,7 @@ mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
 <!-- TOP -->
 
 <div class="top">
-  <h1>Nefrologia HAB</h1>
+  <h1>Nefrologia</h1>
   <span class="sub">Acompanhamento diário de pacientes</span>
   <div class="top-right">
     <div class="fb-pill"><div class="fb-dot ld" id="fbDot"></div><span id="fbLbl">conectando...</span></div>
@@ -432,8 +436,39 @@ mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
     <div class="fsec-ttl cd">Conduta / Diagnóstico</div>
     <div class="fg">
       <div class="f"><label>Diagnóstico / CID</label><input id="f-diag" placeholder="Ex: DRC G5, LRA..."/></div>
+
+      <!-- DISPOSITIVOS -->
+      <div class="f ff">
+        <label>Dispositivos em uso</label>
+        <div class="chips" id="disp-chips" style="margin-top:4px">
+          <span class="chip" data-d="AVF"      onclick="togDisp(this)">AVF</span>
+          <span class="chip" data-d="CVC"      onclick="togDisp(this)">CVC</span>
+          <span class="chip" data-d="PICC"     onclick="togDisp(this)">PICC</span>
+          <span class="chip" data-d="FAV-Bio"  onclick="togDisp(this)">FAV Biossintética</span>
+          <span class="chip" data-d="Cat-Perm" onclick="togDisp(this)">Cateter Permanente</span>
+          <span class="chip" data-d="Cat-Temp" onclick="togDisp(this)">Cateter Temporário</span>
+          <span class="chip" data-d="IOT"      onclick="togDisp(this)">IOT</span>
+          <span class="chip" data-d="TQT"      onclick="togDisp(this)">TQT</span>
+          <span class="chip" data-d="SNE"      onclick="togDisp(this)">SNE</span>
+          <span class="chip" data-d="SVD"      onclick="togDisp(this)">SVD</span>
+          <span class="chip" data-d="SVA"      onclick="togDisp(this)">SVA</span>
+          <span class="chip" data-d="Dreno"    onclick="togDisp(this)">Dreno</span>
+          <span class="chip" data-d="NPT"      onclick="togDisp(this)">NPT</span>
+          <span class="chip" data-d="O2-CN"    onclick="togDisp(this)">O₂ cateter nasal</span>
+          <span class="chip" data-d="O2-Mask"  onclick="togDisp(this)">O₂ máscara</span>
+          <span class="chip" data-d="VNI"      onclick="togDisp(this)">VNI</span>
+        </div>
+        <input id="f-disp-outro" class="disp-other" placeholder="Outro dispositivo..." oninput="dispOutroSync()"/>
+      </div>
+
+      <!-- PROBLEMAS -->
+      <div class="f ff"><label>Problemas ativos</label><textarea id="f-prob" placeholder="1. LRA sobre DRC G3&#10;2. Hipercalemia K+ 6.2&#10;3. Infecção de CVC..."></textarea></div>
+
+      <!-- EVOLUÇÃO -->
+      <div class="f ff"><label>Evolução / Observações</label><textarea id="f-obs" placeholder="Evolução clínica, intercorrências, pendências..."></textarea></div>
+
+      <!-- CONDUTA -->
       <div class="f ff"><label>Conduta do dia</label><textarea id="f-conduta" placeholder="Ex: Ajuste EPO, iniciar sevelamer, HD amanhã..."></textarea></div>
-      <div class="f ff"><label>Observações / Evolução</label><textarea id="f-obs" placeholder="Evolução clínica, intercorrências, pendências..."></textarea></div>
     </div>
   </div>
 
@@ -574,7 +609,7 @@ const SL={enf:'Enfermaria',uti:'UTI',ps:'P.Socorro',par:'Parecer'};
 const FIELDS=['leito','nome','idade','sexo','diag','hb','ht','leuc','bast','plaq','retic',
   'ur','cr','tfg','au','na','k','cl','ca','cai','p','mg','bh','diur','ph','bic','pco2','lac',
   'pcr','pct','alb','pth','vitd','ferr','tsat','falc','tgo',
-  'fe','img','conduta','obs'];
+  'fe','img','prob','obs','conduta','disp'];
 
 const $=id=>document.getElementById(id);
 const gv=id=>{const e=$('f-'+id);return e?e.value.trim():'';};
@@ -712,6 +747,9 @@ function clearF(){
   FIELDS.forEach(f=>{const e=$('f-'+f);if(e)e.value='';});
   document.querySelectorAll('.sb').forEach(b=>b.className='sb');
   document.querySelectorAll('.sex-btn').forEach(b=>b.className='sex-btn');
+  selDisp.clear();
+  document.querySelectorAll('[data-d]').forEach(b=>b.className='chip');
+  const dou=document.getElementById('f-disp-outro');if(dou)dou.value='';
   const tfgC=document.getElementById('tfg-calc');if(tfgC)tfgC.className='tfg-calc';
   const tfgI=document.getElementById('f-tfg');if(tfgI)tfgI._manual=false;
   curSec=null;curSex=null;
@@ -720,6 +758,7 @@ function clearF(){
 function fillF(p){
   FIELDS.forEach(f=>{const e=$('f-'+f);if(e&&p[f]!=null)e.value=p[f];});
   if(p.setor)window.pickSec(p.setor);
+  loadDisp(p.disp||'');
   if(p.sexo)window.pickSex(p.sexo);
   // mark tfg as manual if already stored so we don't overwrite
   const tfgI=document.getElementById('f-tfg');
@@ -792,6 +831,42 @@ window.checkCaI=function(el){
   flag.style.color=color;
   flag.style.display='block';
 };
+// Dispositivos
+let selDisp=new Set();
+window.togDisp=function(el){
+  const k=el.dataset.d;
+  if(selDisp.has(k)){selDisp.delete(k);el.className='chip';}
+  else{selDisp.add(k);el.className='chip on-disp';}
+  syncDispField();
+};
+function syncDispField(){
+  const outro=document.getElementById('f-disp-outro')?.value.trim();
+  const arr=[...selDisp];
+  if(outro)arr.push(outro);
+  const f=document.getElementById('f-disp');
+  if(f)f.value=arr.join(', ');
+}
+window.dispOutroSync=function(){syncDispField();};
+function loadDisp(val){
+  selDisp.clear();
+  document.querySelectorAll('[data-d]').forEach(b=>b.className='chip');
+  if(!val)return;
+  // match chips
+  const parts=val.split(',').map(s=>s.trim());
+  const chipKeys=new Set([...document.querySelectorAll('[data-d]')].map(b=>b.dataset.d));
+  const outros=[];
+  parts.forEach(p=>{
+    if(chipKeys.has(p)){
+      selDisp.add(p);
+      document.querySelector('[data-d="'+p+'"]')?.classList.add('on-disp');
+      document.querySelector('[data-d="'+p+'"]')?.classList.remove('chip');
+      document.querySelector('[data-d="'+p+'"]').className='chip on-disp';
+    } else if(p) outros.push(p);
+  });
+  const ouEl=document.getElementById('f-disp-outro');
+  if(ouEl)ouEl.value=outros.join(', ');
+}
+
 window.toInitials=function(){
   const el=document.getElementById('f-nome');
   if(!el)return;
@@ -1258,12 +1333,11 @@ window.updResumo=function(){
   }
 
   // Conduta / Obs
-  const cond=gf('conduta'), obs=gf('obs');
-  if(cond||obs){
-    lines.push('');
-    if(cond){lines.push('CONDUTA:');lines.push('  '+cond);}
-    if(obs){lines.push('EVOLUÇÃO:');lines.push('  '+obs);}
-  }
+  const disp=gf('disp'), prob=gf('prob'), obs=gf('obs'), cond=gf('conduta');
+  if(disp){lines.push('');lines.push('DISPOSITIVOS: '+disp);}
+  if(prob){lines.push('');lines.push('PROBLEMAS:');prob.split('\n').forEach(l=>{if(l.trim())lines.push('  '+l.trim());});}
+  if(obs){lines.push('');lines.push('EVOLUÇÃO:');lines.push('  '+obs);}
+  if(cond){lines.push('');lines.push('CONDUTA:');lines.push('  '+cond);}
 
   const text=lines.join('\n');
   const isEmpty=!hdHoje&&!selDva.size&&!selAtb.size&&!selRx.size;
