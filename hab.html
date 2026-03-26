@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nefrologia HAB — Pacientes</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+body{padding:1.5rem;font-family:'DM Sans',system-ui,sans-serif;background:#f4f3f0;color:#1a1a18;font-size:14px}
+.wrap{max-width:1500px;margin:0 auto}
+
+/* header */
+.top{display:flex;align-items:baseline;gap:10px;margin-bottom:1.1rem;flex-wrap:wrap}
+.top h1{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.top .sub{font-size:12px;color:#888}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fb-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#888;background:#fff;border:1px solid #e0e0dc;border-radius:99px;padding:3px 11px}
+.fb-dot{width:6px;height:6px;border-radius:50%;background:#ccc;transition:.3s}
+.fb-dot.on{background:#16a34a;box-shadow:0 0 5px #16a34a55}
+.fb-dot.ld{background:#d97706;animation:blink 1s infinite}
+.fb-dot.off{background:#dc2626}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.date-lbl{font-size:11px;color:#aaa;font-family:‘DM Mono’,monospace}
+
+/* stats */
+.stats{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.stat{background:#fff;border:1px solid #e8e8e5;border-radius:9px;padding:9px 14px;display:flex;align-items:center;gap:9px;flex:1;min-width:110px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.s-dot{width:8px;height:8px;border-radius:50%}
+.s-lbl{font-size:10.5px;color:#999;text-transform:uppercase;letter-spacing:.04em}
+.s-val{font-size:19px;font-weight:600;font-family:‘DM Mono’,monospace;line-height:1.1}
+
+/* tabs */
+.tabs{display:flex;gap:3px;border-bottom:1px solid #e0e0dc;margin-bottom:.9rem}
+.tab{padding:7px 16px 9px;font-size:13px;font-weight:500;color:#999;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:7px 7px 0 0;position:relative;bottom:-1px;display:flex;align-items:center;gap:6px;transition:.1s}
+.tab:hover{color:#555;background:#ebebea}
+.tab.active{background:#fff;border-color:#e0e0dc;color:#1a1a18}
+.tab-n{font-size:10.5px;font-family:‘DM Mono’,monospace;background:#f0f0ee;color:#999;border-radius:99px;padding:1px 6px;min-width:17px;text-align:center}
+.tab.active .tab-n{background:#1a1a18;color:#fff}
+.tab.active[data-s=enf]{border-top:2px solid #2563eb}
+.tab.active[data-s=uti]{border-top:2px solid #dc2626}
+.tab.active[data-s=ps] {border-top:2px solid #d97706}
+.tab.active[data-s=par]{border-top:2px solid #7c3aed}
+
+/* toolbar */
+.bar{display:flex;align-items:center;gap:8px;margin-bottom:.9rem;flex-wrap:wrap}
+.srch{position:relative}
+.srch svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none}
+.srch input{padding:6px 10px 6px 30px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;background:#fff;color:#1a1a18;outline:none;width:230px;transition:.12s}
+.srch input:focus{border-color:#888}
+.srch input::placeholder{color:#ccc}
+.cnt{font-size:11.5px;color:#bbb;font-family:‘DM Mono’,monospace}
+.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:.12s;white-space:nowrap}
+.btn-dark{background:#1a1a18;color:#fff}.btn-dark:hover{background:#333}
+.btn-out{background:#fff;color:#555;border:1px solid #ddd}.btn-out:hover{background:#f5f5f3}
+.btn-sm{padding:5px 12px;font-size:12.5px}
+.btn-danger{background:transparent;color:#dc2626;border:1px solid #fca5a5}.btn-danger:hover{background:#fef2f2}
+
+/* table card */
+.tcard{background:#fff;border:1px solid #e8e8e5;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+
+/* group header */
+tr.gh td,tr.gh th{padding:4px 8px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;background:#fafaf8;border-bottom:1px solid #eee;border-right:1px solid #eee;color:#aaa}
+tr.gh th.id-col{text-align:left;border-right:1px solid #e8e8e5}
+tr.gh th.g-h{color:#dc2626;border-top:2px solid #dc2626}
+tr.gh th.g-e{color:#d97706;border-top:2px solid #d97706}
+tr.gh th.g-el{color:#16a34a;border-top:2px solid #16a34a}
+tr.gh th.g-b{color:#0891b2;border-top:2px solid #0891b2}
+tr.gh th.g-c{color:#7c3aed;border-top:2px solid #7c3aed}
+tr.gh th.g-cd{color:#1d4ed8;border-top:2px solid #1d4ed8}
+
+/* sub header */
+tr.sh th{padding:6px 8px;font-size:10.5px;font-weight:600;color:#aaa;text-align:center;background:#f7f7f5;border-bottom:2px solid #e8e8e5;border-right:1px solid #eee;white-space:nowrap}
+tr.sh th.id-col{text-align:left}
+tr.sh th:last-child{border-right:none}
+
+/* rows */
+tbody tr{border-bottom:1px solid #f2f2f0;transition:background .09s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#fafaf8}
+td{padding:8px 8px;border-right:1px solid #f2f2f0;vertical-align:middle;white-space:nowrap}
+td:last-child{border-right:none}
+
+/* id cell */
+.id-cell{min-width:115px;white-space:normal}
+.leito{font-family:‘DM Mono’,monospace;font-size:12px;font-weight:500;color:#1a1a18;display:flex;align-items:center;gap:5px}
+.s-dot-sm{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sd-enf{background:#2563eb}.sd-uti{background:#dc2626}.sd-ps{background:#d97706}.sd-par{background:#7c3aed}
+.iniciais{font-size:12px;color:#555;margin-top:2px;font-weight:500}
+.p-sub{font-size:10.5px;color:#bbb;margin-top:1px}
+
+/* numeric cells */
+.n{font-family:‘DM Mono’,monospace;font-size:12px;text-align:center;min-width:38px}
+.n.ok{color:#15803d}.n.w{color:#b45309}.n.al{color:#dc2626;font-weight:600}.n.em{color:#d1d5db}
+
+/* conduta cell */
+.cd{max-width:170px;white-space:normal;line-height:1.4;font-size:12px;color:#444}
+.dg{max-width:130px;white-space:normal;line-height:1.4;font-size:12px;color:#666}
+
+/* action btns */
+.acts{display:flex;gap:3px}
+.ib{background:none;border:none;color:#ccc;cursor:pointer;padding:3px;border-radius:4px;display:flex;transition:.1s}
+.ib:hover{color:#555;background:#f0f0ee}
+.ib.d:hover{color:#dc2626;background:#fef2f2}
+
+/* empty */
+.empty{text-align:center;padding:50px 20px;color:#ccc}
+.empty svg{display:block;margin:0 auto 12px}
+.empty p{font-size:13px;color:#bbb}
+
+/* modal */
+.ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.4);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:.15s}
+.ov.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border:1px solid #e0e0dc;border-radius:12px;width:100%;max-width:760px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.14);transform:translateY(14px);transition:.15s}
+.ov.open .modal{transform:none}
+.mh{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:5}
+.mh h2{font-size:15px;font-weight:600;flex:1}
+.mcl{background:none;border:none;font-size:20px;color:#bbb;cursor:pointer;padding:2px 7px;border-radius:5px;line-height:1;transition:.1s}
+.mcl:hover{background:#f0f0ee;color:#555}
+.mb{padding:18px}
+.mf{display:flex;justify-content:flex-end;gap:7px;padding:12px 18px;border-top:1px solid #eee;position:sticky;bottom:0;background:#fff}
+
+/* form */
+.fsec{margin-bottom:16px}
+.fsec-ttl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px}
+.fsec-ttl.h{color:#dc2626;border-color:#fca5a5}
+.fsec-ttl.e{color:#d97706;border-color:#fde68a}
+.fsec-ttl.el{color:#16a34a;border-color:#86efac}
+.fsec-ttl.b{color:#0891b2;border-color:#a5f3fc}
+.fsec-ttl.c{color:#7c3aed;border-color:#c4b5fd}
+.fsec-ttl.cd{color:#1d4ed8;border-color:#93c5fd}
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.fg.w{grid-template-columns:repeat(auto-fill,minmax(185px,1fr))}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:11px;color:#888;font-weight:500}
+.f input,.f textarea{font-size:13px;padding:6px 9px;border-radius:6px;border:1px solid #ddd;background:#fafaf8;color:#1a1a18;font-family:inherit;outline:none;transition:.12s}
+.f input:focus,.f textarea:focus{border-color:#888;background:#fff}
+.f input::placeholder{color:#ccc}
+.f textarea{resize:vertical;min-height:62px;line-height:1.5}
+.hint{font-size:10.5px;color:#ccc}
+.ff{grid-column:1/-1}
+.prev-box{font-family:‘DM Mono’,monospace;font-size:12.5px;color:#aaa;background:#f7f7f5;border:1px solid #e8e8e5;border-radius:6px;padding:6px 10px;margin-top:auto}
+
+/* sector buttons */
+.sb-wrap{display:flex;gap:5px;flex-wrap:wrap}
+.sb{padding:5px 13px;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#999;font-family:inherit;transition:.12s}
+.sb:hover{background:#f5f5f3}
+.sb.e-enf{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}
+.sb.e-uti{background:#fef2f2;border-color:#fca5a5;color:#dc2626}
+.sb.e-ps {background:#fffbeb;border-color:#fde68a;color:#b45309}
+.sb.e-par{background:#faf5ff;border-color:#c4b5fd;color:#7c3aed}
+
+/* toast */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:6px}
+.toast{background:#1a1a18;color:#f0f0ee;border-radius:8px;padding:8px 14px;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.18);animation:tin .15s ease;display:flex;align-items:center;gap:7px}
+.toast.err{background:#7f1d1d}
+@keyframes tin{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+.lbar{position:fixed;top:0;left:0;right:0;height:2px;z-index:999;background:linear-gradient(90deg,#2563eb,#7c3aed,#2563eb);background-size:200%;animation:la 1s linear infinite;display:none}
+.lbar.on{display:block}
+@keyframes la{0%{background-position:200%}100%{background-position:-200%}}
+
+mark{background:#fef9c3;color:#854d0e;border-radius:2px;padding:0 1px}
+</style>
+
+</head>
+<body>
+<div class="lbar" id="lbar"></div>
+<div class="wrap">
+
+<!-- TOP -->
+
+<div class="top">
+  <h1>Nefrologia HAB</h1>
+  <span class="sub">Acompanhamento diário de pacientes</span>
+  <div class="top-right">
+    <div class="fb-pill"><div class="fb-dot ld" id="fbDot"></div><span id="fbLbl">conectando...</span></div>
+    <span class="date-lbl" id="dateLbl"></span>
+  </div>
+</div>
+
+<!-- STATS -->
+
+<div class="stats">
+  <div class="stat"><div class="s-dot sd-enf"></div><div><div class="s-lbl">Enfermaria</div><div class="s-val" id="st-enf">—</div></div></div>
+  <div class="stat"><div class="s-dot sd-uti"></div><div><div class="s-lbl">UTI</div><div class="s-val" id="st-uti">—</div></div></div>
+  <div class="stat"><div class="s-dot sd-ps"></div><div><div class="s-lbl">Pronto Socorro</div><div class="s-val" id="st-ps">—</div></div></div>
+  <div class="stat"><div class="s-dot sd-par"></div><div><div class="s-lbl">Parecer</div><div class="s-val" id="st-par">—</div></div></div>
+</div>
+
+<!-- TABS -->
+
+<div class="tabs">
+  <div class="tab active" data-s="all" onclick="setTab('all')">Todos <span class="tab-n" id="tn-all">0</span></div>
+  <div class="tab" data-s="enf" onclick="setTab('enf')"><span class="s-dot-sm sd-enf"></span>Enfermaria <span class="tab-n" id="tn-enf">0</span></div>
+  <div class="tab" data-s="uti" onclick="setTab('uti')"><span class="s-dot-sm sd-uti"></span>UTI <span class="tab-n" id="tn-uti">0</span></div>
+  <div class="tab" data-s="ps"  onclick="setTab('ps')"><span class="s-dot-sm sd-ps"></span>Pronto Socorro <span class="tab-n" id="tn-ps">0</span></div>
+  <div class="tab" data-s="par" onclick="setTab('par')"><span class="s-dot-sm sd-par"></span>Parecer <span class="tab-n" id="tn-par">0</span></div>
+</div>
+
+<!-- TOOLBAR -->
+
+<div class="bar">
+  <div class="srch">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="#bbb"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg>
+    <input id="srch" placeholder="Buscar leito, iniciais, diagnóstico..." oninput="render()">
+  </div>
+  <span class="cnt" id="cnt">—</span>
+  <div class="spacer"></div>
+  <button class="btn btn-out btn-sm" onclick="doExport()">Exportar</button>
+  <button class="btn btn-dark btn-sm" onclick="openModal()">+ Novo paciente</button>
+</div>
+
+<!-- TABLE -->
+
+<div class="tcard">
+  <div class="tscroll">
+    <table>
+      <thead>
+        <tr class="gh">
+          <th class="id-col" rowspan="2" style="padding:8px 10px;min-width:120px">Leito / Paciente</th>
+          <th class="g-h"  colspan="4">Hemograma</th>
+          <th class="g-e"  colspan="3">Escórias</th>
+          <th class="g-el" colspan="5">Eletrólitos</th>
+          <th class="g-b"  colspan="3">BH / Gasometria</th>
+          <th class="g-c"  colspan="4">Complementares</th>
+          <th class="g-cd" colspan="2">Conduta</th>
+          <th rowspan="2" style="background:#fafaf8;border-bottom:1px solid #eee;width:62px"></th>
+        </tr>
+        <tr class="sh">
+          <th>Hb</th><th>Ht</th><th>Leuc</th><th>Plaq</th>
+          <th>Ur</th><th>Cr</th><th>TFG</th>
+          <th>Na</th><th>K</th><th>Ca</th><th>P</th><th>Mg</th>
+          <th>BH 24h</th><th>pH</th><th>HCO₃</th>
+          <th>PCR</th><th>Alb</th><th>PTH</th><th>Ferr</th>
+          <th>Diagnóstico</th><th>Conduta</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="empty" id="empty" style="display:none">
+    <svg width="38" height="38" viewBox="0 0 16 16" fill="#ddd"><path d="M1.75 2h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 14H1.75A1.75 1.75 0 0 1 0 12.25v-8.5C0 2.784.784 2 1.75 2Zm0 1.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25Z"/></svg>
+    <p id="emptyT">Nenhum paciente cadastrado</p>
+    <p id="emptyM" style="margin-top:4px;font-size:12px">Clique em "+ Novo paciente" para adicionar</p>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- MODAL -->
+
+<div class="ov" id="ov" onclick="ovClick(event)">
+  <div class="modal">
+    <div class="mh"><h2 id="mTitle">Novo paciente</h2><button class="mcl" onclick="closeModal()">×</button></div>
+    <div class="mb">
+
+```
+  <!-- IDENTIFICAÇÃO -->
+  <div class="fsec">
+    <div class="fsec-ttl">Identificação</div>
+    <div class="fg w">
+      <div class="f"><label>Leito</label><input id="f-leito" placeholder="Ex: 12A, UTI-3, PS-1" oninput="updPrev()"/></div>
+      <div class="f"><label>Iniciais</label><input id="f-nome" placeholder="Ex: J.S.O" oninput="updPrev()"/><div class="hint">Ponto entre iniciais</div></div>
+      <div class="f" style="justify-content:flex-end;padding-top:14px"><div class="prev-box" id="prev">Leito — Iniciais</div><div class="hint" style="margin-top:3px">Prévia</div></div>
+      <div class="f"><label>Idade (anos)</label><input id="f-idade" type="number" placeholder="—"/></div>
+      <div class="f ff">
+        <label>Setor</label>
+        <div class="sb-wrap">
+          <button class="sb" data-s="enf" onclick="pickSec('enf')">Enfermaria</button>
+          <button class="sb" data-s="uti" onclick="pickSec('uti')">UTI</button>
+          <button class="sb" data-s="ps"  onclick="pickSec('ps')">Pronto Socorro</button>
+          <button class="sb" data-s="par" onclick="pickSec('par')">Parecer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEMOGRAMA -->
+  <div class="fsec">
+    <div class="fsec-ttl h">Hemograma</div>
+    <div class="fg">
+      <div class="f"><label>Hb (g/dL)</label><input id="f-hb" placeholder="—"/></div>
+      <div class="f"><label>Ht (%)</label><input id="f-ht" placeholder="—"/></div>
+      <div class="f"><label>Leucócitos (mil/µL)</label><input id="f-leuc" placeholder="—"/></div>
+      <div class="f"><label>Bastonetes (%)</label><input id="f-bast" placeholder="—"/></div>
+      <div class="f"><label>Plaquetas (mil/µL)</label><input id="f-plaq" placeholder="—"/></div>
+      <div class="f"><label>Reticulócitos (%)</label><input id="f-retic" placeholder="—"/></div>
+    </div>
+  </div>
+
+  <!-- ESCÓRIAS -->
+  <div class="fsec">
+    <div class="fsec-ttl e">Escórias Nitrogenadas</div>
+    <div class="fg">
+      <div class="f"><label>Uréia (mg/dL)</label><input id="f-ur" placeholder="—"/></div>
+      <div class="f"><label>Creatinina (mg/dL)</label><input id="f-cr" placeholder="—"/></div>
+      <div class="f"><label>TFG (mL/min)</label><input id="f-tfg" placeholder="CKD-EPI"/></div>
+      <div class="f"><label>Ácido Úrico</label><input id="f-au" placeholder="—"/></div>
+    </div>
+  </div>
+
+  <!-- ELETRÓLITOS -->
+  <div class="fsec">
+    <div class="fsec-ttl el">Eletrólitos</div>
+    <div class="fg">
+      <div class="f"><label>Na (mEq/L)</label><input id="f-na" placeholder="—"/></div>
+      <div class="f"><label>K (mEq/L)</label><input id="f-k" placeholder="—"/></div>
+      <div class="f"><label>Cl (mEq/L)</label><input id="f-cl" placeholder="—"/></div>
+      <div class="f"><label>Ca total (mg/dL)</label><input id="f-ca" placeholder="—"/></div>
+      <div class="f"><label>P (mg/dL)</label><input id="f-p" placeholder="—"/></div>
+      <div class="f"><label>Mg (mg/dL)</label><input id="f-mg" placeholder="—"/></div>
+    </div>
+  </div>
+
+  <!-- BH -->
+  <div class="fsec">
+    <div class="fsec-ttl b">BH / Gasometria</div>
+    <div class="fg">
+      <div class="f"><label>BH 24h (mL)</label><input id="f-bh" placeholder="Ex: +350"/></div>
+      <div class="f"><label>Diurese (mL/24h)</label><input id="f-diur" placeholder="—"/></div>
+      <div class="f"><label>pH</label><input id="f-ph" placeholder="—"/></div>
+      <div class="f"><label>HCO₃ (mEq/L)</label><input id="f-bic" placeholder="—"/></div>
+      <div class="f"><label>pCO₂</label><input id="f-pco2" placeholder="—"/></div>
+      <div class="f"><label>Lactato</label><input id="f-lac" placeholder="—"/></div>
+    </div>
+  </div>
+
+  <!-- COMPLEMENTARES -->
+  <div class="fsec">
+    <div class="fsec-ttl c">Complementares</div>
+    <div class="fg">
+      <div class="f"><label>PCR (mg/L)</label><input id="f-pcr" placeholder="—"/></div>
+      <div class="f"><label>Albumina (g/dL)</label><input id="f-alb" placeholder="—"/></div>
+      <div class="f"><label>PTH (pg/mL)</label><input id="f-pth" placeholder="—"/></div>
+      <div class="f"><label>Vit D 25-OH</label><input id="f-vitd" placeholder="—"/></div>
+      <div class="f"><label>Ferritina (ng/mL)</label><input id="f-ferr" placeholder="—"/></div>
+      <div class="f"><label>TSAT (%)</label><input id="f-tsat" placeholder="—"/></div>
+      <div class="f"><label>Fosfatase Alc.</label><input id="f-falc" placeholder="—"/></div>
+      <div class="f"><label>TGO / TGP</label><input id="f-tgo" placeholder="—"/></div>
+    </div>
+  </div>
+
+  <!-- CONDUTA -->
+  <div class="fsec">
+    <div class="fsec-ttl cd">Conduta / Diagnóstico</div>
+    <div class="fg">
+      <div class="f"><label>Diagnóstico / CID</label><input id="f-diag" placeholder="Ex: DRC G5, LRA..."/></div>
+      <div class="f ff"><label>Conduta do dia</label><textarea id="f-conduta" placeholder="Ex: Ajuste EPO, iniciar sevelamer, HD amanhã..."></textarea></div>
+      <div class="f ff"><label>Observações / Evolução</label><textarea id="f-obs" placeholder="Evolução clínica, intercorrências, pendências..."></textarea></div>
+    </div>
+  </div>
+
+</div>
+<div class="mf">
+  <button class="btn btn-out btn-sm" onclick="closeModal()">Cancelar</button>
+  <button class="btn btn-danger btn-sm" id="delBtn" onclick="doDel()" style="display:none">Excluir</button>
+  <button class="btn btn-dark btn-sm" id="saveBtn" onclick="doSave()">Salvar</button>
+</div>
+```
+
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, doc, onSnapshot, addDoc, setDoc, deleteDoc, serverTimestamp, query, orderBy }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const db = getFirestore(initializeApp({
+  apiKey:"AIzaSyA5Dz_cP2kERQtqzXiM1Qt9RcQy_Lap1Y8",
+  authDomain:"nefro-1b6d4.firebaseapp.com",
+  projectId:"nefro-1b6d4",
+  storageBucket:"nefro-1b6d4.firebasestorage.app",
+  messagingSenderId:"446117178533",
+  appId:"1:446117178533:web:1e42bf243fed1ea384f14c"
+}));
+
+const COL='pacientes';
+let pts=[],curTab='all',editId=null,curSec=null;
+const SL={enf:'Enfermaria',uti:'UTI',ps:'P.Socorro',par:'Parecer'};
+const FIELDS=['leito','nome','idade','diag','hb','ht','leuc','bast','plaq','retic',
+  'ur','cr','tfg','au','na','k','cl','ca','p','mg','bh','diur','ph','bic','pco2','lac',
+  'pcr','alb','pth','vitd','ferr','tsat','falc','tgo','conduta','obs'];
+
+const $=id=>document.getElementById(id);
+const gv=id=>{const e=$('f-'+id);return e?e.value.trim():'';};
+
+// Firebase status
+function fbSt(s){
+  $('fbDot').className='fb-dot '+(s==='on'?'on':s==='ld'?'ld':'off');
+  $('fbLbl').textContent=s==='on'?'sincronizado':s==='ld'?'conectando...':'offline';
+}
+function lbar(v){$('lbar').classList.toggle('on',v);}
+
+fbSt('ld');lbar(true);
+onSnapshot(query(collection(db,COL),orderBy('criadoEm','asc')),
+  snap=>{pts=snap.docs.map(d=>({id:d.id,...d.data()}));fbSt('on');lbar(false);render();},
+  err=>{console.error(err);fbSt('off');lbar(false);toast('Erro Firebase','err');}
+);
+
+// num cell helper
+function nc(v,o={}){
+  if(!v&&v!==0)return '<td class="n em">—</td>';
+  const n=parseFloat(v);let c='';
+  if(!isNaN(n)&&o.min!==undefined){
+    if(n<o.aL||n>o.aH)c='al';
+    else if(n<o.min||n>o.max)c='w';
+    else c='ok';
+  }
+  return `<td class="n ${c}">${v}</td>`;
+}
+function hl(t,q){
+  if(!q||!t)return t||'—';
+  return String(t).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
+}
+
+// RENDER
+window.render=function(){
+  const q=$('srch').value.toLowerCase().trim();
+  const cts={enf:0,uti:0,ps:0,par:0};
+  pts.forEach(p=>{if(cts[p.setor]!==undefined)cts[p.setor]++;});
+  ['enf','uti','ps','par'].forEach(s=>{
+    $('tn-'+s).textContent=cts[s];
+    $('st-'+s).textContent=cts[s];
+  });
+  $('tn-all').textContent=pts.length;
+
+  let list=pts.filter(p=>{
+    if(curTab!=='all'&&p.setor!==curTab)return false;
+    if(!q)return true;
+    return[p.leito,p.nome,p.diag,p.conduta,p.obs].filter(Boolean).some(v=>v.toLowerCase().includes(q));
+  });
+  $('cnt').textContent=list.length+' paciente'+(list.length!==1?'s':'');
+
+  const tb=$('tbody'),em=$('empty');
+  if(!list.length){
+    tb.innerHTML='';em.style.display='block';
+    $('emptyT').textContent=q||curTab!=='all'?'Nenhum resultado encontrado':'Nenhum paciente cadastrado';
+    $('emptyM').textContent=q||curTab!=='all'?'Tente outros termos ou mude de aba':'Clique em "+ Novo paciente" para adicionar';
+    return;
+  }
+  em.style.display='none';
+  tb.innerHTML=list.map(p=>`<tr onclick="window.openEdit('${p.id}')">
+    <td class="id-cell">
+      <div class="leito"><span class="s-dot-sm sd-${p.setor||'enf'}"></span>${hl(p.leito,q)||'—'}</div>
+      <div class="iniciais">${hl(p.nome,q)||'—'}</div>
+      <div class="p-sub">${p.idade?p.idade+'a · ':''} ${SL[p.setor]||''}</div>
+    </td>
+    ${nc(p.hb,  {min:12,max:16,  aL:7,  aH:19})}
+    ${nc(p.ht,  {min:35,max:47,  aL:20, aH:55})}
+    ${nc(p.leuc,{min:4, max:10,  aL:2,  aH:30})}
+    ${nc(p.plaq,{min:150,max:400,aL:50, aH:900})}
+    ${nc(p.ur,  {min:10,max:50,  aL:5,  aH:300})}
+    ${nc(p.cr,  {min:0.5,max:1.3,aL:0,  aH:15})}
+    ${nc(p.tfg)}
+    ${nc(p.na,  {min:136,max:145,aL:125,aH:155})}
+    ${nc(p.k,   {min:3.5,max:5.0,aL:2.5,aH:6.5})}
+    ${nc(p.ca,  {min:8.4,max:10, aL:7,  aH:12})}
+    ${nc(p.p,   {min:2.5,max:4.5,aL:1,  aH:8})}
+    ${nc(p.mg,  {min:1.7,max:2.4,aL:1,  aH:4})}
+    <td class="n ${p.bh?(Math.abs(parseFloat(p.bh))>1500?'al':'ok'):'em'}">${p.bh||'—'}</td>
+    ${nc(p.ph,  {min:7.35,max:7.45,aL:7.1,aH:7.6})}
+    ${nc(p.bic, {min:22,max:28,  aL:12, aH:36})}
+    ${nc(p.pcr)}
+    ${nc(p.alb, {min:3.5,max:5.0,aL:2.0,aH:6})}
+    ${nc(p.pth)}
+    ${nc(p.ferr)}
+    <td class="dg">${hl(p.diag,q)||'—'}</td>
+    <td class="cd">${hl(p.conduta,q)||'—'}</td>
+    <td><div class="acts" onclick="event.stopPropagation()">
+      <button class="ib" onclick="window.openEdit('${p.id}')" title="Editar">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z"/></svg>
+      </button>
+      <button class="ib d" onclick="window.quickDel('${p.id}')" title="Excluir">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>
+      </button>
+    </div></td>
+  </tr>`).join('');
+};
+
+// TABS
+window.setTab=function(s){
+  curTab=s;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.s===s));
+  render();
+};
+
+// MODAL
+window.openModal=function(id){
+  editId=id||null; clearF();
+  $('mTitle').textContent=id?'Editar paciente':'Novo paciente';
+  $('delBtn').style.display=id?'inline-flex':'none';
+  if(id){const p=pts.find(x=>x.id===id);if(p)fillF(p);}
+  $('ov').classList.add('open');
+};
+window.openEdit=id=>window.openModal(id);
+window.closeModal=function(){$('ov').classList.remove('open');editId=null;curSec=null;};
+window.ovClick=e=>{if(e.target===$('ov'))window.closeModal();};
+
+function clearF(){
+  FIELDS.forEach(f=>{const e=$('f-'+f);if(e)e.value='';});
+  document.querySelectorAll('.sb').forEach(b=>b.className='sb');
+  curSec=null;
+  const p=$('prev');if(p){p.textContent='Leito — Iniciais';p.style.color='#bbb';}
+}
+function fillF(p){
+  FIELDS.forEach(f=>{const e=$('f-'+f);if(e&&p[f]!=null)e.value=p[f];});
+  if(p.setor)window.pickSec(p.setor);
+  updPrev();
+}
+window.pickSec=function(s){
+  curSec=s;
+  document.querySelectorAll('.sb').forEach(b=>b.className='sb'+(b.dataset.s===s?' e-'+s:''));
+};
+window.updPrev=function(){
+  const l=$('f-leito')?.value.trim(),n=$('f-nome')?.value.trim();
+  const el=$('prev');if(!el)return;
+  if(l||n){el.textContent=(l||'—')+(n?' — '+n:'');el.style.color='#1a1a18';}
+  else{el.textContent='Leito — Iniciais';el.style.color='#bbb';}
+};
+
+// SAVE
+window.doSave=async function(){
+  if(!gv('nome')){toast('Informe as iniciais','err');return;}
+  if(!curSec){toast('Selecione o setor','err');return;}
+  const btn=$('saveBtn');btn.disabled=true;btn.textContent='Salvando...';
+  const d={setor:curSec,atualizadoEm:serverTimestamp()};
+  FIELDS.forEach(f=>d[f]=gv(f));
+  try{
+    if(editId){await setDoc(doc(db,COL,editId),d,{merge:true});toast('Atualizado ✓');}
+    else{d.criadoEm=serverTimestamp();await addDoc(collection(db,COL),d);toast('Paciente adicionado ✓');}
+    window.closeModal();
+  }catch(e){toast('Erro: '+e.message,'err');}
+  finally{btn.disabled=false;btn.textContent='Salvar';}
+};
+
+// DELETE
+window.doDel=async function(){
+  if(!editId)return;
+  const p=pts.find(x=>x.id===editId);
+  if(!confirm('Excluir '+(p?.nome||p?.leito||'paciente')+'?'))return;
+  try{await deleteDoc(doc(db,COL,editId));toast('Removido');window.closeModal();}
+  catch(e){toast('Erro: '+e.message,'err');}
+};
+window.quickDel=async function(id){
+  const p=pts.find(x=>x.id===id);
+  if(!confirm('Excluir '+(p?.nome||p?.leito||'paciente')+'?'))return;
+  try{await deleteDoc(doc(db,COL,id));toast('Removido');}
+  catch(e){toast('Erro: '+e.message,'err');}
+};
+
+// EXPORT
+window.doExport=function(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(pts,null,2)],{type:'application/json'}));
+  a.download='hab_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();toast('Exportado');
+};
+
+// TOAST
+window.toast=function(msg,type='ok'){
+  const c=$('toasts'),t=document.createElement('div');
+  t.className='toast'+(type==='err'?' err':'');t.textContent=msg;c.appendChild(t);
+  setTimeout(()=>{t.style.cssText+='opacity:0;transform:translateX(18px);transition:.18s';setTimeout(()=>t.remove(),200);},2500);
+};
+
+// DATE
+function updDate(){
+  const n=new Date();
+  $('dateLbl').textContent=n.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'})+' · '+n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updDate,1000);updDate();
+
+// KEYS
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')window.closeModal();
+  if((e.ctrlKey||e.metaKey)&&e.key==='n'){e.preventDefault();window.openModal();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='f'){e.preventDefault();$('srch').focus();}
+});
+</script>
+
+</body>
+</html>
