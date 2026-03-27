@@ -358,11 +358,11 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
   <div class="fsec">
     <div class="fsec-ttl h">Hemograma</div>
     <div class="fg">
-      <div class="f"><label>Hb (g/dL)</label><input id="f-hb" placeholder="—"/></div>
+      <div class="f"><label>Hb (g/dL)</label><input id="f-hb" placeholder="—" oninput="checkAlert(this,7,20,'Anemia grave','Hb elevada')"/></div>
       <div class="f"><label>Ht (%)</label><input id="f-ht" placeholder="—"/></div>
       <div class="f"><label>Leucócitos (mil/µL)</label><input id="f-leuc" placeholder="—"/></div>
       <div class="f"><label>Bastonetes (%)</label><input id="f-bast" placeholder="—"/></div>
-      <div class="f"><label>Plaquetas (mil/µL)</label><input id="f-plaq" placeholder="—"/></div>
+      <div class="f"><label>Plaquetas (mil/µL)</label><input id="f-plaq" placeholder="—" oninput="checkAlert(this,50,400,'Plaquetopenia grave','')"/></div>
       <div class="f"><label>Reticulócitos (%)</label><input id="f-retic" placeholder="—"/></div>
     </div>
   </div>
@@ -372,12 +372,14 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
     <div class="fsec-ttl e">Escórias Nitrogenadas</div>
     <div class="fg">
       <div class="f"><label>Uréia (mg/dL)</label><input id="f-ur" placeholder="—" oninput="calcUrCr()"/></div>
-      <div class="f"><label>Creatinina (mg/dL)</label><input id="f-cr" placeholder="—" oninput="calcTFG();calcUrCr()"/></div>
+      <div class="f"><label>Creatinina (mg/dL)</label><input id="f-cr" placeholder="—" oninput="calcTFG();calcUrCr();calcKdigo()"/></div>
+      <div class="f"><label>Cr basal (mg/dL)</label><input id="f-crbasal" placeholder="—" oninput="calcKdigo()"/></div>
       <div class="f">
         <label>TFG (mL/min)</label>
         <input id="f-tfg" placeholder="CKD-EPI 2021" oninput="tfgManual()"/>
         <div class="tfg-calc" id="tfg-calc">— mL/min · CKD-EPI 2021</div>
       </div>
+      <div class="f ff"><div class="calc-box" id="kdigo-box" style="display:none">—</div></div>
       <div class="f"><label>Ácido Úrico</label><input id="f-au" placeholder="—"/></div>
       <div class="f ff">
         <div class="calc-box" id="urcr-box">— Relação Ur/Cr</div>
@@ -389,8 +391,8 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
   <div class="fsec">
     <div class="fsec-ttl el">Eletrólitos</div>
     <div class="fg">
-      <div class="f"><label>Na (mEq/L)</label><input id="f-na" placeholder="—" oninput="calcGaso()"/></div>
-      <div class="f"><label>K (mEq/L)</label><input id="f-k" placeholder="—"/></div>
+      <div class="f"><label>Na (mEq/L)</label><input id="f-na" placeholder="—" oninput="calcGaso();checkAlert(this,125,155,'Hiponatremia grave','Hipernatremia grave')"/></div>
+      <div class="f"><label>K (mEq/L)</label><input id="f-k" placeholder="—" oninput="checkAlert(this,3.0,6.0,'Hipocalemia grave','Hipercalemia grave - risco arritmia')"/></div>
       <div class="f"><label>Cl (mEq/L)</label><input id="f-cl" placeholder="—" oninput="calcGaso()"/></div>
       <div class="f"><label>Ca total (mg/dL)</label><input id="f-ca" placeholder="—" oninput="calcCaP()"/></div>
       <div class="f">
@@ -398,8 +400,8 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
         <input id="f-cai" placeholder="—" oninput="checkCaI(this)"/>
         <div id="cai-flag" style="display:none;font-size:10.5px;font-weight:600;margin-top:3px"></div>
       </div>
-      <div class="f"><label>P (mg/dL)</label><input id="f-p" placeholder="—" oninput="calcCaP()"/></div>
-      <div class="f"><label>Mg (mg/dL)</label><input id="f-mg" placeholder="—"/></div>
+      <div class="f"><label>P (mg/dL)</label><input id="f-p" placeholder="—" oninput="calcCaP();checkAlert(this,1,5.5,'Hipofosfatemia','Hiperfosfatemia grave')"/></div>
+      <div class="f"><label>Mg (mg/dL)</label><input id="f-mg" placeholder="—" oninput="checkAlert(this,1.2,2.4,'Hipomagnesemia grave','Hipermagnesemia')"/></div>
       <div class="f ff">
         <div class="calc-box" id="cap-box">— Produto Ca×P</div>
       </div>
@@ -655,7 +657,7 @@ const COL='pacientes';
 let pts=[],curTab='all',editId=null,curSec=null,curSex=null;
 const SL={enf:'Enfermaria',uti:'UTI',ps:'P.Socorro',par:'Parecer'};
 const FIELDS=['leito','nome','idade','sexo','diag','hb','ht','leuc','bast','plaq','retic',
-  'ur','cr','tfg','au','na','k','cl','ca','cai','p','mg','bh','diur','ph','bic','pco2','lac',
+  'ur','cr','crbasal','tfg','au','na','k','cl','ca','cai','p','mg','bh','diur','ph','bic','pco2','lac',
   'ur-ph','ur-nit','ur-leuc','ur-hem','ur-bact','ur-prot','ur-cil','ur-lev','ur-rot',
   'pcr','pct','alb','pth','vitd','ferr','tsat','falc','tgo','comp-outros',
   'cultura','sorologia',
@@ -830,11 +832,34 @@ function clearF(){
   FIELDS.forEach(f=>{const e=$('f-'+f);if(e)e.value='';});
   document.querySelectorAll('.sb').forEach(b=>b.className='sb');
   document.querySelectorAll('.sex-btn').forEach(b=>b.className='sex-btn');
+  // Reset dispositivos
   selDisp.clear();
   document.querySelectorAll('[data-d]').forEach(b=>b.className='chip');
   const dou=document.getElementById('f-disp-outro');if(dou)dou.value='';
+  // Reset ATB
+  selAtb.clear();
+  document.querySelectorAll('[data-atb]').forEach(b=>b.className='chip');
+  const atbAlert=document.getElementById('atb-alert');if(atbAlert)atbAlert.className='atb-alert';
+  // Reset DVA
+  selDva.clear();
+  document.querySelectorAll('[data-dva]').forEach(b=>b.className='chip');
+  const dvaDoses=document.getElementById('dva-doses');if(dvaDoses)dvaDoses.innerHTML='';
+  // Reset drogas nefrológicas
+  selRx.clear();
+  document.querySelectorAll('[data-rx]').forEach(b=>b.className='chip');
+  const rxDoses=document.getElementById('rx-doses');if(rxDoses)rxDoses.innerHTML='';
+  // Reset HD
+  hdHoje=false;hdMod='';
+  const hdBtn=document.getElementById('hd-hoje');if(hdBtn)hdBtn.className='hd-toggle';
+  document.querySelectorAll('[data-hd]').forEach(m=>{m.style.display='none';m.className='chip';});
+  const hdLbl=document.getElementById('hd-modal-label');if(hdLbl)hdLbl.style.display='none';
+  const hdObs=document.getElementById('f-hd-obs');if(hdObs)hdObs.value='';
+  // Reset calc boxes
   const tfgC=document.getElementById('tfg-calc');if(tfgC)tfgC.className='tfg-calc';
   const tfgI=document.getElementById('f-tfg');if(tfgI)tfgI._manual=false;
+  ['urcr-box','cap-box','gaso-box','cai-flag','kdigo-box'].forEach(id=>{
+    const el=document.getElementById(id);if(el){el.className=el.id==='cai-flag'?'':id==='kdigo-box'?'calc-box':'calc-box';el.style.display='none';}
+  });
   curSec=null;curSex=null;
   const p=$('prev');if(p){p.textContent='Leito — Iniciais';p.style.color='#bbb';}
 }
@@ -853,6 +878,15 @@ function fillF(p){
   calcGaso();
   const caiEl=document.getElementById('f-cai');
   if(caiEl&&caiEl.value) window.checkCaI(caiEl);
+  // Re-trigger alerts for pre-filled fields
+  [['f-hb',7,20,'Anemia grave',''],
+   ['f-plaq',50,400,'Plaquetopenia grave',''],
+   ['f-k',3.0,6.0,'Hipocalemia grave','Hipercalemia grave - risco arritmia'],
+   ['f-na',125,155,'Hiponatremia grave','Hipernatremia grave'],
+   ['f-p',1,5.5,'Hipofosfatemia','Hiperfosfatemia grave'],
+   ['f-mg',1.2,2.4,'Hipomagnesemia grave','Hipermagnesemia'],
+  ].forEach(([id,mn,mx,lo,hi])=>{const el=document.getElementById(id);if(el&&el.value)window.checkAlert(el,mn,mx,lo,hi);});
+  calcKdigo();
   updResumo();
 }
 // CKD-EPI 2021 (race-free)
@@ -1077,6 +1111,58 @@ window.calcGaso=function(){
 
   box.className=cls;
   box.textContent=lines.join('\n');
+};
+
+
+// ── Alertas clínicos inline ────────────────────────────────
+window.checkAlert=function(el,min,max,lblLow,lblHigh){
+  const v=parseFloat(el.value);
+  // Remove existing flag if any
+  let flag=el.parentElement.querySelector('.field-alert');
+  if(!flag){
+    flag=document.createElement('div');
+    flag.className='field-alert';
+    flag.style.cssText='font-size:10.5px;font-weight:600;margin-top:3px;padding:3px 7px;border-radius:5px;display:none';
+    el.parentElement.appendChild(flag);
+  }
+  if(isNaN(v)||el.value.trim()===''){flag.style.display='none';return;}
+  if(v<min&&lblLow){
+    flag.textContent='! '+lblLow+' ('+v+')';
+    flag.style.cssText=flag.style.cssText.replace(/background[^;]*/g,'').replace(/color[^;]*/g,'');
+    flag.style.display='block';
+    flag.style.background='#fef2f2';
+    flag.style.color='#991b1b';
+  } else if(v>max&&lblHigh){
+    flag.textContent='! '+lblHigh+' ('+v+')';
+    flag.style.display='block';
+    flag.style.background='#fef2f2';
+    flag.style.color='#991b1b';
+  } else {
+    flag.style.display='none';
+  }
+};
+
+// ── KDIGO AKI staging ──────────────────────────────────────
+window.calcKdigo=function(){
+  const box=document.getElementById('kdigo-box');if(!box)return;
+  const cr=parseFloat(document.getElementById('f-cr')?.value||'');
+  const crb=parseFloat(document.getElementById('f-crbasal')?.value||'');
+  if(isNaN(cr)||isNaN(crb)||crb<=0){box.style.display='none';return;}
+  const ratio=cr/crb;
+  const delta=cr-crb;
+  let stage='',cls='calc-box show',color='';
+  if(cr>=3.0*crb||(cr>=4.0&&delta>=0.5)){
+    stage='KDIGO 3';cls='calc-box show alert';
+  } else if(cr>=2.0*crb){
+    stage='KDIGO 2';cls='calc-box show alert';
+  } else if(cr>=1.5*crb||delta>=0.3){
+    stage='KDIGO 1';cls='calc-box show warn';
+  } else {
+    box.style.display='none';return;
+  }
+  box.className=cls;
+  box.style.display='block';
+  box.textContent=stage+' (Cr atual '+cr+' / basal '+crb+' = x'+ratio.toFixed(2)+')';
 };
 
 // Relação Ur/Cr
