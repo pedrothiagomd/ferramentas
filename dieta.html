@@ -4,113 +4,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orientações Nutricionais - Hemodiálise</title>
+<title>Alimentacao na Hemodialise - CHB Belem</title>
 <style>
-/* system fonts */
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --azul:#1a4a7a;--azul2:#2563a8;--azul-bg:#eef4fb;
-  --verde:#156a4a;--verde2:#1d9068;--verde-bg:#edf7f2;
-  --laranja:#b85c10;--laranja2:#d97706;--laranja-bg:#fff7ed;
-  --roxo:#5b3fa0;--roxo-bg:#f5f3ff;
-  --ciano:#0e7490;--ciano-bg:#ecfeff;
-  --cinza:#f6f5f2;--borda:#dddbd4;
-  --txt:#1c1c1a;--txt2:#4a4a46;
-}
-body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#e8e5de;color:var(--txt);font-size:12.5px;line-height:1.5}
-.page{width:100%;max-width:900px;background:#fff;margin:0 auto;display:flex;flex-direction:column}
+body{font-family:Arial,Helvetica,sans-serif;background:#f0ede8;color:#1c1c1a;font-size:13px;line-height:1.5;padding:16px}
+.page{max-width:860px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.1)}
 
 /* HEADER */
-.hdr{background:var(–azul);padding:15px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.hdr-left{display:flex;align-items:center;gap:12px}
-.hdr-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 11px;font-family:‘Segoe UI’,Tahoma,Arial,sans-serif;font-size:10.5px;font-weight:800;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:.06em;text-align:center;line-height:1.3}
-.hdr-title{font-family:‘Segoe UI’,Tahoma,Arial,sans-serif;font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px}
-.hdr-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px}
-.hdr-right{font-size:10.5px;color:rgba(255,255,255,.5);text-align:right;line-height:1.6}
-.hdr-right strong{color:rgba(255,255,255,.85);display:block;font-size:11px}
+.hdr{background:#1a4a7a;padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.hdr-titulo{font-size:20px;font-weight:700;color:#fff}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.7);margin-top:3px}
+.hdr-clinica{font-size:11px;color:rgba(255,255,255,.6);text-align:right}
+.hdr-clinica strong{display:block;color:rgba(255,255,255,.9);font-size:12px}
 
-/* FAIXA INTRO */
-.intro{background:#fff8e1;border-bottom:2px solid #fde68a;padding:9px 22px;font-size:12px;color:#78350f;display:flex;align-items:center;gap:8px;line-height:1.5}
-.intro b{font-weight:700}
+/* AVISO */
+.aviso{background:#fff8e1;border-bottom:2px solid #fde68a;padding:9px 20px;font-size:12px;color:#78350f}
+.aviso b{font-weight:700}
 
 /* CORPO */
-.body{padding:13px 22px 15px;flex:1;display:flex;flex-direction:column;gap:11px}
+.corpo{padding:16px 20px;display:flex;flex-direction:column;gap:14px}
 
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 
 /* BLOCO */
-.bloco{border:1px solid var(–borda);border-radius:9px;overflow:hidden}
-.bloco-hdr{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(–borda)}
-.bicon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bicon svg{width:14px;height:14px}
-.btitulo{font-family:‘Segoe UI’,Tahoma,Arial,sans-serif;font-size:13px;font-weight:800;letter-spacing:-.1px}
-.bcorpo{padding:9px 12px;font-size:11.5px;color:var(–txt2);line-height:1.6}
+.bloco{border:1px solid #dddbd4;border-radius:8px;overflow:hidden}
+.bh{display:flex;align-items:center;gap:8px;padding:8px 12px}
+.bh-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.bd{padding:10px 12px;font-size:12px;color:#4a4a46}
 
 /* Cores */
-.bk .bloco-hdr{background:#fff7ed}.bk .bicon{background:#d97706}.bk .btitulo{color:var(–laranja)}
-.bp .bloco-hdr{background:var(–azul-bg)}.bp .bicon{background:var(–azul2)}.bp .btitulo{color:var(–azul)}
-.bliq .bloco-hdr{background:var(–ciano-bg)}.bliq .bicon{background:var(–ciano)}.bliq .btitulo{color:var(–ciano)}
-.bna .bloco-hdr{background:var(–roxo-bg)}.bna .bicon{background:var(–roxo)}.bna .btitulo{color:var(–roxo)}
-.bprot .bloco-hdr{background:var(–verde-bg)}.bprot .bicon{background:var(–verde2)}.bprot .btitulo{color:var(–verde)}
-.bmed .bloco-hdr{background:#f0fdf4}.bmed .bicon{background:#16a34a}.bmed .btitulo{color:#15803d}
-.bgeral .bloco-hdr{background:var(–cinza)}.bgeral .bicon{background:#475569}.bgeral .btitulo{color:#334155}
+.ck .bh{background:#fff7ed;border-bottom:1px solid #fde8c8}.ck .bh-label{color:#b85c10}
+.cp .bh{background:#eef4fb;border-bottom:1px solid #c5d9f0}.cp .bh-label{color:#1a4a7a}
+.cliq .bh{background:#ecfeff;border-bottom:1px solid #a5f3fc}.cliq .bh-label{color:#0e7490}
+.cna .bh{background:#f5f3ff;border-bottom:1px solid #ddd6fe}.cna .bh-label{color:#5b3fa0}
+.cprot .bh{background:#edf7f2;border-bottom:1px solid #a7f3d0}.cprot .bh-label{color:#156a4a}
+.cmed .bh{background:#f0fdf4;border-bottom:1px solid #bbf7d0}.cmed .bh-label{color:#15803d}
+.cgeral .bh{background:#f6f5f2;border-bottom:1px solid #dddbd4}.cgeral .bh-label{color:#334155}
 
 /* ALERTA */
-.al{border-left:3px solid;border-radius:0 6px 6px 0;padding:5px 9px;font-size:11.5px;margin-bottom:6px;line-height:1.55}
+.al{border-left:3px solid;padding:5px 9px;margin-bottom:7px;font-size:12px;line-height:1.5;border-radius:0 5px 5px 0}
 .al-r{background:#fef2f2;border-color:#ef4444;color:#7f1d1d}
 .al-a{background:#fffbeb;border-color:#f59e0b;color:#78350f}
-.al-b{background:var(–azul-bg);border-color:var(–azul2);color:var(–azul)}
-.al-g{background:var(–verde-bg);border-color:var(–verde2);color:var(–verde)}
-.al b,.al strong{font-weight:700}
+.al-b{background:#eef4fb;border-color:#2563a8;color:#1a4a7a}
+.al-g{background:#edf7f2;border-color:#1d9068;color:#156a4a}
+.al b{font-weight:700}
 
-/* TABELA ALIMENTOS */
-.tab{width:100%;border-collapse:collapse;font-size:11px;margin-top:5px}
-.tab th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;text-align:left;border-bottom:1px solid var(–borda)}
-.tab td{padding:3px 7px;vertical-align:top;line-height:1.55}
-.tab tr:nth-child(even) td{background:rgba(0,0,0,.02)}
-.th-r{color:#dc2626;background:#fef2f2}
-.th-m{color:#b45309;background:#fff7ed}
-.th-ok{color:#166534;background:#f0fdf4}
+/* TABELA */
+.tab{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px}
+.tab th{padding:4px 8px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dddbd4}
+.tab td{padding:3px 8px;vertical-align:top;line-height:1.55}
+.tab tr:nth-child(even) td{background:#fafaf8}
+.th-r{background:#fef2f2;color:#dc2626}
+.th-ok{background:#f0fdf4;color:#166534}
 
 /* LISTA */
-.pts{list-style:none;display:flex;flex-direction:column;gap:4px;margin-top:4px}
-.pts li{padding-left:13px;position:relative;font-size:11.5px;line-height:1.5}
-.pts li::before{content:‘▸’;position:absolute;left:0;color:#94a3b8;font-size:9px;top:3px}
-.pts li strong{font-weight:700;color:var(–txt)}
+.lista{list-style:none;padding:0;margin-top:5px;display:flex;flex-direction:column;gap:3px}
+.lista li{padding-left:13px;position:relative;font-size:12px;line-height:1.5}
+.lista li::before{content:”>”;position:absolute;left:0;color:#94a3b8;font-size:10px;top:3px;font-weight:700}
+.lista li b{font-weight:700;color:#1c1c1a}
 
-/* MEDICAÇÃO */
-.med-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:5px}
-.mc{border:1px solid var(–borda);border-radius:8px;overflow:hidden}
-.mc-hdr{padding:7px 10px;display:flex;align-items:center;gap:7px}
-.mc-badge{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:99px}
-.mc-nome{font-family:‘Segoe UI’,Tahoma,Arial,sans-serif;font-size:12.5px;font-weight:900}
-.mc-sev .mc-hdr{background:#f0fdf4}.mc-sev .mc-badge{background:#16a34a;color:#fff}.mc-sev .mc-nome{color:#15803d}
-.mc-carb .mc-hdr{background:var(–azul-bg)}.mc-carb .mc-badge{background:var(–azul2);color:#fff}.mc-carb .mc-nome{color:var(–azul)}
-.mc-body{padding:7px 10px;font-size:11.5px;color:var(–txt2);line-height:1.6}
-.mc-row{display:flex;gap:6px;align-items:flex-start;margin-bottom:5px}
+/* MEDICACAO */
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.mc{border:1px solid #dddbd4;border-radius:7px;overflow:hidden}
+.mc-h{padding:7px 10px}
+.mc-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:99px;display:inline-block;margin-bottom:3px}
+.mc-nome{font-size:13px;font-weight:700}
+.mc-sev .mc-h{background:#f0fdf4}.mc-sev .mc-tag{background:#16a34a;color:#fff}.mc-sev .mc-nome{color:#15803d}
+.mc-carb .mc-h{background:#eef4fb}.mc-carb .mc-tag{background:#2563a8;color:#fff}.mc-carb .mc-nome{color:#1a4a7a}
+.mc-b{padding:8px 10px;font-size:12px;color:#4a4a46}
+.mc-row{display:flex;gap:6px;margin-bottom:5px;align-items:flex-start}
 .mc-row:last-child{margin-bottom:0}
-.mc-row svg{flex-shrink:0;margin-top:2px}
-.mc-row b{font-weight:700;color:var(–txt);display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
+.mc-row b{font-weight:700;color:#1c1c1a;display:block;font-size:10.5px;text-transform:uppercase;margin-bottom:1px}
 
-/* DICAS GRID */
-.dicas{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:5px}
-.dica{border:1px solid var(–borda);border-radius:7px;padding:8px 9px;font-size:11.5px;line-height:1.55}
-.dica strong{display:block;font-family:‘Segoe UI’,Tahoma,Arial,sans-serif;font-weight:800;color:var(–txt);margin-bottom:3px;font-size:12px}
+/* DICAS */
+.dg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}
+.dica{border:1px solid #dddbd4;border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.5}
+.dica b{font-size:12px;font-weight:700;color:#1c1c1a;display:block;margin-bottom:3px}
 
-/* RODAPÉ */
-.ftr{background:var(–azul);padding:8px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.ftr span{font-size:10px;color:rgba(255,255,255,.55)}
-.ftr span b{color:rgba(255,255,255,.85)}
+/* RODAPE */
+.ftr{background:#1a4a7a;padding:9px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.ftr span{font-size:10.5px;color:rgba(255,255,255,.6)}
+.ftr b{color:rgba(255,255,255,.85)}
 
-@media print{body{background:#fff}.page{margin:0;width:100%}}
-
-@media screen {
-body { padding: 20px; }
-}
-@media print {
-body { background: #fff; padding: 0; }
-.page { width: 210mm; max-width: 210mm; }
+@media print{
+body{background:#fff;padding:0}
+.page{box-shadow:none;border-radius:0}
 }
 </style>
 
@@ -118,130 +98,145 @@ body { background: #fff; padding: 0; }
 <body>
 <div class="page">
 
-<!-- CABEÇALHO -->
+<!-- HEADER -->
 
 <div class="hdr">
-  <div class="hdr-left">
-    <div class="hdr-badge">CHB<br>Belém</div>
-    <div>
-      <div class="hdr-title">Alimentação na Hemodiálise</div>
-      <div class="hdr-sub">Guia de alimentação, controle de líquidos e uso correto das medicações</div>
-    </div>
+  <div>
+    <div class="hdr-titulo">Alimentacao na Hemodialise</div>
+    <div class="hdr-sub">Guia de alimentacao, controle de liquidos e uso correto das medicacoes</div>
   </div>
-  <div class="hdr-right">
-    <strong>Clínica de Hemodiálise de Belém · CHB</strong>
-    Orientações para o paciente · 2025
+  <div class="hdr-clinica">
+    <strong>Clinica de Hemodialise de Belem</strong>
+    CHB - Orientacoes ao paciente 2025
   </div>
 </div>
 
-<!-- INTRO -->
+<!-- AVISO -->
 
-<div class="intro">
-  <svg width="15" height="15" viewBox="0 0 16 16" fill="#d97706"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566ZM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5Zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg>
-  <span>A hemodiálise remove parte do potássio e do fósforo, mas <b>não substitui a dieta adequada.</b> O acúmulo desses minerais entre as sessões pode causar problemas sérios no coração e nos ossos.</span>
+<div class="aviso">
+  <b>Importante:</b> A hemodialise remove parte do potassio e do fosforo, mas nao substitui a dieta adequada. O acumulo desses minerais entre as sessoes pode causar problemas serios no coracao e nos ossos.
 </div>
 
-<div class="body">
+<div class="corpo">
 
-  <!-- POTÁSSIO E FÓSFORO -->
+  <!-- POTASSIO E FOSFORO -->
 
-  <div class="grid2">
+  <div class="g2">
 
 ```
 <!-- K -->
-<div class="bloco bk">
-  <div class="bloco-hdr">
-    <div class="bicon"><svg viewBox="0 0 16 16" fill="white"><text x="2" y="13" font-size="12" font-weight="bold" font-family="sans-serif">K</text></svg></div>
-    <div class="btitulo">Potássio (K⁺)</div>
+<div class="bloco ck">
+  <div class="bh">
+    <div class="bh-label">Potassio (K+)</div>
   </div>
-  <div class="bcorpo">
-    <div class="al al-r">O potássio alto pode causar <b>batimentos irregulares do coração e até parada cardíaca.</b> O risco é maior no dia antes da diálise.</div>
+  <div class="bd">
+    <div class="al al-r">O potassio alto pode causar <b>batimentos irregulares do coracao e ate parada cardiaca.</b> O risco e maior no dia antes da dialise.</div>
     <table class="tab">
       <tr><th class="th-r">Evitar sempre</th><th class="th-ok">Pode consumir</th></tr>
       <tr>
-        <td>Banana, laranja, abacate, açaí<br>Caju, melão, kiwi<br>Batata inglesa, mandioca, beterraba<br>Tomate cru e molho de tomate<br>Feijão, lentilha, grão-de-bico (K e P altos)<br>Castanhas, amendoim, nozes (K e P altos)<br>Suco de frutas natural<br><b>Sal light</b> (tem muito potássio)</td>
-        <td>Maçã, pera, morango, uva<br>Melancia (porção pequena)<br>Arroz, macarrão, pão<br>Frango, peixe, ovo<br>Chá sem açúcar</td>
+        <td>
+          Banana, laranja, abacate, acai<br>
+          Caju, melao, kiwi<br>
+          Batata inglesa, mandioca, beterraba<br>
+          Tomate cru e molho de tomate<br>
+          Feijao, lentilha, grao-de-bico (K e P altos)<br>
+          Castanhas, amendoim, nozes (K e P altos)<br>
+          Suco de frutas natural<br>
+          <b>Sal light</b> (tem muito potassio)
+        </td>
+        <td>
+          Maca, pera, morango, uva<br>
+          Melancia (porcao pequena)<br>
+          Arroz, macarrao, pao<br>
+          Frango, peixe, ovo<br>
+          Cha sem acucar
+        </td>
       </tr>
     </table>
-    <div class="al al-a" style="margin-top:6px;margin-bottom:0"><b>Dica:</b> Para verduras, descasque, corte em pedaços e deixe de molho em água por 2 horas. Descarte a água e cozinhe normalmente. Isso reduz o potássio do alimento.</div>
+    <div class="al al-a" style="margin-top:7px;margin-bottom:0"><b>Dica:</b> Para verduras, descasque, corte em pedacos e deixe de molho em agua por 2 horas. Descarte a agua e cozinhe normalmente. Isso reduz o potassio do alimento.</div>
   </div>
 </div>
 
 <!-- P -->
-<div class="bloco bp">
-  <div class="bloco-hdr">
-    <div class="bicon"><svg viewBox="0 0 16 16" fill="white"><text x="2" y="13" font-size="12" font-weight="bold" font-family="sans-serif">P</text></svg></div>
-    <div class="btitulo">Fósforo (P)</div>
+<div class="bloco cp">
+  <div class="bh">
+    <div class="bh-label">Fosforo (P)</div>
   </div>
-  <div class="bcorpo">
-    <div class="al al-b">O fósforo alto enfraquece os ossos, causa <b>coceira na pele</b> e prejudica o coração. O sevelamer precisa ser tomado na hora certa para ajudar.</div>
+  <div class="bd">
+    <div class="al al-b">O fosforo alto enfraquece os ossos, causa <b>coceira na pele</b> e prejudica o coracao. O sevelamer precisa ser tomado na hora certa para ajudar.</div>
     <table class="tab">
       <tr><th class="th-r">Evitar sempre</th><th class="th-ok">Pode consumir</th></tr>
       <tr>
-        <td>Refrigerante escuro (cola, guaraná)<br>Leite, queijo, iogurte, requeijão<br>Castanhas, amendoim, nozes<br>Miúdos (fígado, rim, coração)<br>Frutos do mar (camarão, ostra)<br>Chocolate, cacau, achocolatado<br>Embutidos e alimentos processados<br>Feijão, lentilha, castanhas (K e P altos)</td>
-        <td>Arroz, macarrão, pão branco<br>Frango e peixe frescos<br>Ovo (prefira a clara; gema com moderação)<br>Refrigerante claro (limão)<br>Água, chá, café sem leite</td>
+        <td>
+          Refrigerante escuro (cola, guarana)<br>
+          Leite, queijo, iogurte, requeijao<br>
+          Castanhas, amendoim, nozes (K e P altos)<br>
+          Miudos (figado, rim, coracao)<br>
+          Frutos do mar (camarao, ostra)<br>
+          Chocolate, cacau, achocolatado<br>
+          Embutidos e alimentos processados<br>
+          Feijao, lentilha (K e P altos)
+        </td>
+        <td>
+          Arroz, macarrao, pao branco<br>
+          Frango e peixe frescos<br>
+          Ovo (prefira a clara; gema com moderacao)<br>
+          Refrigerante claro (limao)<br>
+          Agua, cha, cafe sem leite
+        </td>
       </tr>
     </table>
-    <div class="al al-b" style="margin-top:6px;margin-bottom:0"><b>Atenção:</b> Alimentos industrializados e embutidos têm aditivos com fósforo que é quase totalmente absorvido pelo organismo. Prefira sempre alimentos frescos e naturais.</div>
+    <div class="al al-b" style="margin-top:7px;margin-bottom:0"><b>Atencao:</b> Alimentos industrializados e embutidos tem aditivos com fosforo que e quase totalmente absorvido. Prefira sempre alimentos frescos e naturais.</div>
   </div>
 </div>
 ```
 
   </div>
 
-  <!-- LÍQUIDOS + SÓDIO + PROTEÍNA -->
+  <!-- LIQUIDOS + SODIO + PROTEINA -->
 
-  <div class="grid3">
+  <div class="g3">
 
 ```
-<!-- LÍQUIDOS -->
-<div class="bloco bliq">
-  <div class="bloco-hdr">
-    <div class="bicon"><svg viewBox="0 0 16 16" fill="white"><path d="M8 1C8 1 3 6.5 3 10a5 5 0 0 0 10 0C13 6.5 8 1 8 1Z"/></svg></div>
-    <div class="btitulo">Controle de Líquidos</div>
-  </div>
-  <div class="bcorpo">
-    <div class="al al-b" style="margin-bottom:5px">Beber no máximo <b>500 mL por dia mais o volume que urinar.</b> O ganho de peso entre as sessões deve ser no máximo 1,5 kg.</div>
-    <ul class="pts">
-      <li><strong>Conta como líquido:</strong> água, suco, sopa, gelatina, sorvete, café, chá, leite</li>
-      <li><strong>Comer menos sal</strong> ajuda a sentir menos sede</li>
-      <li><strong>Para aliviar a sede:</strong> use gelo picado, bochecho com água gelada ou balas azedas</li>
-      <li><strong>Muito líquido acumulado</strong> sobrecarrega o coração e pode causar falta de ar</li>
+<!-- LIQUIDOS -->
+<div class="bloco cliq">
+  <div class="bh"><div class="bh-label">Controle de Liquidos</div></div>
+  <div class="bd">
+    <div class="al al-b">Beber no maximo <b>500 mL por dia mais o volume que urinar.</b> O ganho de peso entre as sessoes deve ser no maximo 1,5 kg.</div>
+    <ul class="lista">
+      <li><b>Conta como liquido:</b> agua, suco, sopa, gelatina, sorvete, cafe, cha, leite</li>
+      <li><b>Comer menos sal</b> ajuda a sentir menos sede</li>
+      <li><b>Para aliviar a sede:</b> gelo picado, bochecho com agua gelada ou balas azedas</li>
+      <li><b>Muito liquido acumulado</b> sobrecarrega o coracao e pode causar falta de ar</li>
     </ul>
   </div>
 </div>
 
-<!-- SÓDIO -->
-<div class="bloco bna">
-  <div class="bloco-hdr">
-    <div class="bicon"><svg viewBox="0 0 16 16" fill="white"><text x="-1" y="13" font-size="10" font-weight="bold" font-family="sans-serif">Na</text></svg></div>
-    <div class="btitulo">Sal e Sódio</div>
-  </div>
-  <div class="bcorpo">
-    <div class="al al-r" style="margin-bottom:5px">O excesso de sal aumenta a pressão, causa inchaço e piora o acúmulo de líquido entre as sessões.</div>
-    <ul class="pts">
-      <li><strong>Evitar:</strong> embutidos, conservas, temperos prontos, macarrão instantâneo, salgadinhos</li>
-      <li><strong>Temperar com:</strong> alho, cebola, limão, ervas frescas como salsa e coentro</li>
-      <li><strong>Sal light é proibido</strong> - tem cloreto de potássio (K) em vez de sódio</li>
-      <li><strong>Verificar rótulos:</strong> menos de 120 mg de sódio por 100g é considerado baixo</li>
+<!-- SODIO -->
+<div class="bloco cna">
+  <div class="bh"><div class="bh-label">Sal e Sodio</div></div>
+  <div class="bd">
+    <div class="al al-r">O excesso de sal aumenta a pressao, causa inchaco e piora o acumulo de liquido entre as sessoes.</div>
+    <ul class="lista">
+      <li><b>Evitar:</b> embutidos, conservas, temperos prontos, macarrao instantaneo, salgadinhos</li>
+      <li><b>Temperar com:</b> alho, cebola, limao, salsa, coentro</li>
+      <li><b>Sal light e proibido</b> - tem cloreto de potassio (K) em vez de sodio</li>
+      <li><b>Verificar rotulos:</b> menos de 120 mg de sodio por 100g e considerado baixo</li>
     </ul>
   </div>
 </div>
 
-<!-- PROTEÍNA -->
-<div class="bloco bprot">
-  <div class="bloco-hdr">
-    <div class="bicon"><svg viewBox="0 0 16 16" fill="white"><path d="M4 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm4 2a.5.5 0 0 0-.5.5v1H7a.5.5 0 0 0 0 1h.5v1a.5.5 0 0 0 1 0V7H9a.5.5 0 0 0 0-1h-.5V4.5A.5.5 0 0 0 8 4Z"/></svg></div>
-    <div class="btitulo">Proteína e Carne</div>
-  </div>
-  <div class="bcorpo">
-    <div class="al al-g" style="margin-bottom:5px">Pacientes em diálise <b>precisam de mais proteína</b> do que pessoas saudáveis - a hemodiálise consome aminoácidos a cada sessão. A meta é manter a força muscular e o peso adequado.</div>
-    <ul class="pts">
-      <li><strong>Priorizar:</strong> frango, peixe e ovos - boas fontes com menos fósforo e potássio</li>
-      <li><strong>Carne vermelha:</strong> pode consumir, mas com moderação - tem mais potássio e fósforo que frango e peixe</li>
-      <li><strong>Sempre preferir carnes frescas</strong> em vez de embutidos, salsichas e processados</li>
-      <li><strong>Feijão e leguminosas:</strong> têm proteína mas também têm muito potássio e fósforo - consumir com cuidado</li>
-      <li><strong>Fraqueza ou perda de peso:</strong> relatar à equipe - pode indicar ingestão insuficiente</li>
+<!-- PROTEINA -->
+<div class="bloco cprot">
+  <div class="bh"><div class="bh-label">Proteina e Carne</div></div>
+  <div class="bd">
+    <div class="al al-g">Pacientes em dialise <b>precisam de mais proteina</b> do que pessoas saudaveis. A hemodialise consome aminoacidos a cada sessao.</div>
+    <ul class="lista">
+      <li><b>Priorizar:</b> frango, peixe e ovos - boas fontes com menos fosforo e potassio</li>
+      <li><b>Carne vermelha:</b> pode consumir, mas com moderacao</li>
+      <li><b>Sempre preferir carnes frescas</b> em vez de embutidos e processados</li>
+      <li><b>Feijao e leguminosas:</b> tem proteina mas tambem tem muito K e P - consumir com cuidado</li>
+      <li><b>Fraqueza ou perda de peso:</b> relatar a equipe</li>
     </ul>
   </div>
 </div>
@@ -249,50 +244,40 @@ body { background: #fff; padding: 0; }
 
   </div>
 
-  <!-- MEDICAÇÕES -->
+  <!-- MEDICACOES -->
 
-  <div class="bloco bmed">
-    <div class="bloco-hdr">
-      <div class="bicon">
-        <svg viewBox="0 0 16 16" fill="white"><path d="M10.5 3.5a3 3 0 0 0-3-3h-1a3 3 0 0 0-3 3v1h7v-1Zm1 2h-9v7a1.5 1.5 0 0 0 1.5 1.5h6A1.5 1.5 0 0 0 11.5 12.5v-7Z"/></svg>
-      </div>
-      <div class="btitulo">Como tomar as medicações corretamente</div>
-    </div>
-    <div class="bcorpo">
-      <div class="med-grid">
+  <div class="bloco cmed">
+    <div class="bh"><div class="bh-label">Como tomar as medicacoes corretamente</div></div>
+    <div class="bd">
+      <div class="mg">
         <div class="mc mc-sev">
-          <div class="mc-hdr">
-            <span class="mc-badge">Quelante de fósforo</span>
-            <span class="mc-nome">Sevelamer (Renagel®)</span>
+          <div class="mc-h">
+            <span class="mc-tag">Quelante de fosforo</span>
+            <div class="mc-nome">Sevelamer (Renagel)</div>
           </div>
-          <div class="mc-body">
+          <div class="mc-b">
             <div class="mc-row">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="#16a34a"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm3.25 4.75a.75.75 0 0 0-1.06-1.06L6.75 8.19 5.81 7.25a.75.75 0 0 0-1.06 1.06l1.5 1.5a.75.75 0 0 0 1.06 0l4-4Z"/></svg>
-              <div><b>Quando tomar</b>Tomar <b>no início da refeição,</b> junto com as primeiras garfadas. Ele age dentro do intestino segurando o fósforo do alimento para não ser absorvido.</div>
+              <div><b>Quando tomar</b>Tomar <b>no inicio da refeicao,</b> junto com as primeiras garfadas. Age dentro do intestino segurando o fosforo do alimento para nao ser absorvido.</div>
             </div>
             <div class="mc-row">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="#dc2626"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm-.75 4.75a.75.75 0 0 1 1.5 0v3.5a.75.75 0 0 1-1.5 0v-3.5Zm.75 7a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z"/></svg>
-              <div><b>Atenção:</b> Engolir inteiro, <b>não mastigar, não esmagar.</b> Tomado fora da refeição não funciona.</div>
+              <div><b>Atencao</b>Engolir inteiro, <b>nao mastigar, nao esmagar.</b> Tomado fora da refeicao nao funciona.</div>
             </div>
           </div>
         </div>
         <div class="mc mc-carb">
-          <div class="mc-hdr">
-            <span class="mc-badge">Reposição de cálcio</span>
-            <span class="mc-nome">Carbonato de Cálcio</span>
+          <div class="mc-h">
+            <span class="mc-tag">Reposicao de calcio</span>
+            <div class="mc-nome">Carbonato de Calcio</div>
           </div>
-          <div class="mc-body">
+          <div class="mc-b">
             <div class="mc-row">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="#2563a8"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm3.25 4.75a.75.75 0 0 0-1.06-1.06L6.75 8.19 5.81 7.25a.75.75 0 0 0-1.06 1.06l1.5 1.5a.75.75 0 0 0 1.06 0l4-4Z"/></svg>
-              <div><b>Para repor cálcio (ossos)</b>Tomar <b>após a refeição</b> - ajuda o organismo a absorver o cálcio para fortalecer os ossos.</div>
+              <div><b>Para repor calcio (ossos)</b>Tomar <b>apos a refeicao</b> - ajuda o organismo a absorver o calcio para fortalecer os ossos.</div>
             </div>
             <div class="mc-row">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="#2563a8"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm3.25 4.75a.75.75 0 0 0-1.06-1.06L6.75 8.19 5.81 7.25a.75.75 0 0 0-1.06 1.06l1.5 1.5a.75.75 0 0 0 1.06 0l4-4Z"/></svg>
-              <div><b>Para fósforo + cálcio</b>Tomar <b>no início da refeição.</b> Pergunte ao seu médico qual a sua indicação - faz diferença na hora de tomar.</div>
+              <div><b>Para fosforo + calcio</b>Tomar <b>no inicio da refeicao.</b> Pergunte ao seu medico qual a sua indicacao - faz diferenca na hora de tomar.</div>
             </div>
             <div class="mc-row">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="#dc2626"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm-.75 4.75a.75.75 0 0 1 1.5 0v3.5a.75.75 0 0 1-1.5 0v-3.5Zm.75 7a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z"/></svg>
-              <div><b>Não tomar</b> se o cálcio estiver alto nos exames - seu médico vai orientar.</div>
+              <div><b>Nao tomar</b> se o calcio estiver alto nos exames - seu medico vai orientar.</div>
             </div>
           </div>
         </div>
@@ -302,31 +287,28 @@ body { background: #fff; padding: 0; }
 
   <!-- DICAS GERAIS -->
 
-  <div class="bloco bgeral">
-    <div class="bloco-hdr">
-      <div class="bicon"><svg viewBox="0 0 16 16" fill="white"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 2a.75.75 0 1 1 0 1.5A.75.75 0 0 1 8 3Zm.75 8.25h-1.5a.75.75 0 0 1 0-1.5h.25V7h-.25a.75.75 0 0 1 0-1.5h1a.75.75 0 0 1 .75.75v3.5h.25a.75.75 0 0 1 0 1.5Z"/></svg></div>
-      <div class="btitulo">Cuidados gerais com a diálise</div>
-    </div>
-    <div class="bcorpo">
-      <div class="dicas">
-        <div class="dica"><strong>Não falte às sessões</strong>Cada sessão perdida acumula toxinas, potássio e fósforo no sangue. Se não puder comparecer, avise a equipe com antecedência.</div>
-        <div class="dica"><strong>Peso e pressão</strong>Pesar-se todo dia em jejum. Nunca aferir pressão nem colocar pulseira no braço da fístula. Cuidar da fístula é cuidar da sua vida.</div>
-        <div class="dica"><strong>Medicamentos</strong>Não parar ou mudar a dose de nenhum remédio sem comunicar à equipe. Alguns são retirados pela diálise e precisam ser tomados em horário específico.</div>
-        <div class="dica"><strong>Vacinas</strong>Pacientes em diálise têm mais risco de infecções. Manter em dia: Hepatite B, Gripe (anual) e Pneumococo.</div>
-        <div class="dica"><strong>Sinais de alerta</strong>Procurar atendimento imediato se: falta de ar, inchaço súbito, dor no peito, batimento irregular, dor ou secreção no acesso vascular.</div>
-        <div class="dica"><strong>Exames mensais</strong>Hemograma, ferro, potássio, fósforo e PTH precisam ser revisados regularmente. Traga os exames para a consulta.</div>
+  <div class="bloco cgeral">
+    <div class="bh"><div class="bh-label">Cuidados gerais com a dialise</div></div>
+    <div class="bd">
+      <div class="dg">
+        <div class="dica"><b>Nao falte as sessoes</b>Cada sessao perdida acumula toxinas, potassio e fosforo no sangue. Se nao puder comparecer, avise a equipe com antecedencia.</div>
+        <div class="dica"><b>Peso e pressao</b>Pesar-se todo dia em jejum. Nunca aferir pressao nem colocar pulseira no braco da fistula. Cuidar da fistula e cuidar da sua vida.</div>
+        <div class="dica"><b>Medicamentos</b>Nao parar ou mudar a dose de nenhum remedio sem comunicar a equipe. Alguns sao retirados pela dialise e precisam ser tomados em horario especifico.</div>
+        <div class="dica"><b>Vacinas</b>Pacientes em dialise tem mais risco de infeccoes. Manter em dia: Hepatite B, Gripe (anual) e Pneumococo.</div>
+        <div class="dica"><b>Sinais de alerta</b>Procurar atendimento imediato se: falta de ar, inchaco subito, dor no peito, batimento irregular, dor ou secrecao no acesso vascular.</div>
+        <div class="dica"><b>Exames mensais</b>Hemograma, ferro, potassio, fosforo e PTH precisam ser revisados regularmente. Traga os exames para a consulta.</div>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- RODAPÉ -->
+<!-- RODAPE -->
 
 <div class="ftr">
-  <span><b>Clínica de Hemodiálise de Belém · CHB</b></span>
-  <span>As orientações podem variar conforme seus exames. Siga as recomendações da sua equipe.</span>
-  <span>Dúvidas? Pergunte na próxima sessão · 2025</span>
+  <span><b>Clinica de Hemodialise de Belem - CHB</b></span>
+  <span>As orientacoes podem variar conforme seus exames. Siga as recomendacoes da sua equipe.</span>
+  <span>Duvidas? Pergunte na proxima sessao - 2025</span>
 </div>
 
 </div>
