@@ -289,7 +289,7 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
           <th class="g-h"  colspan="3">Hemograma</th>
           <th class="g-e"  colspan="3">Escórias</th>
           <th class="g-el" colspan="4">Eletrólitos</th>
-          <th class="g-b"  colspan="3">BH / Gasometria</th>
+          <th class="g-b"  colspan="3">Gasometria</th>
           <th class="g-c"  colspan="2">Complementares</th>
           <th class="g-cd" colspan="2">Conduta</th>
           <th rowspan="2" style="background:#fafaf8;border-bottom:1px solid #eee;width:62px"></th>
@@ -361,9 +361,7 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
       <div class="f"><label>Hb (g/dL)</label><input id="f-hb" placeholder="—" oninput="checkAlert(this,7,20,'Anemia grave','Hb elevada')"/></div>
       <div class="f"><label>Ht (%)</label><input id="f-ht" placeholder="—"/></div>
       <div class="f"><label>Leucócitos (mil/µL)</label><input id="f-leuc" placeholder="—"/></div>
-      <div class="f"><label>Bastonetes (%)</label><input id="f-bast" placeholder="—"/></div>
       <div class="f"><label>Plaquetas (mil/µL)</label><input id="f-plaq" placeholder="—" oninput="checkAlert(this,50,400,'Plaquetopenia grave','')"/></div>
-      <div class="f"><label>Reticulócitos (%)</label><input id="f-retic" placeholder="—"/></div>
     </div>
   </div>
 
@@ -381,6 +379,8 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
       </div>
       <div class="f ff"><div class="calc-box" id="kdigo-box" style="display:none">—</div></div>
       <div class="f"><label>Ácido Úrico</label><input id="f-au" placeholder="—"/></div>
+      <div class="f"><label>BH 24h (mL)</label><input id="f-bh" placeholder="Ex: +350"/></div>
+      <div class="f"><label>Diurese (mL/24h)</label><input id="f-diur" placeholder="—"/></div>
       <div class="f ff">
         <div class="calc-box" id="urcr-box">— Relação Ur/Cr</div>
       </div>
@@ -410,10 +410,8 @@ font-family:“DM Mono”,monospace;font-size:12px;color:#166534;margin-top:2px;
 
   <!-- BH -->
   <div class="fsec">
-    <div class="fsec-ttl b">BH / Gasometria</div>
+    <div class="fsec-ttl b">Gasometria</div>
     <div class="fg">
-      <div class="f"><label>BH 24h (mL)</label><input id="f-bh" placeholder="Ex: +350"/></div>
-      <div class="f"><label>Diurese (mL/24h)</label><input id="f-diur" placeholder="—"/></div>
       <div class="f"><label>pH</label><input id="f-ph" placeholder="—" oninput="calcGaso()"/></div>
       <div class="f"><label>HCO₃ (mEq/L)</label><input id="f-bic" placeholder="—" oninput="calcGaso()"/></div>
       <div class="f"><label>pCO₂ (mmHg)</label><input id="f-pco2" placeholder="—" oninput="calcGaso()"/></div>
@@ -656,7 +654,7 @@ const db = getFirestore(initializeApp({
 const COL='pacientes';
 let pts=[],curTab='all',editId=null,curSec=null,curSex=null;
 const SL={enf:'Enfermaria',uti:'UTI',ps:'P.Socorro',par:'Parecer'};
-const FIELDS=['leito','nome','idade','sexo','diag','hb','ht','leuc','bast','plaq','retic',
+const FIELDS=['leito','nome','idade','sexo','diag','hb','ht','leuc','plaq',
   'ur','cr','crbasal','tfg','au','na','k','cl','ca','cai','p','mg','bh','diur','ph','bic','pco2','lac',
   'ur-ph','ur-nit','ur-leuc','ur-hem','ur-bact','ur-prot','ur-cil','ur-lev','ur-rot',
   'pcr','pct','alb','pth','vitd','ferr','tsat','falc','tgo','comp-outros',
@@ -1171,7 +1169,7 @@ window.calcUrCr=function(){
   const cr=parseFloat(document.getElementById('f-cr')?.value||'');
   const box=document.getElementById('urcr-box');
   if(!box)return;
-  if(isNaN(ur)||isNaN(cr)||cr===0){box.className='calc-box';return;}
+  if(isNaN(ur)||isNaN(cr)||cr===0){box.className='calc-box';box.style.display='none';return;}
   const r=Math.round(ur/cr*10)/10;
   let cls='calc-box show', interp='';
   if(r<10)     {cls='calc-box show alert'; interp='↓ Baixa (<10) — sugestivo de doença hepática / desnutrição';}
@@ -1179,7 +1177,8 @@ window.calcUrCr=function(){
   else if(r<40){cls='calc-box show warn'; interp='↑ Elevada (20–40) — considerar hiperazotemia pré-renal ou aumento catabolismo';}
   else         {cls='calc-box show alert'; interp='↑↑ Muito elevada (>40) — sugestivo de causa pré-renal acentuada';}
   box.className=cls;
-  box.textContent='Ur/Cr = '+r+' · '+interp;
+  box.style.display='block';
+  box.textContent='Ur/Cr = '+r+' | '+interp;
 };
 
 // Produto Ca×P
@@ -1188,14 +1187,15 @@ window.calcCaP=function(){
   const p =parseFloat(document.getElementById('f-p')?.value||'');
   const box=document.getElementById('cap-box');
   if(!box)return;
-  if(isNaN(ca)||isNaN(p)){box.className='calc-box';return;}
+  if(isNaN(ca)||isNaN(p)){box.className='calc-box';box.style.display='none';return;}
   const prod=Math.round(ca*p*10)/10;
   let cls='calc-box show', interp='';
   if(prod<35)      {cls='calc-box show'; interp='Normal (<35)';}
   else if(prod<55) {cls='calc-box show warn'; interp='↑ Elevado (35–55) — risco de calcificação vascular';}
   else             {cls='calc-box show alert'; interp='↑↑ Alto (>55) — risco elevado de calcificação';}
   box.className=cls;
-  box.textContent='Ca×P = '+prod+' mg²/dL² · '+interp;
+  box.style.display='block';
+  box.textContent='Ca×P = '+prod+' mg²/dL² | '+interp;
 };
 
 window.toInitials=function(){
@@ -1644,9 +1644,7 @@ window.updResumo=function(){
   const hemoAll=[
     {l:'Hb',  v:gf('hb'),  u:'g/dL', min:12,  max:16},
     {l:'Leuc',v:gf('leuc'),u:'mil/µL',min:4,   max:10},
-    {l:'Bast',v:gf('bast'),u:'%',     min:0,   max:5},
     {l:'Plaq',v:gf('plaq'),u:'mil/µL',min:150, max:400},
-    {l:'Retic',v:gf('retic'),u:'%',   min:0.5, max:2.5},
   ].filter(x=>x.v&&isAbn(x.v,x.min,x.max));
   if(hemoAll.length) lines.push('Hemograma: '+hemoAll.map(x=>x.l+' '+x.v+' '+x.u).join(' | '));
 
