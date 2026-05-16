@@ -275,23 +275,21 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
     <div style="font-size:11px;font-weight:600;color:#6b21a8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Parâmetros HDF on-line</div>
     <div class="row">
       <div class="field"><label>Modalidade convectiva</label>
-        <select id="hdfModo">
-          <option value="pos">Pós-diluição (padrão)</option>
-          <option value="pre">Pré-diluição (alta hematócrito/coagulação)</option>
-          <option value="mix">Mid/mista</option>
+        <select id="hdfModo" onchange="calcAll()">
+          <option value="pos">Pós-diluição (padrão CONVINCE)</option>
+          <option value="pre">Pré-diluição (alto hematócrito/baixo Qb)</option>
+          <option value="mix">Mid/mista (pré + pós)</option>
         </select>
       </div>
-      <div class="field"><label>Volume convectivo alvo</label>
-        <select id="hdfVconv">
-          <option value="23">≥ 23 L/sessão (CONVINCE)</option>
-          <option value="25">≥ 25 L/sessão (alto convectivo)</option>
-          <option value="ajustar">Ajustar pela máquina (FF ≤ 25%)</option>
+      <div class="field"><label>Fração de mistura (mid/mista)</label>
+        <select id="hdfMix" onchange="calcAll()" disabled>
+          <option value="30">30% pré : 70% pós</option>
+          <option value="50">50% pré : 50% pós</option>
+          <option value="70">70% pré : 30% pós</option>
         </select>
       </div>
     </div>
-    <div style="font-size:10.5px;color:#6b21a8;margin-top:4px;line-height:1.5">
-      <strong>Notas:</strong> Qb mínimo 350–400 mL/min · FF (fração de filtração) auto-calculada · Heparinização +25% pela maior tendência à coagulação no filtro · Considerar dialisador high-flux com KUf ≥ 60 mL/h/mmHg. <em>CONVINCE Trial 2023 / EuDial Consensus 2025.</em>
-    </div>
+    <div id="hdfRecBox"></div>
   </div>
 </div>
 
@@ -426,6 +424,80 @@ function esc(s){if(s===null||s===undefined)return '';return String(s).replace(/[
 function caCorrigido(ca,alb){
   if(ca===null||alb===null||alb>=4)return ca;
   return ca+0.8*(4-alb);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PARÂMETROS HDF — diferenciação técnica por modo de diluição
+// (CONVINCE Trial NEJM 2023 · EuDial Consensus 2025 · ERA-EDTA)
+// ═════════════════════════════════════════════════════════════════════════════
+function getHdfParams(modo){
+  // Retorna parâmetros técnicos por modo de diluição
+  if(modo==='pre'){
+    return {
+      label:'Pré-diluição',
+      vconv:'≥ 45–60 L/sessão',
+      vconvNum:'45–60 L',
+      qbMin:'250–300 mL/min',
+      qbAdd:50, // adicionar 50 ao Qb mínimo do acesso para HDF pré
+      ffLimit:'não limita (sangue diluído)',
+      hepFactor:1.0,
+      hepNota:'Heparinização padrão (similar HD) — sangue diluído reduz coagulação no filtro',
+      cor:'amber',
+      notas:'Substituição PRÉ-filtro: dilui o sangue antes da membrana. Reduz eficácia de remoção convectiva → requer ~2–3× mais volume convectivo para equivalência clínica ao pós-diluição. Útil em: hematócrito alto (>40%), tendência a coagulação, Qb limitado por acesso. <em>EuDial 2025.</em>'
+    };
+  }
+  if(modo==='mix'){
+    return {
+      label:'Mid/mista',
+      vconv:'≥ 30–40 L/sessão',
+      vconvNum:'30–40 L',
+      qbMin:'300–350 mL/min',
+      qbAdd:0,
+      ffLimit:'FF ≤ 30% no segmento pós',
+      hepFactor:1.15,
+      hepNota:'Heparinização +15% (intermediária)',
+      cor:'purple',
+      notas:'Substituição PRÉ + PÓS combinadas. Compromisso entre eficácia convectiva (pós) e segurança hemorreológica (pré). Disponível em equipamentos selecionados (Fresenius 5008/6008, B.Braun Dialog+).'
+    };
+  }
+  // pós (padrão CONVINCE)
+  return {
+    label:'Pós-diluição',
+    vconv:'≥ 23 L/sessão (CONVINCE)',
+    vconvNum:'≥ 23 L',
+    qbMin:'350–400 mL/min',
+    qbAdd:50,
+    ffLimit:'FF ≤ 25% (auto-ajustada pela máquina)',
+    hepFactor:1.25,
+    hepNota:'Heparinização +25% — alta tendência à coagulação por hemoconcentração no filtro',
+    cor:'green',
+    notas:'Substituição PÓS-filtro: padrão CONVINCE Trial. Máxima eficiência de remoção convectiva. Requer Qb adequado e FF ≤ 25% para evitar hemoconcentração. <em>NEJM 2023.</em>'
+  };
+}
+
+function renderHdfPainel(){
+  if(modal!=='HDF'){g('hdfRecBox')&&(g('hdfRecBox').innerHTML='');return;}
+  var modo=g('hdfModo').value;
+  var p=getHdfParams(modo);
+  // Habilita/desabilita o seletor de fração de mistura
+  var mixSel=g('hdfMix');
+  if(mixSel)mixSel.disabled=(modo!=='mix');
+  var mixInfo='';
+  if(modo==='mix'){
+    var frac=mixSel?mixSel.value:'30';
+    mixInfo='<div style="font-size:11px;margin-top:4px;color:#6b21a8"><strong>Mistura selecionada:</strong> '+frac+'% pré-filtro : '+(100-frac)+'% pós-filtro</div>';
+  }
+  g('hdfRecBox').innerHTML=
+    '<div class="rec-box '+p.cor+'" style="margin-top:10px"><div class="rec-label">Parâmetros HDF — '+p.label+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px;margin-top:4px">'+
+    '<div><span style="font-size:10.5px;font-weight:600;opacity:.7">Volume convectivo</span><br><span class="rec-val" style="font-size:13px">'+p.vconv+'</span></div>'+
+    '<div><span style="font-size:10.5px;font-weight:600;opacity:.7">Qb mínimo</span><br><span class="rec-val" style="font-size:13px">'+p.qbMin+'</span></div>'+
+    '<div><span style="font-size:10.5px;font-weight:600;opacity:.7">Fração de filtração</span><br><span class="rec-val" style="font-size:13px">'+p.ffLimit+'</span></div>'+
+    '<div><span style="font-size:10.5px;font-weight:600;opacity:.7">Heparinização</span><br><span class="rec-val" style="font-size:13px">×'+p.hepFactor.toFixed(2)+'</span></div>'+
+    '</div>'+
+    mixInfo+
+    '<div class="rec-detail" style="margin-top:6px">'+p.notas+'<br><strong>Nota heparina:</strong> '+p.hepNota+'.</div>'+
+    '</div>';
 }
 
 function initMedState(){
@@ -910,10 +982,10 @@ function selFreq(btn,freq,type){
 // ACESSO VASCULAR — Qb adaptado a HDF
 // ═════════════════════════════════════════════════════════════════════════════
 var AC_MAP={
-  fav:{label:'FAV',tipo:'fav',qb:'350–450',qbHDF:'400–500',subs:['Rádio-cefálica','Braquio-cefálica','Braquio-basílica','Ulno-basílica']},
-  ptfe:{label:'Prótese PTFE',tipo:'ptfe',qb:'300–400',qbHDF:'350–450',subs:['Antebraço (MS)','Coxa']},
-  'cat-tmp':{label:'Cateter temporário',tipo:'cat',qb:'250–350',qbHDF:'≥ 350 (HDF requer alto Qb)',subs:['Jugular interna','Subclávio','Femoral']},
-  'cat-tun':{label:'Cateter tunelizado',tipo:'cat',qb:'300–400',qbHDF:'≥ 350',subs:['Jugular interna','Subclávio']}
+  fav:{label:'FAV',tipo:'fav',qb:'350–450',subs:['Rádio-cefálica','Braquio-cefálica','Braquio-basílica','Ulno-basílica']},
+  ptfe:{label:'Prótese PTFE',tipo:'ptfe',qb:'300–400',subs:['Antebraço (MS)','Coxa']},
+  'cat-tmp':{label:'Cateter temporário',tipo:'cat',qb:'250–350',subs:['Jugular interna','Subclávio','Femoral']},
+  'cat-tun':{label:'Cateter tunelizado',tipo:'cat',qb:'300–400',subs:['Jugular interna','Subclávio']}
 };
 var acTipo='',acSub='',acLat='';
 
@@ -957,10 +1029,16 @@ function renderQb(){
   var div=g('qbResult');
   if(!acessoTipo){div.innerHTML='';return;}
   var cfg=AC_MAP[acTipo]||{qb:'—',label:acessoTipo};
-  var qbStr=(modal==='HDF'?cfg.qbHDF:cfg.qb)+' mL/min';
+  var qbStr=cfg.qb+' mL/min',modoLbl='';
+  if(modal==='HDF'){
+    var p=getHdfParams(g('hdfModo').value);
+    qbStr=cfg.qb+' mL/min (HD) · '+p.qbMin+' (HDF '+p.label+')';
+    modoLbl=' — HDF '+p.label;
+  }
   var alerta='';
   if(modal==='HDF'&&acessoTipo==='cat'){alerta='<div style="font-size:11px;margin-top:4px;color:#92400e;font-weight:500">⚠ HDF em cateter pode não atingir Qb-alvo. Avaliar manutenção em HD convencional ou troca de acesso.</div>';}
-  div.innerHTML='<div class="rec-box blue" style="margin-top:8px"><div class="rec-label">Meta Qb — '+cfg.label+(modal==='HDF'?' (HDF)':'')+'</div><div class="rec-val">'+qbStr+'</div><div class="rec-detail">Iniciar no limite inferior e titular conforme tolerância hemodinâmica e pressão arterial/venosa</div>'+alerta+'</div>';
+  if(modal==='HDF'&&g('hdfModo').value==='pre'){alerta+='<div style="font-size:11px;margin-top:4px;color:#6b21a8">ℹ Pré-diluição permite Qb menor — útil quando o acesso limita o fluxo.</div>';}
+  div.innerHTML='<div class="rec-box blue" style="margin-top:8px"><div class="rec-label">Meta Qb — '+cfg.label+modoLbl+'</div><div class="rec-val">'+qbStr+'</div><div class="rec-detail">Iniciar no limite inferior e titular conforme tolerância hemodinâmica e pressão arterial/venosa</div>'+alerta+'</div>';
 }
 
 function renderTaurolock(){
@@ -978,6 +1056,7 @@ function calcAll(){
   renderDialisato();
   renderAdequacao();
   renderAlertasMed();
+  renderHdfPainel();
   buildMedGrid();
   buildPainelIntegrado();
   if(acessoTipo)renderQb();
@@ -999,15 +1078,20 @@ function calcHeparina(){
   var ps=fv('pesoSeco'),esq=g('hepEsquema').value,div=g('hepResult');
   if(esq==='sem'){div.innerHTML='<div class="rec-box slate"><div class="rec-label">Anticoagulação</div><div class="rec-val">Heparina-free</div><div class="rec-detail">Sem heparina — manter circuito com lavagem salina periódica (NaCl 100–200 mL a cada 30 min)</div></div>';return;}
   if(!ps){div.innerHTML='<div style="font-size:12px;color:#aaa">Informe o peso seco para calcular a dose</div>';return;}
-  // HDF requer ~25% mais heparina (maior risco coagulação no filtro)
-  var fHDF=(modal==='HDF')?1.25:1.0;
+  // Fator HDF dinâmico baseado no modo de diluição
+  var fHDF=1.0,modoLbl='';
+  if(modal==='HDF'){
+    var p=getHdfParams(g('hdfModo').value);
+    fHDF=p.hepFactor;
+    modoLbl=' · HDF '+p.label;
+  }
   var bUI=Math.round(ps*50*fHDF),mUI=Math.round(ps*25*fHDF);
   var bML=(ps*50*fHDF/HEP_CONC).toFixed(1),mML=(ps*25*fHDF/HEP_CONC).toFixed(1);
-  var val2='',detail='',hdfHint=modal==='HDF'?' (+25% para HDF)':'';
+  var val2='',detail='',hdfHint=fHDF!==1.0?(' (×'+fHDF.toFixed(2)+' para HDF)'):'';
   if(esq==='std'){val2='Bolus: '+bML+' mL ('+bUI+' UI) · Manutenção: '+mML+' mL/h ('+mUI+' UI/h)';detail='Bolus EV inicial + manutenção contínua (suspender 30–60 min antes do término). 5.000 UI/mL · 50 UI/kg · 25 UI/kg/h'+hdfHint;}
   else if(esq==='bolus'){val2='Bolus único: '+bML+' mL ('+bUI+' UI)';detail='Bolus único EV no início da sessão. 5.000 UI/mL · 50 UI/kg'+hdfHint;}
   else if(esq==='mini'){val2='Heparinização mínima: '+mML+' mL ('+mUI+' UI)';detail='Bolus reduzido — sem manutenção. 5.000 UI/mL · 25 UI/kg'+hdfHint;}
-  div.innerHTML='<div class="rec-box purple"><div class="rec-label">Heparina não fracionada (5.000 UI/mL) — peso: '+ps.toFixed(1)+' kg'+(modal==='HDF'?' · HDF':'')+'</div><div class="rec-val">'+val2+'</div><div class="rec-detail">'+detail+'</div></div>';
+  div.innerHTML='<div class="rec-box purple"><div class="rec-label">Heparina não fracionada (5.000 UI/mL) — peso: '+ps.toFixed(1)+' kg'+modoLbl+'</div><div class="rec-val">'+val2+'</div><div class="rec-detail">'+detail+'</div></div>';
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1042,7 +1126,13 @@ function gerarResumo(){
   var ufMax=ps&&t?Math.round(taxa*parseFloat(ps)*parseFloat(t)):null;
 
   var qbVal='—';
-  if(acTipo&&AC_MAP[acTipo]){qbVal=(modal==='HDF'?AC_MAP[acTipo].qbHDF:AC_MAP[acTipo].qb)+' mL/min';}
+  if(acTipo&&AC_MAP[acTipo]){
+    qbVal=AC_MAP[acTipo].qb+' mL/min';
+    if(modal==='HDF'){
+      var pHdf=getHdfParams(g('hdfModo').value);
+      qbVal=AC_MAP[acTipo].qb+' (HD) · '+pHdf.qbMin+' (HDF '+pHdf.label+')';
+    }
+  }
 
   var medsAtivos=MEDS.filter(function(m){return medState[m.id].ativo&&!medState[m.id].suspended;});
   var medsSuspensos=MEDS.filter(function(m){return medState[m.id].ativo&&medState[m.id].suspended;});
@@ -1056,8 +1146,14 @@ function gerarResumo(){
     urrStr=((ureP-ureT)/ureP*100).toFixed(1)+'%';
   }
 
-  var hdfModo=modal==='HDF'?(g('hdfModo').value==='pre'?'pré-diluição':g('hdfModo').value==='mix'?'mista':'pós-diluição'):'';
-  var hdfVconv=modal==='HDF'?g('hdfVconv').value:'';
+  // Detalhes HDF dinâmicos
+  var hdfDetalhes='';
+  if(modal==='HDF'){
+    var pH=getHdfParams(g('hdfModo').value);
+    hdfDetalhes=' ('+pH.label+', V_conv '+pH.vconvNum+', FF '+pH.ffLimit;
+    if(g('hdfModo').value==='mix'){var fr=g('hdfMix').value;hdfDetalhes+=', '+fr+'% pré : '+(100-fr)+'% pós';}
+    hdfDetalhes+=')';
+  }
 
   var txt='PRESCRICAO DIALITICA — '+nome.toUpperCase()+'\n';
   txt+='Data: '+new Date().toLocaleDateString('pt-BR')+'\n'+'—'.repeat(52)+'\n\n';
@@ -1070,9 +1166,7 @@ function gerarResumo(){
   txt+='\n';
 
   // Modalidade
-  txt+='MODALIDADE: '+modal;
-  if(modal==='HDF')txt+=' ('+hdfModo+', V_conv '+(hdfVconv==='ajustar'?'ajustado pela máquina':'≥ '+hdfVconv+' L/sessão')+')';
-  txt+='  |  FREQUENCIA: '+freqSel+'  |  SESSAO: '+(t?t+' h':'—')+'\n';
+  txt+='MODALIDADE: '+modal+hdfDetalhes+'  |  FREQUENCIA: '+freqSel+'  |  SESSAO: '+(t?t+' h':'—')+'\n';
   txt+='ACESSO: '+(acessoNome||'—')+'  |  Qb META: '+qbVal+'\n\n';
 
   // UF
@@ -1113,14 +1207,14 @@ function gerarResumo(){
   txt+='ANTICOAGULACAO\n';
   var esq=g('hepEsquema')?g('hepEsquema').value:'std';
   var psN=ps?parseFloat(ps):null;
-  var fHDF=(modal==='HDF')?1.25:1.0;
+  var fHDF=1.0,hdfFactorTag='';
+  if(modal==='HDF'){var pHfac=getHdfParams(g('hdfModo').value);fHDF=pHfac.hepFactor;hdfFactorTag=' (×'+fHDF.toFixed(2)+' HDF '+pHfac.label+')';}
   if(esq==='sem'){txt+='  Heparina: nao prescrito (heparina-free)\n';}
   else if(psN){
     var bML=(psN*50*fHDF/5000).toFixed(1),mML=(psN*25*fHDF/5000).toFixed(1);
-    var hdfTag=modal==='HDF'?' (+25% HDF)':'';
-    if(esq==='std')txt+='  Heparina'+hdfTag+': bolus '+bML+' mL EV + manutencao '+mML+' mL/h (5.000 UI/mL)\n';
-    else if(esq==='bolus')txt+='  Heparina'+hdfTag+': bolus unico '+bML+' mL EV (5.000 UI/mL)\n';
-    else if(esq==='mini')txt+='  Heparina'+hdfTag+': heparinizacao minima '+mML+' mL EV (5.000 UI/mL)\n';
+    if(esq==='std')txt+='  Heparina'+hdfFactorTag+': bolus '+bML+' mL EV + manutencao '+mML+' mL/h (5.000 UI/mL)\n';
+    else if(esq==='bolus')txt+='  Heparina'+hdfFactorTag+': bolus unico '+bML+' mL EV (5.000 UI/mL)\n';
+    else if(esq==='mini')txt+='  Heparina'+hdfFactorTag+': heparinizacao minima '+mML+' mL EV (5.000 UI/mL)\n';
   } else {txt+='  Heparina: peso seco nao informado\n';}
   if(acessoTipo==='cat')txt+='  Taurolock: '+(tauChk?tauFreq:'nao prescrito')+'\n';
   if(calcChk)txt+='  Calcitonina: '+calcFreq+'\n';
