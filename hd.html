@@ -118,6 +118,7 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
 .checkrow{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:6px 10px;border-radius:6px;border:1px solid #ddd;background:#fff}
 .checkrow input{width:14px;height:14px;accent-color:#1a1a18;cursor:pointer}
 .checkrow.active{background:#fff5f5;border-color:#fca5a5;color:#991b1b}
+.checkrow.active-pos{background:#f0fdf4;border-color:#86efac;color:#166534}
 .dialisato-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
 .adeq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:7px}
 .hdf-extra{background:#faf5ff;border:1px solid #c4b5fd;border-radius:8px;padding:9px 12px;margin-top:8px;display:none}
@@ -198,6 +199,36 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
     <div class="field" style="grid-column:span 2">
       <label>Status clínico atual</label>
       <label class="checkrow" id="infRow"><input type="checkbox" id="infAtiva" onchange="onInfChange()"> Infecção ativa (suspender ferro EV, alerta ESA-hiporresponsividade)</label>
+    </div>
+  </div>
+  <div class="row" style="margin-top:4px">
+    <div class="field" style="grid-column:span 3">
+      <label>Transplante renal</label>
+      <label class="checkrow" id="filaTxRow"><input type="checkbox" id="filaTx" onchange="onFilaTxChange()"> Em fila de transplante renal</label>
+    </div>
+  </div>
+  <div class="row" id="filaTxDetalhes" style="display:none;margin-top:4px">
+    <div class="field">
+      <label>Data de inscrição na fila</label>
+      <input type="text" id="filaTxData" placeholder="dd/mm/aaaa" maxlength="10">
+    </div>
+    <div class="field">
+      <label>Status na fila</label>
+      <select id="filaTxStatus">
+        <option value="ativo">Ativo (apto a receber órgão)</option>
+        <option value="suspenso">Suspenso temporariamente</option>
+        <option value="contraindic">Contraindicação temporária</option>
+        <option value="emAvaliacao">Em avaliação pré-transplante</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tipo de compatibilidade</label>
+      <select id="filaTxComp">
+        <option value="cadaver">Doador falecido (cadáver)</option>
+        <option value="vivo">Doador vivo aparentado</option>
+        <option value="vivoNApar">Doador vivo não aparentado</option>
+        <option value="ambos">Cadáver + doador vivo identificado</option>
+      </select>
     </div>
   </div>
 </div>
@@ -370,6 +401,7 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
 <div class="action-row">
   <button class="primary" onclick="gerarResumo()">Gerar resumo clínico</button>
   <button onclick="copiarResumo(event)">Copiar resumo</button>
+  <button onclick="importarResumo()">Importar resumo</button>
   <button onclick="window.print()">Imprimir</button>
   <button class="danger" onclick="limparTudo()">Limpar tudo</button>
 </div>
@@ -556,6 +588,15 @@ function onInfChange(){
   }
   buildMedGrid();
   onLabChange();
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FILA DE TRANSPLANTE
+// ═════════════════════════════════════════════════════════════════════════════
+function onFilaTxChange(){
+  var fila=g('filaTx').checked;
+  g('filaTxRow').classList.toggle('active-pos',fila);
+  g('filaTxDetalhes').style.display=fila?'grid':'none';
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1163,6 +1204,13 @@ function gerarResumo(){
   txt+='  Causa DRC:      '+(causa||'nao informada')+'\n';
   txt+='  Perfil clinico: '+perfilTxt+'\n';
   if(infAtiva)txt+='  ** INFECCAO ATIVA ** — ferro EV suspenso, ESA pode estar hiporresponsivo\n';
+  if(g('filaTx').checked){
+    var filaStatusMap={ativo:'Ativo',suspenso:'Suspenso temporariamente',contraindic:'Contraindicação temporária',emAvaliacao:'Em avaliação pré-transplante'};
+    var filaCompMap={cadaver:'Doador falecido',vivo:'Doador vivo aparentado',vivoNApar:'Doador vivo não aparentado',ambos:'Cadáver + doador vivo'};
+    txt+='  FILA TRANSPLANTE: '+(filaStatusMap[sv('filaTxStatus')]||'Ativo')+' · '+(filaCompMap[sv('filaTxComp')]||'Doador falecido');
+    var fdata=sv('filaTxData');if(fdata)txt+=' · Inscrição: '+fdata;
+    txt+='\n';
+  }
   txt+='\n';
 
   // Modalidade
@@ -1271,6 +1319,358 @@ function limparTudo(){
   g('causaSubWrap').style.display='none';g('causaOutraWrap').style.display='none';
   g('hdfExtra').classList.remove('show');
   g('infRow').classList.remove('active');
+  modal='HD';freqSel='3x/semana';acReset();
+  g('btnHD').className='toggle-btn sel';g('btnHDF').className='toggle-btn';
+  initMedState();buildMedGrid();
+  g('painelIntegrado').style.display='none';
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// IMPORTAR / EXPORTAR ESTADO — re-importação de resumos prévios
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Coleta o estado completo da UI em um objeto serializável
+function dumpState(){
+  return {
+    v:16,
+    // Identificação
+    nome:sv('nomeNovo'),
+    causaDRC:sv('causaDRC'),
+    causaSub:sv('causaSub'),
+    causaOutra:sv('causaOutra'),
+    perfilClinico:sv('perfilClinico'),
+    infAtiva:g('infAtiva').checked,
+    filaTx:g('filaTx').checked,
+    filaTxData:sv('filaTxData'),
+    filaTxStatus:sv('filaTxStatus'),
+    filaTxComp:sv('filaTxComp'),
+    // Labs
+    labs:{
+      ktvE:sv('ktvE'),ureiaInp:sv('ureiaInp'),ureiaPos:sv('ureiaPos'),
+      hbInp:sv('hbInp'),ferritinaInp:sv('ferritinaInp'),satFeInp:sv('satFeInp'),
+      caInp:sv('caInp'),albInp:sv('albInp'),pInp:sv('pInp'),
+      pthInp:sv('pthInp'),pthData:sv('pthData'),vitDInp:sv('vitDInp'),
+      kInp:sv('kInp'),hco3Inp:sv('hco3Inp')
+    },
+    // Modalidade
+    modal:modal,
+    hdfModo:g('hdfModo')?g('hdfModo').value:'pos',
+    hdfMix:g('hdfMix')?g('hdfMix').value:'30',
+    freqSel:freqSel,
+    pesoSeco:sv('pesoSeco'),
+    tempo:sv('tempo'),
+    // Acesso
+    acTipo:acTipo,acSub:acSub,acLat:acLat,
+    // Anticoagulação / cateter
+    hepEsquema:g('hepEsquema').value,
+    tauChk:!!(g('taurolockChk')&&g('taurolockChk').checked),
+    tauFreq:g('taurolockFreq')?g('taurolockFreq').value:'',
+    calcChk:g('calcitoninaChk').checked,
+    calcFreq:g('calcitoninaFreq').value,
+    // Medicações
+    medState:JSON.parse(JSON.stringify(medState))
+  };
+}
+
+// Aplica um objeto de estado à UI
+function restaurarEstado(s){
+  if(!s)return;
+  // Identificação
+  if(s.nome)g('nomeNovo').value=s.nome;
+  if(s.causaDRC){
+    g('causaDRC').value=s.causaDRC;
+    onCausaChange();
+    if(s.causaSub&&g('causaSub'))g('causaSub').value=s.causaSub;
+    if(s.causaOutra&&g('causaOutra'))g('causaOutra').value=s.causaOutra;
+  }
+  if(s.perfilClinico)g('perfilClinico').value=s.perfilClinico;
+  if(s.infAtiva){g('infAtiva').checked=true;onInfChange();}
+  if(s.filaTx){
+    g('filaTx').checked=true;
+    onFilaTxChange();
+    if(s.filaTxData)g('filaTxData').value=s.filaTxData;
+    if(s.filaTxStatus)g('filaTxStatus').value=s.filaTxStatus;
+    if(s.filaTxComp)g('filaTxComp').value=s.filaTxComp;
+  }
+  // Labs
+  if(s.labs){
+    Object.keys(s.labs).forEach(function(k){
+      if(g(k)&&s.labs[k])g(k).value=s.labs[k];
+    });
+  }
+  // Modalidade
+  if(s.modal)setModal(s.modal);
+  if(s.hdfModo&&g('hdfModo'))g('hdfModo').value=s.hdfModo;
+  if(s.hdfMix&&g('hdfMix'))g('hdfMix').value=s.hdfMix;
+  if(s.freqSel){
+    var chip=document.querySelector('.freq-chip[data-freq="'+s.freqSel.replace(/"/g,'\\"')+'"]');
+    if(chip){
+      var type=s.freqSel==='2x/semana'?'warn':'';
+      selFreq(chip,s.freqSel,type);
+    }
+  }
+  if(s.pesoSeco)g('pesoSeco').value=s.pesoSeco;
+  if(s.tempo)g('tempo').value=s.tempo;
+  // Acesso — simular cliques sequenciais
+  if(s.acTipo&&AC_MAP[s.acTipo]){
+    var tipoBtn=document.querySelector('#ac-tipo .acesso-chip[onclick*="\''+s.acTipo+'\'"]');
+    if(tipoBtn){
+      acSelTipo(tipoBtn,s.acTipo);
+      if(s.acSub){
+        // Buscar pelo texto do botão (mais robusto)
+        var subBtns=document.querySelectorAll('#ac-subtipo .acesso-chip');
+        for(var i=0;i<subBtns.length;i++){
+          if(subBtns[i].textContent.trim()===s.acSub){
+            acSelSub(subBtns[i],s.acSub);
+            break;
+          }
+        }
+        if(s.acLat){
+          var latBtn=document.querySelector('#ac-lat .acesso-chip[onclick*="\''+s.acLat+'\'"]');
+          if(latBtn)acSelLat(latBtn,s.acLat);
+        }
+      }
+    }
+  }
+  // Heparina
+  if(s.hepEsquema)g('hepEsquema').value=s.hepEsquema;
+  // Taurolock (só existe se cateter)
+  if(s.tauChk&&g('taurolockChk')){g('taurolockChk').checked=true;}
+  if(s.tauFreq&&g('taurolockFreq'))g('taurolockFreq').value=s.tauFreq;
+  // Calcitonina
+  if(s.calcChk)g('calcitoninaChk').checked=true;
+  if(s.calcFreq)g('calcitoninaFreq').value=s.calcFreq;
+  // Medicações
+  if(s.medState){
+    Object.keys(s.medState).forEach(function(id){
+      if(medState[id]){
+        var src=s.medState[id];
+        medState[id].ativo=!!src.ativo;
+        medState[id].suspended=!!src.suspended;
+        medState[id].suspReason=src.suspReason||'';
+        if(src.dose)medState[id].dose=src.dose;
+        if(src.freq)medState[id].freq=src.freq;
+        if(src.doseManual!==undefined)medState[id].doseManual=src.doseManual;
+        if(src.cp)medState[id].cp=src.cp;
+      }
+    });
+  }
+  // Recalcular tudo
+  calcAll();
+  onLabChange();
+}
+
+// Parser nível 1: JSON base64 oculto (recuperação 100% fiel)
+function parseResumoJSON(txt){
+  var m=/HD_STATE:([A-Za-z0-9+/=]+)/.exec(txt);
+  if(!m)return null;
+  try{
+    var json=decodeURIComponent(escape(atob(m[1])));
+    return JSON.parse(json);
+  }catch(e){return null;}
+}
+
+// Parser nível 2: regex (fallback para resumos editados ou antigos)
+function parseResumoTexto(txt){
+  var s={labs:{},medState:{}},m;
+  // Nome (cabeçalho)
+  m=/^PRESCRICAO DIALITICA — (.+)$/m.exec(txt);
+  if(m){var n=m[1].trim();if(n&&n!=='NOVO PACIENTE')s.nome=n;}
+  // Perfil clínico
+  m=/Perfil clinico:\s+(\w+)/.exec(txt);
+  if(m){var pm={'Padrão':'padrao','Padrao':'padrao','Cardiopata':'cardio','Idoso':'fragil'};s.perfilClinico=pm[m[1]]||'padrao';}
+  // Infecção e fila TX
+  if(/INFECCAO ATIVA/.test(txt))s.infAtiva=true;
+  if(/FILA TRANSPLANTE/.test(txt)){
+    s.filaTx=true;
+    m=/FILA TRANSPLANTE:\s+([^·\n]+)/.exec(txt);
+    if(m){
+      var stMap={'Ativo':'ativo','Suspenso':'suspenso','Contraindicação':'contraindic','Contraindicaç':'contraindic','Em avaliação':'emAvaliacao','Em avaliaç':'emAvaliacao'};
+      var txtSt=m[1].trim();
+      for(var k in stMap)if(txtSt.indexOf(k)===0){s.filaTxStatus=stMap[k];break;}
+    }
+    m=/Inscrição:\s+([0-9/\-]+)/.exec(txt);
+    if(m)s.filaTxData=m[1].trim();
+  }
+  // Modalidade
+  m=/MODALIDADE:\s+(HDF?)/.exec(txt);
+  if(m)s.modal=m[1];
+  m=/\((Pós|Pos|Pré|Pre|Mid|Mista)/.exec(txt);
+  if(m){var mm={'Pós':'pos','Pos':'pos','Pré':'pre','Pre':'pre','Mid':'mix','Mista':'mix'};s.hdfModo=mm[m[1]];}
+  // Frequência
+  m=/FREQUENCIA:\s+([^|]+?)\s*\|/.exec(txt);
+  if(m)s.freqSel=m[1].trim();
+  // Sessão e peso
+  m=/SESSAO:\s+([0-9]+(?:[.,][0-9]+)?)\s*h/.exec(txt);
+  if(m)s.tempo=m[1].replace(',','.');
+  m=/Peso seco:\s+([0-9]+(?:[.,][0-9]+)?)/.exec(txt);
+  if(m)s.pesoSeco=m[1].replace(',','.');
+  // Labs
+  var labMap={
+    'Kt/V equilibrado':'ktvE','Hemoglobina':'hbInp','Fosforo':'pInp',
+    'Calcio total':'caInp','Albumina':'albInp','Potassio':'kInp',
+    'Bicarbonato':'hco3Inp','PTH':'pthInp','25-OH Vit D':'vitDInp',
+    'Ferritina':'ferritinaInp','Sat. Transferrina':'satFeInp'
+  };
+  Object.keys(labMap).forEach(function(lab){
+    var labRe=lab.replace(/[.+*?^$()|{}[\]\\\/]/g,'\\$&');
+    // Âncora (?:^|\n)\s+ garante que a label está no início da linha (precedida só por indentação),
+    // evitando match em "Banho de Potassio:" e "Banho de Bicarbonato:" do bloco de dialisato.
+    var re=new RegExp('(?:^|\\n)\\s+'+labRe+':\\s+([0-9]+(?:[.,][0-9]+)?)','i');
+    var match=re.exec(txt);
+    if(match)s.labs[labMap[lab]]=match[1].replace(',','.');
+  });
+  // Ureia pre/pos
+  m=/Ureia pre \/ pos:\s+([0-9]+|—)\s*\/\s*([0-9]+|—)/.exec(txt);
+  if(m){
+    if(m[1]!=='—')s.labs.ureiaInp=m[1];
+    if(m[2]!=='—')s.labs.ureiaPos=m[2];
+  }
+  m=/PTH:.*?\(([0-9/\-]+)\)/.exec(txt);
+  if(m)s.labs.pthData=m[1];
+  // Acesso
+  m=/ACESSO:\s+([^|]+?)\s*\|/.exec(txt);
+  if(m){
+    var acTxt=m[1].trim();
+    if(acTxt!=='—'){
+      var ac=/^(.+?)\s+—\s+(.+?)\s+(ESQ|DIR)$/.exec(acTxt);
+      if(ac){
+        var tipoMap={'FAV':'fav','Prótese PTFE':'ptfe','Protese PTFE':'ptfe','Cateter temporário':'cat-tmp','Cateter temporario':'cat-tmp','Cateter tunelizado':'cat-tun'};
+        s.acTipo=tipoMap[ac[1].trim()];
+        s.acSub=ac[2].trim();
+        s.acLat=ac[3];
+      }
+    }
+  }
+  // Heparina
+  if(/Heparina:\s*nao prescrito/.test(txt))s.hepEsquema='sem';
+  else if(/bolus.*manutencao/.test(txt))s.hepEsquema='std';
+  else if(/bolus unico/.test(txt))s.hepEsquema='bolus';
+  else if(/heparinizacao minima/.test(txt))s.hepEsquema='mini';
+  // Calcitonina
+  m=/Calcitonina:\s+([^\n]+)/.exec(txt);
+  if(m){s.calcChk=true;s.calcFreq=m[1].trim();}
+  // Taurolock
+  m=/Taurolock:\s+([^\n]+)/.exec(txt);
+  if(m&&m[1].trim()!=='nao prescrito'){s.tauChk=true;s.tauFreq=m[1].trim();}
+  // Medicações ativas
+  MEDS.forEach(function(med){
+    var nomeRe=med.nome.replace(/[.+*?^$()|{}[\]\\\/]/g,'\\$&');
+    var re=new RegExp('-\\s+'+nomeRe+':\\s+([^\\n]+)','m');
+    var match=re.exec(txt);
+    if(match){
+      var line=match[1].trim();
+      var parts=line.split('—').map(function(p){return p.trim();});
+      s.medState[med.id]={ativo:true,suspended:false,suspReason:'',dose:parts[0]||(med.doses[0]||''),freq:parts[1]||med.freqs[0],doseManual:'',cp:1};
+      if(med.id==='sevelamer'){
+        var cpM=/x\s+(\d+)\s+comprimido/.exec(line);
+        if(cpM)s.medState[med.id].cp=parseInt(cpM[1]);
+        s.medState[med.id].dose='800 mg';
+      }
+      if(med.id==='paricalcitol'){
+        s.medState[med.id].doseManual=parts[0]||'';
+      }
+    }
+  });
+  // Medicações suspensas
+  var suspSec=/MEDICACOES SUSPENSAS\n([\s\S]*?)(?:\n\n|\n═|$)/.exec(txt);
+  if(suspSec){
+    MEDS.forEach(function(med){
+      var nomeRe=med.nome.replace(/[.+*?^$()|{}[\]\\\/]/g,'\\$&');
+      var re=new RegExp('-\\s+'+nomeRe+'\\s+\\[SUSPENSA\\](?:\\s+—\\s+Motivo:\\s+([^\\n]+))?');
+      var match=re.exec(suspSec[1]);
+      if(match){
+        if(!s.medState[med.id])s.medState[med.id]={ativo:true,dose:med.doses[0]||'',freq:med.freqs[0],doseManual:'',cp:1};
+        s.medState[med.id].suspended=true;
+        s.medState[med.id].suspReason=match[1]?match[1].trim():'';
+      }
+    });
+  }
+  return s;
+}
+
+// Modal de importação
+function importarResumo(){
+  var existing=document.querySelector('.import-overlay');
+  if(existing){existing.remove();return;}
+  var overlay=document.createElement('div');
+  overlay.className='import-overlay';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;padding:1.2rem;border-radius:10px;max-width:720px;width:100%;max-height:90vh;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.2)';
+  box.innerHTML='<div style="font-size:15px;font-weight:600;color:#1a1a18">Importar resumo</div>'+
+    '<div style="font-size:12px;color:#666;line-height:1.5">Cole abaixo um resumo gerado anteriormente. O sistema reconstrói os campos identificáveis (labs, modalidade, acesso, medicações ativas e suspensas).</div>'+
+    '<textarea id="importTxt" placeholder="PRESCRICAO DIALITICA — ..." style="flex:1;min-height:280px;padding:10px;border:1px solid #ddd;border-radius:6px;font-family:DM Mono,monospace;font-size:11px;resize:vertical;outline:none"></textarea>'+
+    '<div id="importStatus" style="font-size:11px;color:#666;min-height:16px"></div>'+
+    '<div style="display:flex;gap:6px;justify-content:flex-end">'+
+    '<button id="impCancel" style="padding:7px 16px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-family:inherit;font-size:13px">Cancelar</button>'+
+    '<button id="impGo" style="padding:7px 16px;border:1px solid #1a1a18;background:#1a1a18;color:#fff;border-radius:6px;cursor:pointer;font-family:inherit;font-size:13px">Importar</button>'+
+    '</div>';
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  setTimeout(function(){g('importTxt').focus();},50);
+  document.getElementById('impCancel').addEventListener('click',function(){overlay.remove();});
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.getElementById('impGo').addEventListener('click',function(){executarImport(overlay);});
+}
+
+function executarImport(overlay){
+  var txt=g('importTxt').value;
+  var status=g('importStatus');
+  if(!txt||!txt.trim()){status.style.color='#991b1b';status.textContent='Cole um texto antes de importar.';return;}
+  // Tentar JSON primeiro (resumos antigos podem ter o blob); fallback para regex
+  var state=parseResumoJSON(txt);
+  if(!state){
+    state=parseResumoTexto(txt);
+  }
+  if(!state||Object.keys(state).length===0){
+    status.style.color='#991b1b';
+    status.textContent='Não foi possível interpretar o resumo. Verifique o formato.';
+    return;
+  }
+  // Contar quantos campos foram efetivamente capturados (para feedback ao usuário)
+  var capturados=0;
+  if(state.nome)capturados++;
+  if(state.perfilClinico)capturados++;
+  if(state.modal)capturados++;
+  if(state.freqSel)capturados++;
+  if(state.pesoSeco)capturados++;
+  if(state.tempo)capturados++;
+  if(state.acTipo)capturados++;
+  if(state.labs)capturados+=Object.keys(state.labs).length;
+  if(state.medState)capturados+=Object.keys(state.medState).length;
+
+  limparTudoSilencioso();
+  restaurarEstado(state);
+  overlay.remove();
+  // Toast de sucesso (não-bloqueante)
+  var toast=document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:20px;right:20px;background:#166534;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,.2);font-family:DM Sans,sans-serif';
+  toast.textContent='Resumo importado — '+capturados+' campo(s) restaurado(s). Revise antes de gerar nova prescrição.';
+  document.body.appendChild(toast);
+  setTimeout(function(){toast.style.transition='opacity .4s';toast.style.opacity='0';setTimeout(function(){toast.remove();},400);},4000);
+}
+
+// Limpar tudo sem confirmação (uso interno)
+function limparTudoSilencioso(){
+  document.querySelectorAll('input[type=text],input[type=number]').forEach(function(el){el.value='';});
+  document.querySelectorAll('input[type=checkbox]').forEach(function(el){el.checked=false;});
+  document.querySelectorAll('select').forEach(function(el){el.selectedIndex=0;});
+  document.querySelectorAll('#ac-tipo .acesso-chip,#ac-subtipo .acesso-chip,#ac-lat .acesso-chip').forEach(function(c){c.className='acesso-chip';});
+  document.querySelectorAll('.freq-chip').forEach(function(c){c.className='freq-chip';});
+  var freq3=document.querySelector('.freq-chip[data-freq="3x/semana"]');
+  if(freq3)freq3.className='freq-chip sel';
+  g('acessoSel').textContent='';g('qbResult').innerHTML='';g('ufResult').innerHTML='';
+  g('hepResult').innerHTML='<div style="font-size:12px;color:#aaa">Informe o peso seco para calcular a dose</div>';
+  g('taurolockArea').innerHTML='<div style="font-size:12px;color:#aaa;font-style:italic">Selecione um cateter para habilitar</div>';
+  g('summaryArea').innerHTML='';g('labPreview').innerHTML='';g('freqNote').textContent='';
+  g('adequacaoBox').innerHTML='';g('alertasMed').innerHTML='';
+  g('dialisatoBox').innerHTML='<div style="font-size:12px;color:#aaa;font-style:italic">Preencha cálcio, potássio e bicarbonato para receber sugestões personalizadas.</div>';
+  g('causaSubWrap').style.display='none';g('causaOutraWrap').style.display='none';
+  g('hdfExtra').classList.remove('show');
+  g('infRow').classList.remove('active');
+  g('filaTxRow').classList.remove('active-pos');
+  g('filaTxDetalhes').style.display='none';
   modal='HD';freqSel='3x/semana';acReset();
   g('btnHD').className='toggle-btn sel';g('btnHDF').className='toggle-btn';
   initMedState();buildMedGrid();
