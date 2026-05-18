@@ -86,6 +86,8 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
 .susp-btn:hover{background:#fca5a5;color:#7f1d1d}
 .susp-btn.suspended{background:#fca5a5;color:#7f1d1d;font-weight:600}
 .susp-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;white-space:nowrap}
+.br-unavail-badge{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;white-space:nowrap;letter-spacing:.02em}
+.br-unavail-note{font-size:11px;padding:6px 9px;border-radius:6px;background:#f8fafc;color:#475569;border:1px solid #e2e8f0;margin-top:4px;line-height:1.55}
 .susp-reason-wrap{padding:6px 12px 8px;background:#fff5f5;border-top:1px solid #fecaca;display:none}
 .susp-reason-wrap.open{display:block}
 .susp-reason-wrap label{font-size:10.5px;color:#991b1b;font-weight:600;display:block;margin-bottom:4px}
@@ -433,12 +435,12 @@ var SUBCAUSAS={
 
 var MEDS=[
   {id:'epo',          nome:'EPO (eritropoietina)',      doses:['2.000 UI','4.000 UI','6.000 UI','8.000 UI','10.000 UI','12.000 UI'],   freqs:['1x/sem','2x/sem','3x/sem','a cada 2 sem']},
-  {id:'hifphi',       nome:'HIF-PHI (Roxadustat)',      doses:['70 mg','100 mg','120 mg','150 mg','200 mg'],                            freqs:['3x/sem VO','1x/dia VO']},
+  {id:'hifphi',       nome:'HIF-PHI (Roxadustat)',      doses:['70 mg','100 mg','120 mg','150 mg','200 mg'],                            freqs:['3x/sem VO','1x/dia VO'], naoDisponivelBR:true},
   {id:'noripurum',    nome:'Noripurum EV',              doses:[],                                                                        freqs:['100 mg 2x/sem (reposição)','200 mg 1x/sem (reposição)','100 mg 1x/sem (manutenção)','200 mg quinzenal (manutenção)','100 mg/mês (manutenção mínima)']},
   {id:'sevelamer',    nome:'Sevelamer',                doses:['800 mg'],                                                                freqs:['1x/dia','2x/dia','3x/dia','4x/dia']},
   {id:'calcio',       nome:'Carbonato de cálcio',       doses:['500 mg','1g','1,5g','2g','2,5g','3g'],                                  freqs:['1x/dia','2x/dia','3x/dia','4x/dia']},
   {id:'cinacalcet',   nome:'Cinacalcete VO',            doses:['30 mg','60 mg','90 mg','180 mg'],                                       freqs:['1x/dia','2x/dia']},
-  {id:'etelcalcetida',nome:'Etelcalcetida EV',          doses:['2,5 mg','5 mg','7,5 mg','10 mg','15 mg'],                               freqs:['3x/sem (após HD)']},
+  {id:'etelcalcetida',nome:'Etelcalcetida EV',          doses:['2,5 mg','5 mg','7,5 mg','10 mg','15 mg'],                               freqs:['3x/sem (após HD)'], naoDisponivelBR:true},
   {id:'paricalcitol', nome:'Paricalcitol',              doses:[],                                                                       freqs:['3x/sem (intradialítico)','2x/sem','1x/sem']},
   {id:'calcitriol',   nome:'Calcitriol (Rocaltrol®)',   doses:['0,25 mcg VO','0,5 mcg VO','1,0 mcg VO','0,5 mcg EV','1,0 mcg EV','2,0 mcg EV'],freqs:['1x/dia VO','2x/dia VO','3x/sem EV (intradialítico)','2x/sem EV']},
   {id:'vitd',         nome:'Vitamina D (colecalciferol)',doses:['400 UI','800 UI','1.000 UI','2.000 UI','50.000 UI'],                   freqs:['1x/dia','2x/dia','1x/semana','quinzenal']}
@@ -622,11 +624,11 @@ function getRecs(hb,p,ca,k,pth,pthStr,ps,ferritina,satFe,vitD){
   else if(hb<=13){r.epo={cor:'amber',dose:'Reduzir 25%',freq:'3x/sem',detail:'Hb '+hb.toFixed(1)+' > 11,5 g/dL — reduzir ESA 25%. (KDIGO 2026 Rec 3.3.1)'};}
   else{r.epo={cor:'red',dose:'Suspender ou reduzir 50%',freq:'—',detail:'Hb '+hb.toFixed(1)+' > 13 g/dL — suspender ou reduzir 50%. Alto risco CV/trombose. (KDIGO 2026 Rec 3.3.1)'};}
 
-  // ─── HIF-PHI (KDIGO 2026 — alternativa ao ESA) ──────────────────────────
-  if(hb===null){r.hifphi={cor:'slate',dose:'—',freq:'—',detail:'Alternativa ao ESA (KDIGO 2026). Informar Hb.'};}
-  else if(hb<10){r.hifphi={cor:'green',dose:'70–100 mg',freq:'3x/sem VO',detail:'Hb '+hb.toFixed(1)+' — HIF-PHI (roxadustat) é alternativa ao ESA: preferência por VO, intolerância ESA, ausência de refrigeração, ESA-hiporresponsividade. CONTRAINDICADO em malignidade ativa, evento CV/trombótico recente. (KDIGO 2026 Rec 3.4)'};}
-  else if(hb<=11.5){r.hifphi={cor:'slate',dose:'Manter',freq:'3x/sem VO',detail:'Hb na meta — manter HIF-PHI se em uso.'};}
-  else{r.hifphi={cor:'amber',dose:'Reduzir/suspender',freq:'—',detail:'Hb '+hb.toFixed(1)+' acima da meta. Reduzir 50% ou suspender. (KDIGO 2026)'};}
+  // ─── HIF-PHI (KDIGO 2026 — alternativa ao ESA) — INDISPONÍVEL NO BRASIL ──
+  if(hb===null){r.hifphi={cor:'slate',dose:'—',freq:'—',detail:'⚠ NÃO DISPONÍVEL NO BRASIL — referência didática. Alternativa ao ESA por KDIGO 2026. Informar Hb.'};}
+  else if(hb<10){r.hifphi={cor:'slate',dose:'70–100 mg',freq:'3x/sem VO',detail:'⚠ NÃO DISPONÍVEL NO BRASIL — sem registro ANVISA até 2026. Hb '+hb.toFixed(1)+' — em países onde disponível, alternativa ao ESA: preferência por VO, intolerância a ESA, ESA-hiporresponsividade. CONTRAINDICADO em malignidade ativa, evento CV/trombótico recente. (KDIGO 2026 Rec 3.4)'};}
+  else if(hb<=11.5){r.hifphi={cor:'slate',dose:'Manter',freq:'3x/sem VO',detail:'⚠ NÃO DISPONÍVEL NO BRASIL. Hb na meta — manter HIF-PHI se em uso (fora do BR).'};}
+  else{r.hifphi={cor:'slate',dose:'Reduzir/suspender',freq:'—',detail:'⚠ NÃO DISPONÍVEL NO BRASIL. Hb '+hb.toFixed(1)+' acima da meta. Reduzir 50% ou suspender. (KDIGO 2026)'};}
 
   // ─── NORIPURUM (KDIGO 2026 HD-specific: ferritina ≤500 + TSAT ≤30%) ──────
   if(infAtiva){
@@ -660,18 +662,18 @@ function getRecs(hb,p,ca,k,pth,pthStr,ps,ferritina,satFe,vitD){
   else if(pth>=600){r.cinacalcet={cor:'slate',dose:'2ª linha',freq:'Avaliar após 8–12 sem de análogo VD',detail:'PTH '+pthStr+': associar se resposta parcial ao paricalcitol/calcitriol. (KDIGO 2017 4.2.4)'};}
   else{r.cinacalcet={cor:'slate',dose:'2ª linha',freq:'Se análogo VD insuficiente',detail:'PTH '+pthStr+': equivalente ao paricalcitol (KDIGO 2017 4.2.4). Preferir se Ca ≥ 9,0.'};}
 
-  // ─── ETELCALCETIDA EV ───────────────────────────────────────────────────
-  if(pth===null||ca===null){r.etelcalcetida={cor:'slate',dose:'—',freq:'—',detail:'PTH e Ca necessários.'};}
-  else if(pth<300){r.etelcalcetida={cor:'slate',dose:'Não indicado',freq:'—',detail:'PTH '+pthStr+' — não indicado.'};}
-  else if(ca<8.4){r.etelcalcetida={cor:'red',dose:'Contraindicado',freq:'—',detail:'Ca corrigido '+ca.toFixed(1)+' < 8,4 — calcimimético CONTRAINDICADO.'};}
-  else if(ca>=9.5&&pth>=300){r.etelcalcetida={cor:'green',dose:'5 mg',freq:'3x/sem após HD (titular até 15 mg)',detail:'Alternativa EV ao cinacalcete — útil em má aderência VO ou intolerância digestiva. Equivalência aprox.: 5 mg etel ≈ 30 mg cinacalcete. (Bloco et al. JAMA 2017)'};}
-  else{r.etelcalcetida={cor:'slate',dose:'2ª linha EV',freq:'3x/sem após HD',detail:'Alternativa EV ao cinacalcete em pacientes com má aderência VO.'};}
+  // ─── ETELCALCETIDA EV — INDISPONÍVEL NO BRASIL ──────────────────────────
+  if(pth===null||ca===null){r.etelcalcetida={cor:'slate',dose:'—',freq:'—',detail:'⚠ NÃO DISPONÍVEL NO BRASIL — referência didática. PTH e Ca necessários.'};}
+  else if(pth<300){r.etelcalcetida={cor:'slate',dose:'Não indicado',freq:'—',detail:'⚠ NÃO DISPONÍVEL NO BRASIL. PTH '+pthStr+' — não indicado.'};}
+  else if(ca<8.4){r.etelcalcetida={cor:'slate',dose:'Contraindicado',freq:'—',detail:'⚠ NÃO DISPONÍVEL NO BRASIL. Ca corrigido '+ca.toFixed(1)+' < 8,4 — calcimimético CONTRAINDICADO.'};}
+  else if(ca>=9.5&&pth>=300){r.etelcalcetida={cor:'slate',dose:'5 mg',freq:'3x/sem após HD (titular até 15 mg)',detail:'⚠ NÃO DISPONÍVEL NO BRASIL — sem registro ANVISA até 2026. Em países onde disponível: alternativa EV ao cinacalcete em má aderência VO ou intolerância digestiva. Equivalência aprox.: 5 mg etel ≈ 30 mg cinacalcete. (Bloco et al. JAMA 2017)'};}
+  else{r.etelcalcetida={cor:'slate',dose:'2ª linha EV',freq:'3x/sem após HD',detail:'⚠ NÃO DISPONÍVEL NO BRASIL. Alternativa EV ao cinacalcete em pacientes com má aderência VO.'};}
 
   // ─── PARICALCITOL ───────────────────────────────────────────────────────
   if(pth===null){r.paricalcitol={cor:'slate',dose:'—',freq:'—',detail:'PTH não informado.'};}
   else if(pth<150){r.paricalcitol={cor:'slate',dose:'Não indicado',freq:'—',detail:'PTH '+pthStr+': abaixo da meta — não indicado. (KDIGO 2017)'};}
   else if(pth<300){r.paricalcitol={cor:'slate',dose:'Não indicado',freq:'—',detail:'PTH '+pthStr+': dentro da meta (150–300) — não indicado. (KDIGO 2017)'};}
-  else if(ca!==null&&ca>=9.5){r.paricalcitol={cor:'red',dose:'Contraindicado',freq:'—',detail:'Ca corrigido '+ca.toFixed(1)+': hipercalcemia — paricalcitol CONTRAINDICADO. Usar cinacalcete/etelcalcetida. (KDIGO 2017)'};}
+  else if(ca!==null&&ca>=9.5){r.paricalcitol={cor:'red',dose:'Contraindicado',freq:'—',detail:'Ca corrigido '+ca.toFixed(1)+': hipercalcemia — paricalcitol CONTRAINDICADO. Usar cinacalcete. (KDIGO 2017)'};}
   else if(!ps){r.paricalcitol={cor:'slate',dose:'Informe o peso seco',freq:'—',detail:'Peso seco necessário para calcular dose EV.'};}
   else if(pth<600){var lo=(ps*0.04).toFixed(1),hi=(ps*0.1).toFixed(1);r.paricalcitol={cor:'green',dose:'EV: '+lo+'–'+hi+' mcg/sessão',freq:'3x/sem — 1ª linha',detail:'PTH '+pthStr+': iniciar '+lo+' mcg/sessão 3x/sem. Meta PTH 2–9× LSN (≈150–600). (KDIGO 2017 4.2.3–4.2.4)'};}
   else{var lo2=(ps*0.06).toFixed(1),hi2=(ps*0.1).toFixed(1);r.paricalcitol={cor:'green',dose:'EV: '+lo2+'–'+hi2+' mcg/sessão',freq:'3x/sem — 1ª linha',detail:'PTH '+pthStr+': HPT grave. Dose 0,06–0,1 mcg/kg. Monitorar Ca semanalmente. (KDIGO 2017 4.2.4)'};}
@@ -687,7 +689,7 @@ function getRecs(hb,p,ca,k,pth,pthStr,ps,ferritina,satFe,vitD){
   if(pth===null||ca===null){r.calcitriol={cor:'slate',dose:'—',freq:'—',detail:'PTH e Ca necessários para recomendação.'};}
   else if(pth<150){r.calcitriol={cor:'slate',dose:'Não indicado',freq:'—',detail:'PTH '+pthStr+': abaixo da meta — não indicado. (KDIGO 2017)'};}
   else if(pth<300){r.calcitriol={cor:'slate',dose:'Não indicado',freq:'—',detail:'PTH '+pthStr+': dentro da meta. Não indicado. (KDIGO 2017)'};}
-  else if(ca>=9.5){r.calcitriol={cor:'red',dose:'Contraindicado',freq:'—',detail:'Ca corrigido '+ca.toFixed(1)+': hipercalcemia — calcitriol CONTRAINDICADO. Usar cinacalcete/etelcalcetida. (KDIGO 2017)'};}
+  else if(ca>=9.5){r.calcitriol={cor:'red',dose:'Contraindicado',freq:'—',detail:'Ca corrigido '+ca.toFixed(1)+': hipercalcemia — calcitriol CONTRAINDICADO. Usar cinacalcete. (KDIGO 2017)'};}
   else if(pth>=600){r.calcitriol={cor:'amber',dose:'EV: 1,0–2,0 mcg/sessão<br>VO: 0,5–1,0 mcg/dia',freq:'EV 3x/sem intradialítico · VO 1x/dia',detail:'PTH '+pthStr+': HPT grave. EV: iniciar 1,0 mcg/sessão. Conversão: 1 mcg paricalcitol ≈ 2 mcg calcitriol EV. Monitorar Ca semanalmente. (KDIGO 2017)'};}
   else{r.calcitriol={cor:'green',dose:'EV: 0,5–1,0 mcg/sessão<br>VO: 0,25–0,5 mcg/dia',freq:'EV 3x/sem intradialítico · VO 1x/dia',detail:'PTH '+pthStr+': EV 0,5 mcg/sessão 3x/sem ou VO 0,25 mcg/dia. (KDIGO 2017)'};}
 
@@ -833,7 +835,7 @@ function buildPainelIntegrado(){
     items.push({div:true});
     if(pth<150){items.push({pill:'Paricalcitol/Calcitriol',cls:'pp-slate',txt:'PTH '+pthStr+' < 150 — não indicados. Suspender se em uso.'});items.push({pill:'Cinacalcete',cls:'pp-slate',txt:'PTH < 150 — não indicado.'});}
     else if(pth<300){items.push({pill:'Paricalcitol/Calcitriol',cls:'pp-slate',txt:'PTH '+pthStr+' (150–300) — meta. Monitorar.'});items.push({pill:'Cinacalcete',cls:'pp-slate',txt:'PTH '+pthStr+' — não indicado.'});}
-    else if(ca>=9.5){items.push({pill:'Cinacalcete',cls:'pp-green',txt:'PTH '+pthStr+' + Ca '+ca.toFixed(1)+' — 1ª linha. 30 mg/dia, titular.',med:'cinacalcet'});items.push({pill:'Etelcalcetida',cls:'pp-green',txt:'Alternativa EV: 5 mg após HD 3x/sem.',med:'etelcalcetida'});items.push({pill:'Paricalcitol/Calcitriol',cls:'pp-slate',txt:'Ca ≥ 9,5 — CONTRAINDICADOS.'});}
+    else if(ca>=9.5){items.push({pill:'Cinacalcete',cls:'pp-green',txt:'PTH '+pthStr+' + Ca '+ca.toFixed(1)+' — 1ª linha. 30 mg/dia, titular.',med:'cinacalcet'});items.push({pill:'Paricalcitol/Calcitriol',cls:'pp-slate',txt:'Ca ≥ 9,5 — CONTRAINDICADOS.'});}
     else if(ca<8.4){var doseStr='Informe peso seco.';if(ps){var lo=(ps*0.04).toFixed(1),hi=(ps*0.1).toFixed(1);doseStr='Iniciar '+lo+' mcg/sessão 3x/sem.';}items.push({pill:'Paricalcitol',cls:'pp-amber',txt:'PTH '+pthStr+' — indicado. '+doseStr+' Ca '+ca.toFixed(1)+' baixo — monitor SEMANAL.',med:'paricalcitol'});items.push({pill:'Cinacalcete',cls:'pp-slate',txt:'Ca < 8,4 — contraindicado.'});}
     else{var doseStr2='Informe peso seco.';if(ps){if(pth>=600){var lx=(ps*0.06).toFixed(1),hx=(ps*0.1).toFixed(1);doseStr2=lx+'–'+hx+' mcg/sessão 3x/sem.';}else{var lx2=(ps*0.04).toFixed(1),hx2=(ps*0.1).toFixed(1);doseStr2=lx2+'–'+hx2+' mcg/sessão 3x/sem.';}}items.push({pill:'Paricalcitol',cls:'pp-green',txt:'PTH '+pthStr+' — indicado. '+doseStr2,med:'paricalcitol'});items.push({pill:'Cinacalcete',cls:'pp-slate',txt:pth>=600?'2ª linha — associar se PTH não reduzir ≥ 30% em 8–12 sem.':'2ª linha — se resposta parcial ao paricalcitol.'});}
   }
@@ -961,22 +963,26 @@ function buildMedGrid(){
       :'';
 
     var suspBadge=isSuspended?'<span class="susp-badge">SUSPENSA</span>':'';
+    var brBadge=m.naoDisponivelBR?'<span class="br-unavail-badge" title="Sem registro ANVISA — referência didática">Indisp. BR</span>':'';
+    var brNote=m.naoDisponivelBR?'<div class="br-unavail-note"><strong>⚠ Não disponível no Brasil.</strong> Medicação mantida como referência didática (KDIGO 2026). Sem registro ANVISA até a data desta versão.</div>':'';
 
     var suspPanel=isSuspended
       ?'<div class="susp-reason-wrap open"><label>Justificativa da suspensão</label><input type="text" placeholder="Ex: Hb > 13, infecção ativa, hipercalcemia..." value="'+esc(s.suspReason)+'" oninput="medState[\''+m.id+'\'].suspReason=this.value"><span class="susp-restore" onclick="toggleSuspend(\''+m.id+'\')">Reativar medicação</span></div>'
       :'';
 
-    var itemClass='med-item'+(s.ativo?(isSuspended?' suspended-med':' active-med'):'');
+    var itemClass='med-item'+(s.ativo?(isSuspended?' suspended-med':' active-med'):'')+(m.naoDisponivelBR?' br-unavail':'');
     var fieldsDisplay=s.ativo&&!isSuspended?'display:'+(isNori?'flex':'grid'):' display:none';
 
     return '<div class="'+itemClass+'" id="meditem-'+m.id+'">'
       +'<div class="med-header">'
       +'<input type="checkbox" class="med-check" id="chk-'+m.id+'" onchange="toggleMed(\''+m.id+'\')" '+(s.ativo?'checked':'')+'>'
       +'<label class="med-name" for="chk-'+m.id+'">'+esc(m.nome)+'</label>'
+      +brBadge
       +suspBadge
       +suspBtn
       +'</div>'
       +'<div style="padding:8px 12px;display:flex;flex-direction:column;gap:5px">'
+      +brNote
       +recBox
       +'<div class="'+(isNori?'med-fields-nori':'med-fields')+'" id="fields-'+m.id+'" style="'+fieldsDisplay+'">'
       +doseField
