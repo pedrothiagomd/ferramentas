@@ -885,8 +885,8 @@ function renderLabPreview(){
     {label:'Bicarbonato',val:hco3!==null?hco3.toFixed(1)+' mEq/L':'—',ref:'Pré-HD ≥ 22 (KDOQI)',cl:hco3===null?'neutral':hco3<18||hco3>30?'alert':hco3<22||hco3>26?'warn':'ok'},
     {label:'PTH',val:pth!==null?pth+' pg/mL':'—',ref:'Meta 150–600 (2–9× LSN)',cl:pth===null?'neutral':pth>=600?'alert':pth<150?'warn':'ok'},
     {label:'25-OH Vit D',val:vitD!==null?vitD+' ng/mL':'—',ref:'Meta ≥ 30',cl:vitD===null?'neutral':vitD<20?'alert':vitD<30?'warn':'ok'},
-    {label:'Ferritina',val:ferritina!==null?ferritina+' ng/mL':'—',ref:'HD: ≤500 + TSAT≤30%',cl:ferritina===null?'neutral':ferritina>700?'alert':ferritina<45?'alert':ferritina<=500?'info':'ok'},
-    {label:'Sat. Transf.',val:satFe!==null?satFe+'%':'—',ref:'HD: ≤30% repor',cl:satFe===null?'neutral':satFe>=40?'alert':satFe<=30?'info':'ok'}
+    {label:'Ferritina',val:ferritina!==null?ferritina+' ng/mL':'—',ref:'HD: ≤500 + TSAT≤30%',cl:ferritina===null?'neutral':ferritina>700?'alert':ferritina<45?'alert':ferritina<=500?'warn':'ok'},
+    {label:'Sat. Transf.',val:satFe!==null?satFe+'%':'—',ref:'HD: ≤30% repor',cl:satFe===null?'neutral':satFe>=40?'alert':satFe<=30?'warn':'ok'}
   );
   var hasAny=cards.some(function(c){return c.val!=='—';});
   if(!hasAny){g('labPreview').innerHTML='';return;}
@@ -1482,6 +1482,41 @@ function parseResumoTexto(txt){
   // Nome (cabeçalho)
   m=/^PRESCRICAO DIALITICA — (.+)$/m.exec(txt);
   if(m){var n=m[1].trim();if(n&&n!=='NOVO PACIENTE')s.nome=n;}
+  // Causa DRC (texto humano → código do select)
+  m=/Causa DRC:\s+([^\n]+)/.exec(txt);
+  if(m){
+    var causaTxt=m[1].trim();
+    if(causaTxt&&causaTxt!=='nao informada'){
+      // Separar nome principal de sub-causa (se houver "— ")
+      var causaParts=causaTxt.split(/\s+—\s+/);
+      var causaPrincipal=causaParts[0].trim();
+      var causaSubTxt=causaParts[1]?causaParts[1].trim():'';
+      // Mapa reverso label → código
+      var causaMap={
+        'Nefropatia diabética':'DM','Nefropatia diabetica':'DM',
+        'Nefropatia hipertensiva':'HAS',
+        'Glomerulopatia':'GN',
+        'Doença renal policística do adulto':'DRPA','Doenca renal policistica do adulto':'DRPA',
+        'Nefrite intersticial crônica':'NIC','Nefrite intersticial cronica':'NIC',
+        'Uropatia obstrutiva':'UROP',
+        'Síndrome cardiorrenal':'CRS','Sindrome cardiorrenal':'CRS',
+        'Síndrome hepatorrenal':'HRS','Sindrome hepatorrenal':'HRS',
+        'Nefrite lúpica':'LUPUS','Nefrite lupica':'LUPUS',
+        'Vasculite ANCA':'ANCA',
+        'Mieloma / paraproteinemia':'MIELO',
+        'Lesão renal aguda não recuperada':'ATI','Lesao renal aguda nao recuperada':'ATI',
+        'Causa indeterminada':'INDET'
+      };
+      if(causaMap[causaPrincipal]){
+        s.causaDRC=causaMap[causaPrincipal];
+        if(causaSubTxt)s.causaSub=causaSubTxt;
+      } else {
+        // Não casou nenhum padrão → "Outra"
+        s.causaDRC='OUTRA';
+        s.causaOutra=causaTxt;
+      }
+    }
+  }
   // Perfil clínico
   m=/Perfil clinico:\s+(\w+)/.exec(txt);
   if(m){var pm={'Padrão':'padrao','Padrao':'padrao','Cardiopata':'cardio','Idoso':'fragil'};s.perfilClinico=pm[m[1]]||'padrao';}
@@ -1494,6 +1529,13 @@ function parseResumoTexto(txt){
       var stMap={'Ativo':'ativo','Suspenso':'suspenso','Contraindicação':'contraindic','Contraindicaç':'contraindic','Em avaliação':'emAvaliacao','Em avaliaç':'emAvaliacao'};
       var txtSt=m[1].trim();
       for(var k in stMap)if(txtSt.indexOf(k)===0){s.filaTxStatus=stMap[k];break;}
+    }
+    // Tipo de compatibilidade (vem após primeiro " · ")
+    m=/FILA TRANSPLANTE:[^·\n]+·\s+([^·\n]+)/.exec(txt);
+    if(m){
+      var compMap={'Doador falecido':'cadaver','Doador vivo aparentado':'vivo','Doador vivo não aparentado':'vivoNApar','Doador vivo nao aparentado':'vivoNApar','Cadáver + doador vivo':'ambos','Cadaver + doador vivo':'ambos'};
+      var txtComp=m[1].trim();
+      for(var kc in compMap)if(txtComp.indexOf(kc)===0){s.filaTxComp=compMap[kc];break;}
     }
     m=/Inscrição:\s+([0-9/\-]+)/.exec(txt);
     if(m)s.filaTxData=m[1].trim();
@@ -1559,10 +1601,13 @@ function parseResumoTexto(txt){
   // Taurolock
   m=/Taurolock:\s+([^\n]+)/.exec(txt);
   if(m&&m[1].trim()!=='nao prescrito'){s.tauChk=true;s.tauFreq=m[1].trim();}
-  // Medicações ativas
+  // Medicações ativas — parser tolerante a sufixos (" EV", "(Rocaltrol)") e símbolos (®)
   MEDS.forEach(function(med){
-    var nomeRe=med.nome.replace(/[.+*?^$()|{}[\]\\\/]/g,'\\$&');
-    var re=new RegExp('-\\s+'+nomeRe+':\\s+([^\\n]+)','m');
+    // Remove ® e usa "raiz" do nome (primeira palavra significativa) para match mais robusto
+    var nomeBase=med.nome.replace(/®/g,'').replace(/\s*\([^)]+\)\s*/g,'').replace(/\s+(EV|VO|SC|IM)\s*$/i,'').trim();
+    var nomeRe=nomeBase.replace(/[.+*?^$()|{}[\]\\\/]/g,'\\$&');
+    // Aceita o nome seguido de espaços/parênteses/sufixos antes do ":"
+    var re=new RegExp('-\\s+'+nomeRe+'[^:\\n]*:\\s+([^\\n]+)','mi');
     var match=re.exec(txt);
     if(match){
       var line=match[1].trim();
@@ -1576,14 +1621,19 @@ function parseResumoTexto(txt){
       if(med.id==='paricalcitol'){
         s.medState[med.id].doseManual=parts[0]||'';
       }
+      if(med.id==='calcitriol'){
+        // freq vem como "3x/sem EV intradialítico (EV intradialítico)" — pegar até primeiro parênteses
+        s.medState[med.id].freq=(parts[1]||'').replace(/\s*\([^)]*\)\s*$/,'').trim()||med.freqs[0];
+      }
     }
   });
-  // Medicações suspensas
+  // Medicações suspensas — mesmo tratamento tolerante
   var suspSec=/MEDICACOES SUSPENSAS\n([\s\S]*?)(?:\n\n|\n═|$)/.exec(txt);
   if(suspSec){
     MEDS.forEach(function(med){
-      var nomeRe=med.nome.replace(/[.+*?^$()|{}[\]\\\/]/g,'\\$&');
-      var re=new RegExp('-\\s+'+nomeRe+'\\s+\\[SUSPENSA\\](?:\\s+—\\s+Motivo:\\s+([^\\n]+))?');
+      var nomeBase=med.nome.replace(/®/g,'').replace(/\s*\([^)]+\)\s*/g,'').replace(/\s+(EV|VO|SC|IM)\s*$/i,'').trim();
+      var nomeRe=nomeBase.replace(/[.+*?^$()|{}[\]\\\/]/g,'\\$&');
+      var re=new RegExp('-\\s+'+nomeRe+'[^\\[\\n]*\\[SUSPENSA\\](?:\\s+—\\s+Motivo:\\s+([^\\n]+))?','i');
       var match=re.exec(suspSec[1]);
       if(match){
         if(!s.medState[med.id])s.medState[med.id]={ativo:true,dose:med.doses[0]||'',freq:med.freqs[0],doseManual:'',cp:1};
@@ -1629,27 +1679,43 @@ function executarImport(overlay){
   if(!state){
     state=parseResumoTexto(txt);
   }
+  // Diagnóstico no console para depuração (visível em F12)
+  try{console.log('[Prescritor HD] Estado parseado:',state);}catch(e){}
   if(!state||Object.keys(state).length===0){
     status.style.color='#991b1b';
-    status.textContent='Não foi possível interpretar o resumo. Verifique o formato.';
+    status.textContent='Não foi possível interpretar o resumo. Verifique se o formato corresponde ao gerado pela ferramenta.';
     return;
   }
-  // Contar quantos campos foram efetivamente capturados (para feedback ao usuário)
+  // Contar quantos campos foram efetivamente capturados
   var capturados=0;
   if(state.nome)capturados++;
+  if(state.causaDRC)capturados++;
   if(state.perfilClinico)capturados++;
   if(state.modal)capturados++;
   if(state.freqSel)capturados++;
   if(state.pesoSeco)capturados++;
   if(state.tempo)capturados++;
   if(state.acTipo)capturados++;
+  if(state.filaTx)capturados++;
   if(state.labs)capturados+=Object.keys(state.labs).length;
   if(state.medState)capturados+=Object.keys(state.medState).length;
 
+  if(capturados===0){
+    status.style.color='#991b1b';
+    status.textContent='Texto recebido mas nenhum campo reconhecido. Verifique se é um resumo gerado pelo Prescritor HD.';
+    return;
+  }
+
   limparTudoSilencioso();
-  restaurarEstado(state);
+  // Aplicar estado e tratar erros sem abortar
+  try{restaurarEstado(state);}catch(e){
+    try{console.error('[Prescritor HD] Erro ao restaurar:',e);}catch(_){}
+    status.style.color='#991b1b';
+    status.textContent='Erro ao aplicar estado: '+e.message+'. Veja console (F12).';
+    return;
+  }
   overlay.remove();
-  // Toast de sucesso (não-bloqueante)
+  // Toast de sucesso
   var toast=document.createElement('div');
   toast.style.cssText='position:fixed;bottom:20px;right:20px;background:#166534;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,.2);font-family:DM Sans,sans-serif';
   toast.textContent='Resumo importado — '+capturados+' campo(s) restaurado(s). Revise antes de gerar nova prescrição.';
