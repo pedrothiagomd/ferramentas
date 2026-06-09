@@ -214,6 +214,80 @@ const BREWERS = {
         note: "Orientação oficial do UFO: moagem no lado fino do médio, mais fina que a sua de V60. Mantenha o leito sempre úmido; ácido/rápido → mais fina · amargo/lento → mais grossa." },
     ],
   },
+
+  oxo: {
+    label: "OXO Rapid Brewer",
+    note: "Bomba de pressão manual: concentrado estilo espresso, sem eletricidade. Os 'shots de sopa' foram popularizados pelo Lance Hedrick.",
+    defaultFilter: "oxoAero",
+    bodyKey: "oxoAero",
+    clarityKey: "oxoAero",
+    filters: {
+      oxoAero: { label: "Papel AeroPress + tela", sub: "papel sobre o leito", group: "OXO", tier: "mod", offsetUm: 0,
+        flow: "Por pressão (bomba)", bypass: "—", cup: "Concentrado claro e limpo, sem crema",
+        note: "Tela de 58,5 mm no fundo da cesta e um papel padrão de AeroPress por cima do leito — o papel uniformiza o fluxo e limpa a xícara." },
+    },
+    recipes: [
+      { name: "Soup", coffee: 22, water: "80–90 ml → 66 g na xícara", temp: "92–96 °C", ratio: "≈1:3", c40Lo: 11, c40Hi: 15, native: "oxoAero", proc: ["washed"],
+        procNote: "Pequeno, claro e intenso, quase um chá concentrado: brilha em lavados de altitude e lotes delicados.",
+        tag: "O 'shot de sopa': concentrado com clareza de coado, servido morno em xícara pequena (~66 g).",
+        prestep: "ANTES · Tela no fundo da cesta, 22 g compactados, papel de AeroPress por cima do leito",
+        events: [
+          ["00:00", 85, "adicione 80–90 g devagar (incline nos primeiros 10 g)"],
+          ["00:30", "1 bombeada", "lenta, até saturar a pastilha por completo"],
+          ["00:45", "bombear", "firme e rápido (~2/s) até ouvir o chiado"],
+          ["01:00", "parar", "tire da xícara; descarte o líquido final do chiado"],
+        ],
+        enjoy: ["01:00","01:30"],
+        note: "Calibre pela bombeada: se saturar antes de 1 bombeada completa, moa mais fina; se precisar de mais de 1, mais grossa. Alvo: 66 g na xícara — ajuste a água de entrada para acertar. Adstringente → menos temperatura · azedo → mais." },
+      { name: "Zuppa Lunga — Lance Hedrick", coffee: 22, water: "220 ml", temp: "95 °C", ratio: "1:10", c40Lo: 16, c40Hi: 20, native: "oxoAero", proc: ["washed","natural"],
+        procNote: "A 'sopa longa': mais diluída na receita (não na xícara), doce e equilibrada. Serve torra clara, média e escura.",
+        tag: "A versão longa da Soup, do Lance: muda a proporção em vez de diluir depois, preservando a textura.",
+        prestep: "ANTES · Mesma montagem da Soup; moagem mais grossa que a Soup",
+        events: [
+          ["00:00", 220, "despeje tudo; incline na primeira adição para soltar a bolha"],
+          ["00:30", "rosquear", "rosqueie a bomba; busque saturação quase completa SEM pressão"],
+          ["01:00", "bombear", "bombeie com calma até esvaziar; pare no chiado"],
+        ],
+        enjoy: ["01:30","02:00"],
+        note: "O resultado é mais doce e equilibrado que a Soup ('bomba de suco'). Na AeroPress, a mesma ideia funciona com 15 g e 150 ml." },
+    ],
+  },
+
+  bird: {
+    label: "BIRD (Weber Workshops)",
+    note: "Imersão sem bypass com separação a vácuo: a garra agita, a borboleta sobe o pod e separa a borra. Permite moagens bem mais finas que um coado.",
+    defaultFilter: "birdPaper",
+    bodyKey: "birdMesh",
+    clarityKey: "birdPaper",
+    filters: {
+      birdMesh: { label: "Tela inox", sub: "filtro padrão reutilizável", group: "Weber", tier: "mod", offsetUm: 0,
+        flow: "Livre (imersão)", bypass: "Zero", cup: "Mais corpo e óleos, estilo prensa refinada",
+        note: "A malha de aço reutilizável que acompanha o BIRD. Deixa passar óleos e finos — xícara mais cheia." },
+      birdPaper: { label: "Tela + papel CAFEC", sub: "abacá feito para a Weber", group: "CAFEC", tier: "mod", offsetUm: 0,
+        flow: "Livre (imersão)", bypass: "Zero", cup: "Limpa e focada, sem sedimento",
+        note: "Papel abacá de 72 mm feito pela CAFEC para a Weber, usado junto da tela. Não molhe o papel antes. Xícara mais limpa; suba o pod um pouco mais devagar." },
+    },
+    recipes: [
+      { name: "Imersão 1:15", coffee: 20, water: "300 ml", temp: "87 °C", ratio: "1:15", c40Lo: 16, c40Hi: 20, native: "birdPaper", proc: ["washed","natural"],
+        procNote: "Infusão longa e gentil, temperatura baixa: serve qualquer processo e torra.",
+        tag: "O ponto de partida da comunidade: proporção 1:15 com infusão de 5 minutos.",
+        events: [
+          ["00:00", 300, "água por cima do café · agite com a garra"],
+          ["05:00", "subir", "gire a borboleta devagar (~30–60 s) até o pod subir"],
+        ],
+        enjoy: ["05:45","06:15"],
+        note: "Moagem mais fina que a do seu coador de cone — a imersão sem bypass perdoa o grão fino. Velocidade da subida também é variável: mais lenta = mais limpa." },
+      { name: "Rápida e limpa", coffee: 15, water: "250 ml", temp: "96 °C", ratio: "1:16,7", c40Lo: 13, c40Hi: 17, native: "birdPaper", proc: ["washed","natural"],
+        procNote: "Curta e quente, com moagem entre espresso e coado: foco e clareza com menos adstringência que um V60.",
+        tag: "Estilo comunidade: agitação inicial, infusão curta e subida lenta do pod.",
+        events: [
+          ["00:00", 250, "água por cima do café · agite ~30 s com a garra"],
+          ["02:30", "subir", "gire a borboleta lentamente, ~1 min de subida"],
+        ],
+        enjoy: ["03:30","04:00"],
+        note: "Moagem ~25% mais grossa que espresso. Se quiser extrair mais, vá mais fina aos poucos — o vácuo segura bem." },
+    ],
+  },
 };
 
 const toSec = (s) => { const [m, x] = s.split(":").map(Number); return m * 60 + x; };
@@ -417,7 +491,7 @@ function App() {
           </ul>
           <p className="font-data text-[10.5px] mt-3 leading-relaxed" style={{ color: "#776D5E" }}>
             Calibração: C40 = 30 µm/clique · C60 = 21 µm/clique. Receitas: OREA O1 Guides; Graycano via Basic Barista;
-            V60 de Lance Hedrick (receita diária e masterclass 1-2-1); UFO de Jay e Kenzie
+            V60 e Zuppa Lunga de Lance Hedrick; Soup no OXO via Bean & Bean Coffee Roasters; BIRD via Weber Workshops e comunidade Home-Barista; UFO de Jay e Kenzie
             (criadores) via Goldchild Coffee. Filtros: Sibarist, OREA/Rogue Wave, CAFEC, Basic Barista, A.M.O.C.,
             Slow Pour Supply, Standout Coffee, Nordic Brew Lab. Cliques do C60 são pontos de partida calculados —
             o ajuste final é sempre pelo tempo de escoamento e pelo paladar.
