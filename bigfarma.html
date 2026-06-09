@@ -448,6 +448,13 @@ function nextSt(s){const c=['PENDENTE','PAGO','VENCIDO','CANCELADO'];return c[(c
 function badge(s,oc){const cls=(s||'PENDENTE').toLowerCase();return`<span class="badge ${cls}" onclick="${oc}">${s||'PENDENTE'}</span>`;}
 
 async function sha(str){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+// Reset stored passwords when defaults change (bump version to force reset)
+const PW_VERSION = '2';
+if(localStorage.getItem('pw_version') !== PW_VERSION) {
+  ['admin','u1','u2','u3'].forEach(id => localStorage.removeItem('pw_'+id));
+  localStorage.setItem('pw_version', PW_VERSION);
+}
+
 async function checkPw(id,pw){const st=localStorage.getItem('pw_'+id);const h=await sha(pw);if(st)return st===h;const def={admin:'01080508',u1:'639639',u2:'18581858',u3:'1234'};return h===await sha(def[id]||'');}
 async function setPw(id,pw){localStorage.setItem('pw_'+id,await sha(pw));}
 
