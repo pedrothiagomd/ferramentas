@@ -75,6 +75,19 @@ body{font-family:var(--body);background:var(--paper);color:var(--ink);height:100
 .cfg svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8}
 .ro-bar{background:var(--amber-soft);padding:7px;font-size:.74rem;color:var(--amber);text-align:center;font-weight:600;flex-shrink:0;display:none;align-items:center;justify-content:center;gap:6px}
 .ro-bar svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.branch-bar{flex-shrink:0;padding:10px 16px 0;background:var(--paper)}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;box-shadow:var(--shadow)}
+.seg-btn{flex:1;padding:9px 4px;border:none;background:none;border-radius:9px;font-family:var(--body);font-size:.8rem;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .15s}
+.seg-btn.on{background:var(--green);color:#fff}
+.branch-tag{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--slate-soft);color:var(--slate);border-radius:10px;padding:8px;font-size:.82rem;font-weight:600}
+.branch-tag svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.cmp-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.cmp-name{font-size:.78rem;font-weight:700;color:var(--ink2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cmp-name .pin{width:7px;height:7px;border-radius:50%}
+.cmp-saldo{font-family:var(--disp);font-size:1.2rem;font-weight:600}
+.cmp-saldo.pos{color:var(--green)}.cmp-saldo.neg{color:var(--red)}
+.cmp-sub{font-size:.68rem;color:var(--ink3);margin-top:6px;line-height:1.5}
 
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 96px}
 
@@ -259,6 +272,7 @@ body{font-family:var(--body);background:var(--paper);color:var(--ink);height:100
     </div>
   </div>
   <div class="ro-bar" id="ro-bar"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Modo visualização · somente leitura</div>
+  <div class="branch-bar" id="branch-bar"></div>
 
   <div class="scroll" id="scroll">
 
@@ -411,11 +425,12 @@ firebase.initializeApp({
 const db = firebase.firestore();
 
 const USERS=[
-  {id:'admin',name:'Administrador',role:'admin', color:'#0E8C5A',av:'AD'},
-  {id:'u1',   name:'Ebenezer',      role:'viewer',color:'#3D5564',av:'EB'},
-  {id:'u2',   name:'Tami',          role:'viewer',color:'#B9740A',av:'TM'},
-  {id:'u3',   name:'Funcionário 3',role:'viewer',color:'#7C5C9E',av:'F3'},
+  {id:'admin',name:'Administrador',role:'admin', branch:null,        color:'#0E8C5A',av:'AD'},
+  {id:'u1',   name:'Ebenezer',     role:'viewer',branch:'salvaterra',color:'#3D5564',av:'EB'},
+  {id:'u2',   name:'Tami',         role:'viewer',branch:'soure',     color:'#B9740A',av:'TM'},
 ];
+const BRANCHES=[{id:'salvaterra',name:'Salvaterra'},{id:'soure',name:'Soure'}];
+const branchName=b=>b==='todas'?'Ambas':(BRANCHES.find(x=>x.id===b)?.name||b);
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const FORMAS=[
   {k:'cc', l:'Cartão Crédito',c:'#0E8C5A'},
@@ -425,19 +440,72 @@ const FORMAS=[
   {k:'cre',l:'Crediário',     c:'#7C5C9E'},
 ];
 
-let curUser=null,selUid='admin',curM=new Date().getMonth();
+let curUser=null,selUid='admin',curM=new Date().getMonth(),curBranch='salvaterra';
 const cache={};
 
 async function dbSet(key,val){cache[key]=val;try{await db.collection('data').doc(key).set({v:JSON.stringify(val)});}catch(e){localStorage.setItem(key,JSON.stringify(val));}}
 async function dbGet(key){if(cache[key]!==undefined)return cache[key];try{const s=await db.collection('data').doc(key).get();const v=s.exists?JSON.parse(s.data().v):null;cache[key]=v;return v;}catch(e){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}}
-const mk=(t,m)=>m!==undefined?`bf26_${t}_m${m}`:`bf26_${t}`;
-const getRec =m=>dbGet(mk('rec',m)).then(v=>v||{});
-const getBols=m=>dbGet(mk('bol',m)).then(v=>v||[]);
-const getFix =()=>dbGet(mk('fix')).then(v=>v||[]);
-const getFns =()=>dbGet(mk('fns')).then(v=>v||[]);
-const getCfSt=m=>dbGet(mk('cfst',m)).then(v=>v||{});
-const getFnSt=m=>dbGet(mk('fnst',m)).then(v=>v||{});
-async function preload(m){await Promise.all([dbGet(mk('rec',m)),dbGet(mk('bol',m)),dbGet(mk('fix')),dbGet(mk('fns')),dbGet(mk('cfst',m)),dbGet(mk('fnst',m))]);}
+function keyFor(b,t,m){return m!==undefined?`bf26_${b}_${t}_m${m}`:`bf26_${b}_${t}`;}
+const mk=(t,m)=>keyFor(curBranch,t,m);
+async function getRec(m){
+  if(curBranch==='todas'){
+    const arr=await Promise.all(BRANCHES.map(b=>dbGet(keyFor(b.id,'rec',m))));
+    const out={};FORMAS.forEach(f=>{out[f.k]=arr.reduce((s,o)=>s+(parseFloat(o?.[f.k])||0),0);});return out;
+  }
+  return (await dbGet(mk('rec',m)))||{};
+}
+async function getBols(m){
+  if(curBranch==='todas'){
+    const arr=await Promise.all(BRANCHES.map(b=>dbGet(keyFor(b.id,'bol',m))));
+    return arr.flatMap((l,i)=>(l||[]).map(x=>({...x,_b:BRANCHES[i].id})));
+  }
+  return (await dbGet(mk('bol',m)))||[];
+}
+async function getFix(){
+  if(curBranch==='todas'){
+    const arr=await Promise.all(BRANCHES.map(b=>dbGet(keyFor(b.id,'fix'))));
+    return arr.flatMap((l,i)=>(l||[]).map(x=>({...x,_b:BRANCHES[i].id})));
+  }
+  return (await dbGet(mk('fix')))||[];
+}
+async function getFns(){
+  if(curBranch==='todas'){
+    const arr=await Promise.all(BRANCHES.map(b=>dbGet(keyFor(b.id,'fns'))));
+    return arr.flatMap((l,i)=>(l||[]).map(x=>({...x,_b:BRANCHES[i].id})));
+  }
+  return (await dbGet(mk('fns')))||[];
+}
+async function getCfSt(m){
+  if(curBranch==='todas'){
+    const arr=await Promise.all(BRANCHES.map(b=>dbGet(keyFor(b.id,'cfst',m))));
+    return Object.assign({},...arr.map(o=>o||{}));
+  }
+  return (await dbGet(mk('cfst',m)))||{};
+}
+async function getFnSt(m){
+  if(curBranch==='todas'){
+    const arr=await Promise.all(BRANCHES.map(b=>dbGet(keyFor(b.id,'fnst',m))));
+    return Object.assign({},...arr.map(o=>o||{}));
+  }
+  return (await dbGet(mk('fnst',m)))||{};
+}
+async function preload(m){
+  const branches = curBranch==='todas' ? BRANCHES.map(b=>b.id) : [curBranch];
+  const keys=[];
+  branches.forEach(b=>{keys.push(keyFor(b,'rec',m),keyFor(b,'bol',m),keyFor(b,'fix'),keyFor(b,'fns'),keyFor(b,'cfst',m),keyFor(b,'fnst',m));});
+  await Promise.all(keys.map(dbGet));
+}
+// Per-branch totals for the comparison view
+async function branchSaldo(b,m){
+  const [rec,bols,fix,fns]=await Promise.all([
+    dbGet(keyFor(b,'rec',m)),dbGet(keyFor(b,'bol',m)),dbGet(keyFor(b,'fix')),dbGet(keyFor(b,'fns'))
+  ]);
+  const tRec=FORMAS.reduce((s,f)=>s+(parseFloat((rec||{})[f.k])||0),0);
+  const bPago=(bols||[]).filter(x=>x.s==='PAGO').reduce((s,x)=>s+x.v,0);
+  const tFix=(fix||[]).reduce((s,x)=>s+x.v,0);
+  const tFn=(fns||[]).reduce((s,x)=>s+x.sal*1.19+(x.vt||0)+(x.vr||0),0);
+  return {rec:tRec,saidas:bPago+tFix+tFn,saldo:tRec-(bPago+tFix+tFn)};
+}
 
 const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
 const fd=d=>{if(!d)return'—';const p=d.split('-');return`${p[2]}/${p[1]}`;};
@@ -455,20 +523,20 @@ if(localStorage.getItem('pw_version') !== PW_VERSION) {
   localStorage.setItem('pw_version', PW_VERSION);
 }
 
-async function checkPw(id,pw){const st=localStorage.getItem('pw_'+id);const h=await sha(pw);if(st)return st===h;const def={admin:'01080508',u1:'639639',u2:'18581858',u3:'1234'};return h===await sha(def[id]||'');}
+async function checkPw(id,pw){const st=localStorage.getItem('pw_'+id);const h=await sha(pw);if(st)return st===h;const def={admin:'01080508',u1:'639639',u2:'18581858'};return h===await sha(def[id]||'');}
 async function setPw(id,pw){localStorage.setItem('pw_'+id,await sha(pw));}
 
 function renderUsers(){document.getElementById('user-btns').innerHTML=USERS.map(u=>`<button class="u-item${u.id===selUid?' sel':''}" onclick="selUser('${u.id}')"><div class="u-av" style="background:${u.color}1f;color:${u.color}">${u.av}</div><div class="u-info"><div class="name">${u.name}</div><div class="role">${u.role==='admin'?'Administrador':'Visualizador'}</div></div></button>`).join('');}
 function selUser(id){selUid=id;renderUsers();document.getElementById('pw-inp').focus();document.getElementById('login-err').textContent='';}
 function togglePw(){const i=document.getElementById('pw-inp');i.type=i.type==='password'?'text':'password';}
-async function doLogin(){const pw=document.getElementById('pw-inp').value;const err=document.getElementById('login-err');if(!pw){err.textContent='Digite a senha';return;}const ok=await checkPw(selUid,pw);if(!ok){err.textContent='Senha incorreta';document.getElementById('pw-inp').value='';return;}curUser=USERS.find(u=>u.id===selUid);document.getElementById('login').classList.add('off');document.getElementById('app').classList.add('on');document.getElementById('pw-inp').value='';err.textContent='';applyRole();renderMG();await preload(curM);await renderPage('resumo');updateBadge();}
+async function doLogin(){const pw=document.getElementById('pw-inp').value;const err=document.getElementById('login-err');if(!pw){err.textContent='Digite a senha';return;}const ok=await checkPw(selUid,pw);if(!ok){err.textContent='Senha incorreta';document.getElementById('pw-inp').value='';return;}curUser=USERS.find(u=>u.id===selUid);curBranch=curUser.role==='admin'?'salvaterra':curUser.branch;document.getElementById('login').classList.add('off');document.getElementById('app').classList.add('on');document.getElementById('pw-inp').value='';err.textContent='';applyRole();renderBranchBar();renderMG();await preload(curM);await renderPage('resumo');updateBadge();}
 function applyRole(){document.getElementById('ro-bar').style.display=curUser.role==='admin'?'none':'flex';}
 function isAdmin(){return curUser?.role==='admin';}
-function guard(){if(!isAdmin()){toast('Apenas o admin pode editar','err');return false;}return true;}
+function guard(){if(!isAdmin()){toast('Apenas o admin pode editar','err');return false;}if(curBranch==='todas'){toast('Selecione uma farmácia para editar','err');return false;}return true;}
 
 const PT={resumo:'Resumo',rec:'Entradas',bol:'Boletos',fix:'Custos Fixos',eq:'Equipe'};
 const FABP=['bol','fix','eq'];
-async function go(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));document.getElementById('page-'+id).classList.add('on');document.getElementById('nb-'+id).classList.add('on');document.getElementById('ttitle').textContent=PT[id];document.getElementById('fab').className=FABP.includes(id)&&isAdmin()?'fab':'fab off';document.getElementById('scroll').scrollTo(0,0);await renderPage(id);}
+async function go(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));document.getElementById('page-'+id).classList.add('on');document.getElementById('nb-'+id).classList.add('on');document.getElementById('ttitle').textContent=PT[id];document.getElementById('fab').className=(FABP.includes(id)&&isAdmin()&&curBranch!=='todas')?'fab':'fab off';document.getElementById('scroll').scrollTo(0,0);await renderPage(id);}
 async function renderPage(id){if(id==='resumo')await rResumo();if(id==='rec')await rRec();if(id==='bol')await rBol();if(id==='fix')await rFix();if(id==='eq')await rEq();updateBadge();}
 function curPage(){return document.querySelector('.nb.on')?.id?.replace('nb-','')||'resumo';}
 function openAdd(){const p=curPage();if(p==='bol')openSheet('s-bol');if(p==='fix')openSheet('s-fix');if(p==='eq')openSheet('s-fn');}
@@ -477,6 +545,27 @@ function closeSheet(id){document.getElementById(id).classList.remove('on');}
 async function updateBadge(){const n=(await getBols(curM)).filter(b=>b.s==='PENDENTE'||b.s==='VENCIDO').length;const el=document.getElementById('bpend');el.textContent=n;el.className=n?'nbadge':'nbadge off';}
 
 function renderMG(){document.getElementById('mgrid').innerHTML=MESES.map((m,i)=>`<div class="mbtn${i===curM?' on':''}" onclick="setM(${i})">${m.slice(0,3)}</div>`).join('');document.getElementById('mlabel').textContent=MESES[curM];const rl=document.getElementById('rec-mes-label');if(rl)rl.textContent=MESES[curM];}
+function renderBranchBar(){
+  const bar=document.getElementById('branch-bar');
+  if(isAdmin()){
+    bar.style.display='block';
+    bar.innerHTML=`<div class="seg">
+      <button class="seg-btn${curBranch==='salvaterra'?' on':''}" onclick="setBranch('salvaterra')">Salvaterra</button>
+      <button class="seg-btn${curBranch==='soure'?' on':''}" onclick="setBranch('soure')">Soure</button>
+      <button class="seg-btn${curBranch==='todas'?' on':''}" onclick="setBranch('todas')">Ambas</button>
+    </div>`;
+  } else {
+    bar.style.display='block';
+    bar.innerHTML=`<div class="branch-tag"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Farmácia ${branchName(curBranch)}</div>`;
+  }
+}
+async function setBranch(b){
+  curBranch=b;
+  renderBranchBar();
+  document.getElementById('fab').className=(FABP.includes(curPage())&&isAdmin()&&curBranch!=='todas')?'fab':'fab off';
+  await preload(curM);
+  await renderPage(curPage());
+}
 function openMov(){document.getElementById('mov').classList.add('on');}
 function closeMov(){document.getElementById('mov').classList.remove('on');}
 async function setM(i){curM=i;closeMov();renderMG();await preload(i);await renderPage(curPage());}
@@ -500,6 +589,11 @@ async function rResumo(){
       </div>
     </div>
     ${bPend>0?`<div class="chip full" style="border-color:var(--amber);background:var(--amber-soft)"><div class="chip-l"><span class="ic" style="background:#fff;color:var(--amber)"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>Boletos a vencer</div><div class="chip-v a num">${brl(bPend)}</div></div>`:''}`;
+  if(curBranch==='todas'){
+    const cols=['#0E8C5A','#B9740A'];
+    const data=await Promise.all(BRANCHES.map(b=>branchSaldo(b.id,curM)));
+    document.getElementById('hero').innerHTML+=`<div class="eyebrow">Por farmácia</div><div class="cmp">${BRANCHES.map((b,i)=>`<div class="cmp-card"><div class="cmp-name"><span class="pin" style="background:${cols[i]}"></span>${b.name}</div><div class="cmp-saldo ${data[i].saldo>=0?'pos':'neg'} num">${brl(data[i].saldo)}</div><div class="cmp-sub">Entrou ${brl(data[i].rec)}<br>Saiu ${brl(data[i].saidas)}</div></div>`).join('')}</div>`;
+  }
   const max=Math.max(...FORMAS.map(f=>parseFloat(rec[f.k])||0),1);
   document.getElementById('d-rec').innerHTML=FORMAS.map(f=>{const v=parseFloat(rec[f.k])||0;const pct=tRec>0?(v/tRec*100).toFixed(0):0;const w=v/max*100;return`<div class="li"><div class="li-dot" style="background:${f.c}"></div><div class="li-b"><div class="li-t">${f.l}</div><div class="prog"><div class="prog-f" style="width:${w}%;background:${f.c}"></div></div></div><div class="li-r"><div class="li-v">${brl(v)}</div><div class="li-m">${pct}%</div></div></div>`;}).join('');
   const r5=bols.slice(-4).reverse();
