@@ -1,121 +1,123 @@
 import React, { useState, useMemo } from "react";
-import { Coffee, Droplets, Thermometer, Scale, Leaf, Sparkles } from "lucide-react";
+import { Coffee, Droplets, Thermometer, Scale, Leaf, Sparkles, FlaskConical } from "lucide-react";
 
-/* ----------------------------- FILTROS ----------------------------- */
-const FILTERS = {
-  oreaFlat: {
-    label: "OREA Flat", sub: "Type G + Negotiator", group: "OREA", offset: 0,
-    flow: "Médio", bypass: "Bypass baixo (com Negotiator)",
-    cup: "Doce, suculento, encorpado",
-    note: "Papel plano de uso geral — nem rápido nem lento. Precisa do Negotiator para selar o bypass.",
+/* ============================ BREWERS ============================ */
+const BREWERS = {
+  oreaO1: {
+    label: "OREA O1",
+    note: "Fundo plano aberto (Tritan). Aceita filtro plano ou wave.",
+    defaultFilter: "sibFastFlat",
+    bodyKey: "sibWaveB3",
+    clarityKey: "sibFastFlat",
+    // offsets relativos ao filtro plano OREA (Type G)
+    filters: {
+      oreaFlat: { label: "OREA Flat", sub: "Type G + Negotiator", group: "OREA", tier: "slow", offset: 0,
+        flow: "Médio", bypass: "Bypass baixo (com Negotiator)", cup: "Doce, suculento, encorpado",
+        note: "Papel plano de uso geral — nem rápido nem lento. Precisa do Negotiator para selar o bypass." },
+      oreaWave: { label: "OREA Wave", sub: "papel ondulado", group: "OREA", tier: "mod", offset: -2,
+        flow: "Médio-rápido", bypass: "Tem bypass", cup: "Limpo, porém menos doce/concentrado que plano",
+        note: "Ondulado, se sustenta sozinho — sem Negotiator. Deixa passar mais água pela lateral (bypass)." },
+      sibFastFlat: { label: "Sibarist FAST Flat", sub: "específico do O1", group: "Sibarist", tier: "fast", offset: -3,
+        flow: "Muito rápido (15–40%+)", bypass: "Bypass zero", cup: "Limpo, sedoso, brilhante, floral/frutado",
+        note: "Plano da edição O1, com vincos para dobrar à mão. O mais rápido — adere à parede (bypass zero) e pede grão mais fino." },
+      sibWaveFast: { label: "Sibarist Wave · FAST", sub: "wave + tec. FAST", group: "Sibarist", tier: "fast", offset: -3,
+        flow: "Rápido", bypass: "Bypass mínimo", cup: "Clareza, brilho, xícara limpa",
+        note: "Wave plissado (se sustenta sozinho) com papel FAST. Fluxo rápido e transparente, perfil próximo ao FAST Flat." },
+      sibWaveB3: { label: "Sibarist Wave · B3", sub: "wave + tec. B3", group: "Sibarist", tier: "mod", offset: -2,
+        flow: "Moderadamente rápido", bypass: "Bypass mínimo", cup: "Doce, encorpado, mais textura; extração controlada",
+        note: "Mesmo formato wave, papel B3 (criado com Matt Winton). Mais corpo e controle — ótimo para naturais e fermentados." },
+    },
+    recipes: [
+      { name: "Base One", coffee: 12, water: "200 ml", temp: "96 °C", ratio: "1:16,7", baseLo: 30, baseHi: 36, proc: ["washed"],
+        procNote: "Brilho alto e corpo leve: brilha em lavados de torra clara.",
+        tag: "Familiar para quem vem do V60/Kalita. Brilho alto, corpo leve.",
+        events: [["00:00",50,"+50 · espiral"],["00:40",100,"+50"],["01:10",150,"+50"],["01:40",200,"+50"]],
+        enjoy: ["02:00","02:30"], note: "Despeje quando a água quase tocar o leito." },
+      { name: "The Dara", coffee: 12, water: "200 ml", temp: "94 °C", ratio: "1:16,7", baseLo: 30, baseHi: 36, proc: ["natural"],
+        procNote: "Janela de despejo longa e gentil: domestica naturais e fermentados.",
+        tag: "Do amigo Dara, de Madri. Sempre um resultado equilibrado.",
+        events: [["00:00",40,"+40 · espiral"],["00:40",90,"+50"],["01:20",150,"+60"],["02:00",200,"+50"]],
+        enjoy: ["02:30","03:00"], note: "Despeje quando a água quase tocar o leito." },
+      { name: "The Wide", coffee: 10, water: "200 ml", temp: "96 °C", ratio: "1:20", baseLo: 20, baseHi: 25, proc: ["washed"],
+        procNote: "Extração alta e proporção larga: clareza de lavados.",
+        tag: "Extração alta, proporção larga. Pensada para filtros planos.",
+        events: [["00:00",50,"+50 · espiral"],["01:00",125,"+75 · circ/central"],["02:00",200,"+75"]],
+        enjoy: ["03:30","04:30"], note: "Moagem fina = drawdown lento. Despeje devagar se ficar lento demais." },
+      { name: "The Mid", coffee: 12, water: "200 ml", temp: "92 °C", ratio: "1:16,7", baseLo: 28, baseHi: 34, proc: ["washed","natural"],
+        procNote: "Versátil; a OREA recomenda p/ lavados, mas segura naturais também.",
+        tag: "Receita simples que funciona bem com todos os tipos de café.",
+        events: [["00:00",50,"+50 · espiral"],["00:40",125,"+75 · circ/central"],["01:45",200,"+75"]],
+        enjoy: ["02:30","03:30"], note: "Controle o tempo de extração mudando a vazão do despejo." },
+      { name: "Easy Does It", coffee: 16, water: "260 ml", temp: "94 °C", ratio: "1:16,3", baseLo: 34, baseHi: 39, proc: ["washed","natural"],
+        procNote: "Pulsos indulgentes: vai bem com qualquer processo.",
+        tag: "Receita-base, em pulsos. Ajuste grão e temperatura ao paladar.",
+        events: [["00:00",60,"+60 · espiral"],["00:40",110,"+50"],["01:10",160,"+50"],["01:40",210,"+50"],["02:10",260,"+50"]],
+        enjoy: ["02:40","03:40"], note: "A receita-base da OREA — melhor ponto de partida para dialar." },
+      { name: "The Fine", coffee: 12, water: "200 ml", temp: "94 °C", ratio: "1:16,7", baseLo: 23, baseHi: 27, proc: ["washed"],
+        procNote: "Despejo único e brilhante: lavados rápidos e limpos.",
+        tag: "Favorita da comunidade: despejo único, sempre abaixo de 2 min.",
+        events: [["00:00",200,"+200 · 50g circ., 150g central"]],
+        enjoy: ["02:00","02:00"], note: "Deve escoar e estar pronto por volta dos 2:00." },
+      { name: "The Bypass", coffee: 18, water: "260 ml + bypass", temp: "96 °C", ratio: "1:14,4", baseLo: 30, baseHi: 36, proc: ["natural"],
+        procNote: "O bypass na xícara equilibra a intensidade de naturais/fermentados.",
+        tag: "Do campeão UK Matteo D'Ottavio. Bypass na xícara para equilibrar.",
+        events: [["00:00",60,"+60 · circ→central"],["00:40",160,"+100 · 4 g/s"],["01:30",260,"+100 · 4 g/s"]],
+        bypass: ["02:30","+15–30 g"], enjoy: ["02:30","03:00"], note: "Adicione o bypass aos poucos e prove — menos bypass = mais intenso." },
+      { name: "The Techno", coffee: 12.4, water: "200 ml", temp: "94 °C", ratio: "1:16,1", baseLo: 32, baseHi: 36, proc: ["washed"],
+        procNote: "Acelera e realça acidez: lavados vibrantes.",
+        tag: "Direto de Berghain — acelera conforme avança. Por Mordy.",
+        events: [["00:00",40,"+40 · circular"],["00:30",120,"+80 · circular"],["01:20",160,"+40 · 20+20"],["01:45",200,"+40 · central"]],
+        enjoy: ["02:30","03:00"], note: "Acelera o despejo conforme progride." },
+      { name: "The Ice", coffee: 18, water: "160 ml + 140 g gelo", temp: "94 °C", ratio: "1:8,9 conc.", baseLo: 33, baseHi: 36, proc: ["washed"],
+        procNote: "Flash brew brilhante; a OREA indica p/ lavados.",
+        tag: "Flash brew em 4 despejos: brilhante, sem gosto de diluído.", prestep: "PRÉ · 140 g de gelo na jarra",
+        events: [["00:00",40,"+40 · espiral"],["00:40",80,"+40"],["01:00",120,"+40"],["01:20",160,"+40"]],
+        enjoy: ["01:40","02:20"], note: "Mexa e resfrie rápido após o brew, derretendo parte do gelo." },
+      { name: "The Bright", coffee: 18, water: "300 ml", temp: "94 °C", ratio: "1:16,7", baseLo: 30, baseHi: 36, proc: ["washed"],
+        procNote: "Cadência fácil e brilhante: lavados alegres.",
+        tag: "Cadência 75/75/150 que entrega uma xícara brilhante e alegre.",
+        events: [["00:00",75,"+75 · circular"],["00:30",150,"+75"],["01:00",300,"+150"]],
+        enjoy: ["02:00","02:45"], note: "Despeje quando a água quase tocar o leito." },
+    ],
   },
-  oreaWave: {
-    label: "OREA Wave", sub: "papel ondulado", group: "OREA", offset: -2,
-    flow: "Médio-rápido", bypass: "Tem bypass",
-    cup: "Limpo, porém menos doce/concentrado que plano",
-    note: "Ondulado, se sustenta sozinho — sem Negotiator. Deixa passar mais água pela lateral (bypass).",
-  },
-  sibFastFlat: {
-    label: "Sibarist FAST Flat", sub: "específico do O1", group: "Sibarist", offset: -3,
-    flow: "Muito rápido (15–40%+)", bypass: "Bypass zero",
-    cup: "Limpo, sedoso, brilhante, floral/frutado",
-    note: "Filtro plano da edição O1, com vincos para dobrar à mão. O mais rápido — adere à parede (bypass zero) e pede grão mais fino. Brilha em lavados de torra clara.",
-  },
-  sibWaveFast: {
-    label: "Sibarist Wave · FAST", sub: "wave + tec. FAST", group: "Sibarist", offset: -3,
-    flow: "Rápido", bypass: "Bypass mínimo",
-    cup: "Clareza, brilho, xícara limpa",
-    note: "Formato wave plissado (se sustenta sozinho) com papel FAST. Fluxo rápido e transparente, perfil próximo ao FAST Flat.",
-  },
-  sibWaveB3: {
-    label: "Sibarist Wave · B3", sub: "wave + tec. B3", group: "Sibarist", offset: -2,
-    flow: "Moderadamente rápido", bypass: "Bypass mínimo",
-    cup: "Doce, encorpado, mais textura; extração controlada",
-    note: "Mesmo formato wave, papel B3 (criado com Matt Winton). Mais corpo, doçura e controle — ótimo para naturais e fermentados.",
+
+  graycano: {
+    label: "Graycano",
+    note: "Cônico de alumínio com Lava Ribs e parede dupla — térmica estável p/ florais e frutados.",
+    defaultFilter: "sibFastCone",
+    bodyKey: "gcStock",
+    clarityKey: "sibFastCone",
+    // offsets relativos ao filtro stock GC01 (cone)
+    filters: {
+      gcStock: { label: "Graycano GC01", sub: "filtro stock", group: "Graycano", tier: "slow", offset: 0,
+        flow: "Modesto", bypass: "—", cup: "Encorpado, rico, limpo (evita 'muddy')",
+        note: "Filtro original do Graycano. Fluxo modesto, extração mais lenta e cheia de corpo — a base das receitas." },
+      cafecAbaca: { label: "CAFEC Abaca", sub: "cone 1–2 cup", group: "CAFEC", tier: "mod", offset: -2,
+        flow: "Rápido", bypass: "—", cup: "Limpo, doce, intenso e complexo",
+        note: "Abacá japonês com produção 'fine-grained' — fluxo rápido e estável. Mais fino que o stock." },
+      sibFastCone: { label: "Sibarist FAST", sub: "cone Graycano SE", group: "Sibarist", tier: "fast", offset: -4,
+        flow: "Muito rápido (15–40%+)", bypass: "Bypass mínimo", cup: "Brilhante, clareza e intensidade, floral/frutado",
+        note: "Cone que encaixa nas Lava Ribs eliminando bolsas de ar. O mais rápido — pede grão bem mais fino que o stock." },
+    },
+    recipes: [
+      { name: "5-Stage", coffee: 15, water: "250 ml", temp: "96 °C", ratio: "1:16,7", baseLo: 33, baseHi: 37, proc: ["washed"],
+        procNote: "5 pulsos extraem mais e dão corpo/textura — a Graycano indica p/ lavados.",
+        tag: "A receita-padrão da Graycano: 5 pulsos iguais de 50 g.",
+        events: [["00:00",50,"+50 · bloom"],["00:40",100,"+50"],["01:20",150,"+50"],["02:00",200,"+50"],["02:40",250,"+50"]],
+        enjoy: ["03:15","03:45"], note: "Espere a água quase tocar o leito entre os pulsos; mantenha a mesma velocidade." },
+      { name: "3-Pour (rápida)", coffee: 17, water: "240 ml", temp: "92 °C", ratio: "1:14", baseLo: 34, baseHi: 38, proc: ["washed","natural"],
+        procNote: "Forte e rápida; temperatura menor abraça naturais e fermentados.",
+        tag: "Estilo competição: 3 despejos de 80 g, ~2 min.",
+        events: [["00:00",80,"+80 · bloom 40s"],["00:40",160,"+80 · circular"],["01:20",240,"+80 · circular"]],
+        enjoy: ["02:00","02:30"], note: "Despejos circulares lentos; deixe drenar por completo." },
+    ],
   },
 };
-
-/* ----------------------------- RECEITAS ----------------------------- */
-// baseLo/baseHi = moagem C60 normalizada para filtro plano OREA (Type G).
-// O offset do filtro escolhido é somado a isso.
-const RECIPES = [
-  { name: "Base One", origin: "Wave", coffee: 12, water: "200 ml", temp: "96 °C", ratio: "1:16,7",
-    baseLo: 30, baseHi: 36, proc: ["washed"],
-    procNote: "Brilho alto e corpo leve: brilha em lavados de torra clara.",
-    tag: "Familiar para quem vem do V60/Kalita. Brilho alto, doçura mais baixa, corpo leve.",
-    events: [["00:00",50,"+50 · espiral"],["00:40",100,"+50"],["01:10",150,"+50"],["01:40",200,"+50"]],
-    enjoy: ["02:00","02:30"], note: "Despeje quando a água quase tocar o leito." },
-
-  { name: "The Dara", origin: "Wave", coffee: 12, water: "200 ml", temp: "94 °C", ratio: "1:16,7",
-    baseLo: 30, baseHi: 36, proc: ["natural"],
-    procNote: "Janela de despejo longa e gentil: domestica naturais e fermentados.",
-    tag: "Do amigo Dara, de Madri. Sempre um resultado equilibrado.",
-    events: [["00:00",40,"+40 · espiral"],["00:40",90,"+50"],["01:20",150,"+60"],["02:00",200,"+50"]],
-    enjoy: ["02:30","03:00"], note: "Despeje quando a água quase tocar o leito." },
-
-  { name: "The Wide", origin: "Flat", coffee: 10, water: "200 ml", temp: "96 °C", ratio: "1:20",
-    baseLo: 20, baseHi: 25, proc: ["washed"],
-    procNote: "Extração alta e proporção larga: clareza de lavados.",
-    tag: "Extração alta, proporção larga. Pensada para filtros planos.",
-    events: [["00:00",50,"+50 · espiral"],["01:00",125,"+75 · circ/central"],["02:00",200,"+75"]],
-    enjoy: ["03:30","04:30"], note: "Moagem fina = drawdown lento. Despeje devagar se ficar lento demais." },
-
-  { name: "The Mid", origin: "Flat", coffee: 12, water: "200 ml", temp: "92 °C", ratio: "1:16,7",
-    baseLo: 28, baseHi: 34, proc: ["washed","natural"],
-    procNote: "Versátil; a OREA recomenda p/ lavados, mas segura naturais também.",
-    tag: "Receita simples que funciona bem com todos os tipos de café.",
-    events: [["00:00",50,"+50 · espiral"],["00:40",125,"+75 · circ/central"],["01:45",200,"+75"]],
-    enjoy: ["02:30","03:30"], note: "Controle o tempo de extração mudando a vazão do despejo." },
-
-  { name: "Easy Does It", origin: "Flat", coffee: 16, water: "260 ml", temp: "94 °C", ratio: "1:16,3",
-    baseLo: 34, baseHi: 39, proc: ["washed","natural"],
-    procNote: "Pulsos indulgentes: vai bem com qualquer processo.",
-    tag: "Receita-base, em pulsos. Ajuste grão e temperatura ao paladar.",
-    events: [["00:00",60,"+60 · espiral"],["00:40",110,"+50"],["01:10",160,"+50"],["01:40",210,"+50"],["02:10",260,"+50"]],
-    enjoy: ["02:40","03:40"], note: "A receita-base da OREA — melhor ponto de partida para dialar." },
-
-  { name: "The Fine", origin: "Wave", coffee: 12, water: "200 ml", temp: "94 °C", ratio: "1:16,7",
-    baseLo: 23, baseHi: 27, proc: ["washed"],
-    procNote: "Despejo único e brilhante: lavados rápidos e limpos.",
-    tag: "Favorita da comunidade: despejo único, sempre abaixo de 2 min.",
-    events: [["00:00",200,"+200 · 50g circ. lento, 150g central"]],
-    enjoy: ["02:00","02:00"], note: "Deve escoar e estar pronto por volta dos 2:00." },
-
-  { name: "The Bypass", origin: "Wave", coffee: 18, water: "260 ml + bypass", temp: "96 °C", ratio: "1:14,4",
-    baseLo: 30, baseHi: 36, proc: ["natural"],
-    procNote: "O bypass na xícara equilibra a intensidade de naturais/fermentados.",
-    tag: "Do campeão UK Matteo D'Ottavio. Bypass na xícara para equilibrar.",
-    events: [["00:00",60,"+60 · circ→central"],["00:40",160,"+100 · 4 g/s"],["01:30",260,"+100 · 4 g/s"]],
-    bypass: ["02:30","+15–30 g"], enjoy: ["02:30","03:00"],
-    note: "Adicione o bypass aos poucos e prove — menos bypass = mais intenso." },
-
-  { name: "The Techno", origin: "Flat", coffee: 12.4, water: "200 ml", temp: "94 °C", ratio: "1:16,1",
-    baseLo: 32, baseHi: 36, proc: ["washed"],
-    procNote: "Acelera e realça acidez: lavados vibrantes.",
-    tag: "Direto de Berghain — acelera conforme avança. Por Mordy.",
-    events: [["00:00",40,"+40 · circular"],["00:30",120,"+80 · circular"],["01:20",160,"+40 · 20+20"],["01:45",200,"+40 · central"]],
-    enjoy: ["02:30","03:00"], note: "Acelera o despejo conforme progride." },
-
-  { name: "The Ice", origin: "Wave", coffee: 18, water: "160 ml + 140 g gelo", temp: "94 °C", ratio: "1:8,9 conc.",
-    baseLo: 33, baseHi: 36, proc: ["washed"],
-    procNote: "Flash brew brilhante; a OREA indica p/ lavados.",
-    tag: "Flash brew em 4 despejos: brilhante, sem gosto de diluído.",
-    prestep: "PRÉ · 140 g de gelo na jarra",
-    events: [["00:00",40,"+40 · espiral"],["00:40",80,"+40"],["01:00",120,"+40"],["01:20",160,"+40"]],
-    enjoy: ["01:40","02:20"], note: "Mexa e resfrie rápido após o brew, derretendo parte do gelo." },
-
-  { name: "The Bright", origin: "Wave", coffee: 18, water: "300 ml", temp: "94 °C", ratio: "1:16,7",
-    baseLo: 30, baseHi: 36, proc: ["washed"],
-    procNote: "Cadência fácil e brilhante: lavados alegres.",
-    tag: "Cadência 75/75/150 que entrega uma xícara brilhante e alegre.",
-    events: [["00:00",75,"+75 · circular"],["00:30",150,"+75"],["01:00",300,"+150"]],
-    enjoy: ["02:00","02:45"], note: "Despeje quando a água quase tocar o leito." },
-];
 
 const toSec = (s) => { const [m, x] = s.split(":").map(Number); return m * 60 + x; };
 const clampGrind = (n) => Math.max(12, n);
 
-/* ----------------------------- TIMELINE ----------------------------- */
+/* ============================ TIMELINE ============================ */
 function Timeline({ r }) {
   const evs = r.events.map((e) => ({ t: e[0], cum: e[1], add: e[2], sec: toSec(e[0]) }));
   const enjoySec = toSec(r.enjoy[0]);
@@ -151,32 +153,49 @@ function Timeline({ r }) {
   );
 }
 
-/* ----------------------------- APP ----------------------------- */
+/* ============================ APP ============================ */
 export default function App() {
-  const [filter, setFilter] = useState("sibFastFlat");
+  const [brewer, setBrewer] = useState("oreaO1");
+  const [filter, setFilter] = useState(BREWERS.oreaO1.defaultFilter);
   const [proc, setProc] = useState("all");
-  const f = FILTERS[filter];
+
+  const B = BREWERS[brewer];
+  const f = B.filters[filter] || B.filters[B.defaultFilter];
+
+  const chooseBrewer = (b) => { setBrewer(b); setFilter(BREWERS[b].defaultFilter); };
+
+  const groups = useMemo(() => {
+    const order = []; const map = {};
+    Object.entries(B.filters).forEach(([k, v]) => {
+      if (!map[v.group]) { map[v.group] = []; order.push(v.group); }
+      map[v.group].push([k, v]);
+    });
+    return order.map((g) => [g, map[g]]);
+  }, [brewer]);
 
   const recipes = useMemo(() => {
-    const withGrind = RECIPES.map((r) => ({
+    const list = B.recipes.map((r) => ({
       ...r,
       gLo: clampGrind(r.baseLo + f.offset),
       gHi: clampGrind(r.baseHi + f.offset),
       match: proc === "all" || r.proc.includes(proc),
     }));
-    if (proc === "all") return withGrind;
-    return [...withGrind].sort((a, b) => (b.match ? 1 : 0) - (a.match ? 1 : 0));
-  }, [filter, proc, f.offset]);
+    if (proc === "all") return list;
+    return [...list].sort((a, b) => (b.match ? 1 : 0) - (a.match ? 1 : 0));
+  }, [brewer, filter, proc, f.offset]);
 
-  const tip =
-    proc === "natural" && (filter === "sibFastFlat" || filter === "sibWaveFast")
-      ? "Dica: para naturais com mais corpo, o Sibarist Wave · B3 costuma soar mais redondo que os papéis FAST."
-      : proc === "washed" && filter === "sibWaveB3"
-      ? "Dica: para clareza máxima em lavados de torra clara, os papéis FAST (Flat ou Wave) realçam mais o brilho."
-      : null;
+  const tip = useMemo(() => {
+    if (proc === "natural" && f.tier === "fast" && B.bodyKey !== filter)
+      return `Para naturais com mais corpo, o ${B.filters[B.bodyKey].label} tende a soar mais redondo que os papéis rápidos.`;
+    if (proc === "washed" && f.tier !== "fast" && B.clarityKey !== filter)
+      return `Para clareza máxima em lavados de torra clara, o ${B.filters[B.clarityKey].label} realça mais o brilho.`;
+    return null;
+  }, [brewer, filter, proc, f.tier]);
 
-  const fGroups = { OREA: [], Sibarist: [] };
-  Object.entries(FILTERS).forEach(([k, v]) => fGroups[v.group].push([k, v]));
+  const btn = (on, accent) => ({
+    background: on ? accent : "#FAF7F0", color: on ? "#fff" : "#211C17",
+    borderColor: on ? accent : "#D6CCBB",
+  });
 
   return (
     <div className="min-h-screen w-full" style={{ background: "#EAE4D8", color: "#211C17" }}>
@@ -188,70 +207,72 @@ export default function App() {
         {/* HEADER */}
         <header className="border-b-2 pb-5 mb-5" style={{ borderColor: "#211C17" }}>
           <div className="font-data text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: "#A0571A" }}>
-            Guia interativo · OREA O1 · Comandante C60
+            Guia interativo · Comandante C60
           </div>
           <h1 className="font-display font-bold leading-none tracking-tight" style={{ fontSize: "clamp(26px,6vw,42px)" }}>
             Seletor de Receitas
           </h1>
           <p className="mt-3 text-sm max-w-2xl" style={{ color: "#43392f" }}>
-            Escolha o filtro e o processamento do café. A moagem é recalculada em <b>clicks do C60</b> conforme o
-            fluxo do filtro, e as receitas recomendadas para o processo ficam em destaque. Tudo é ponto de
-            partida — ajuste pelo tempo e pelo paladar.
+            Escolha o brewer, o filtro e o processamento do café. A moagem é recalculada em <b>clicks do C60</b>
+            conforme o fluxo do filtro, e as receitas recomendadas para o processo ficam em destaque. Tudo é
+            ponto de partida — ajuste pelo tempo e pelo paladar.
           </p>
         </header>
 
-        {/* CONTROLES */}
-        <section className="mb-5">
-          <div className="font-data text-[11px] tracking-[0.16em] uppercase mb-2" style={{ color: "#776D5E" }}>
-            1 · Filtro
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {["OREA", "Sibarist"].map((g) => (
-              <div key={g}>
-                <div className="font-data text-[10px] uppercase tracking-wider mb-1.5" style={{ color: "#A0571A" }}>{g}</div>
-                <div className="flex flex-wrap gap-2">
-                  {fGroups[g].map(([k, v]) => {
-                    const on = filter === k;
-                    return (
-                      <button key={k} onClick={() => setFilter(k)}
-                        className="rounded-md px-3 py-2 text-left transition border"
-                        style={{
-                          background: on ? "#211C17" : "#FAF7F0",
-                          color: on ? "#FAF7F0" : "#211C17",
-                          borderColor: on ? "#211C17" : "#D6CCBB",
-                        }}>
-                        <div className="font-display font-semibold text-[13px] leading-tight">{v.label}</div>
-                        <div className="font-data text-[9.5px] opacity-70">{v.sub}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* BREWER */}
+        <div className="font-data text-[11px] tracking-[0.16em] uppercase mb-2" style={{ color: "#776D5E" }}>Brewer</div>
+        <div className="flex flex-wrap gap-2 mb-1">
+          {Object.entries(BREWERS).map(([k, v]) => {
+            const on = brewer === k;
+            return (
+              <button key={k} onClick={() => chooseBrewer(k)}
+                className="rounded-md px-4 py-2.5 text-left transition border font-display font-semibold flex items-center gap-2"
+                style={btn(on, "#211C17")}>
+                <FlaskConical size={15} /> {v.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[12px] mb-4" style={{ color: "#776D5E" }}>{B.note}</p>
 
-          <div className="font-data text-[11px] tracking-[0.16em] uppercase mt-4 mb-2" style={{ color: "#776D5E" }}>
-            2 · Processamento
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {[["all", "Todos"], ["washed", "Lavado"], ["natural", "Natural"]].map(([k, lbl]) => {
-              const on = proc === k;
-              return (
-                <button key={k} onClick={() => setProc(k)}
-                  className="rounded-md px-4 py-2 text-[13px] font-display font-semibold transition border flex items-center gap-1.5"
-                  style={{
-                    background: on ? "#A0571A" : "#FAF7F0",
-                    color: on ? "#fff" : "#211C17",
-                    borderColor: on ? "#A0571A" : "#D6CCBB",
-                  }}>
-                  {k === "natural" && <Leaf size={14} />}
-                  {k === "washed" && <Droplets size={14} />}
-                  {lbl}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* FILTRO */}
+        <div className="font-data text-[11px] tracking-[0.16em] uppercase mb-2" style={{ color: "#776D5E" }}>Filtro</div>
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
+          {groups.map(([g, items]) => (
+            <div key={g}>
+              <div className="font-data text-[10px] uppercase tracking-wider mb-1.5" style={{ color: "#A0571A" }}>{g}</div>
+              <div className="flex flex-wrap gap-2">
+                {items.map(([k, v]) => {
+                  const on = filter === k;
+                  return (
+                    <button key={k} onClick={() => setFilter(k)}
+                      className="rounded-md px-3 py-2 text-left transition border" style={btn(on, "#211C17")}>
+                      <div className="font-display font-semibold text-[13px] leading-tight">{v.label}</div>
+                      <div className="font-data text-[9.5px] opacity-70">{v.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* PROCESSAMENTO */}
+        <div className="font-data text-[11px] tracking-[0.16em] uppercase mb-2" style={{ color: "#776D5E" }}>Processamento</div>
+        <div className="flex flex-wrap gap-2 mb-5">
+          {[["all","Todos"],["washed","Lavado"],["natural","Natural"]].map(([k, lbl]) => {
+            const on = proc === k;
+            return (
+              <button key={k} onClick={() => setProc(k)}
+                className="rounded-md px-4 py-2 text-[13px] font-display font-semibold transition border flex items-center gap-1.5"
+                style={btn(on, "#A0571A")}>
+                {k === "natural" && <Leaf size={14} />}
+                {k === "washed" && <Droplets size={14} />}
+                {lbl}
+              </button>
+            );
+          })}
+        </div>
 
         {/* PAINEL DO FILTRO */}
         <section className="rounded-md p-4 mb-3" style={{ background: "#211C17", color: "#EAE4D8" }}>
@@ -275,22 +296,20 @@ export default function App() {
           )}
         </section>
 
-        {/* CONVERSÃO NOTA */}
         <p className="font-data text-[11px] mb-5" style={{ color: "#776D5E" }}>
-          Moagem em clicks do Comandante C60 (já convertida do guia original do C40 ×1,4 e ajustada por filtro).
+          Moagem em clicks do Comandante C60 (convertida do guia original em C40 ×1,4 e ajustada por filtro).
         </p>
 
         {/* RECEITAS */}
         <div className="grid md:grid-cols-2 gap-4">
           {recipes.map((r) => {
             const dim = proc !== "all" && !r.match;
+            const procTag = r.proc.includes("natural") && !r.proc.includes("washed") ? "NAT" : r.proc.length === 2 ? "AMB" : "LAV";
             return (
-              <article key={r.name}
-                className="rounded-lg p-4 border transition"
-                style={{
-                  background: "#FAF7F0", borderColor: r.match && proc !== "all" ? "#A0571A" : "#D6CCBB",
-                  borderWidth: r.match && proc !== "all" ? 2 : 1, opacity: dim ? 0.5 : 1,
-                }}>
+              <article key={r.name} className="rounded-lg p-4 border transition"
+                style={{ background: "#FAF7F0",
+                  borderColor: r.match && proc !== "all" ? "#A0571A" : "#D6CCBB",
+                  borderWidth: r.match && proc !== "all" ? 2 : 1, opacity: dim ? 0.5 : 1 }}>
                 <div className="flex justify-between items-baseline gap-2 flex-wrap">
                   <h2 className="font-display font-bold text-xl tracking-tight">{r.name}</h2>
                   <span className="font-data text-[13px] font-bold" style={{ color: "#0f766e" }}>{r.ratio}</span>
@@ -306,7 +325,6 @@ export default function App() {
 
                 <p className="text-[12.5px] mt-1.5" style={{ color: "#776D5E" }}>{r.tag}</p>
 
-                {/* SPECS */}
                 <div className="flex flex-wrap mt-3 rounded border overflow-hidden" style={{ borderColor: "#E3DCCE" }}>
                   {[
                     [<Coffee size={12} key="c"/>, "Café", `${String(r.coffee).replace(".", ",")} g`],
@@ -342,9 +360,7 @@ export default function App() {
                   <span className="font-data font-bold shrink-0" style={{ color: "#0f766e" }}>↳</span>{r.note}
                 </p>
                 <p className="text-[12px] mt-1.5 flex gap-1.5" style={{ color: "#5a5044" }}>
-                  <span className="font-data font-bold shrink-0" style={{ color: "#A0571A" }}>
-                    {r.proc.includes("natural") && !r.proc.includes("washed") ? "NAT" : r.proc.length === 2 ? "AMB" : "LAV"}
-                  </span>{r.procNote}
+                  <span className="font-data font-bold shrink-0" style={{ color: "#A0571A" }}>{procTag}</span>{r.procNote}
                 </p>
               </article>
             );
@@ -356,13 +372,14 @@ export default function App() {
           <div className="font-data text-[11px] tracking-[0.14em] uppercase mb-2" style={{ color: "#A0571A" }}>Notas</div>
           <ul className="text-[12.5px] space-y-1" style={{ color: "#43392f" }}>
             <li>· Ajuste 2–3 clicks por vez. Aguado/ácido → mais fino · entupiu/amargo → mais grosso.</li>
-            <li>· Vazão de despejo OREA ~5 g/s (50 g em 10 s). Pré-molhe o filtro para tirar gosto de papel.</li>
+            <li>· Pré-molhe o filtro para tirar gosto de papel e assentá-lo no dripper.</li>
+            <li>· Graycano: alumínio segura bem o calor — ótimo para temperaturas mais baixas em florais/frutados.</li>
             <li>· Receitas pensadas para torra clara. Torra média/escura: moa um pouco mais fino e baixe a temperatura.</li>
-            <li>· Naturais/fermentados pedem mais controle: filtros B3 e temperatura um pouco menor ajudam.</li>
           </ul>
           <p className="font-data text-[10.5px] mt-3 leading-relaxed" style={{ color: "#776D5E" }}>
-            Receitas-base: OREA O1 Guides. Dados dos filtros: OREA / Rogue Wave, Sibarist, Basic Barista, A.M.O.C.,
-            Standout Coffee, Nordic Brew Lab, WatchHouse. Conversão C60 (×1,4) e ajustes por filtro conforme seu pedido.
+            Fontes: OREA O1 Guides; receita Graycano via Basic Barista; dados de filtros via OREA/Rogue Wave, Sibarist,
+            CAFEC, Basic Barista, A.M.O.C., Slow Pour Supply, Standout Coffee, Nordic Brew Lab. Conversão C60 (×1,4) e
+            ajustes por filtro conforme seu pedido — pontos de partida, não regras.
           </p>
         </footer>
       </div>
