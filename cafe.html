@@ -47,7 +47,7 @@ const FlaskConical = (p) => <Svg {...p}><path d="M10 2v6.5L4.5 18a2 2 0 0 0 1.8 
 const BREWERS = {
   oreaO1: {
     label: "OREA O1",
-    note: "Fundo plano aberto (Tritan). Aceita papel plano ou ondulado (wave).",
+    note: "Fundo plano aberto, edição Raw Steel (aço). Aceita papel plano ou ondulado (wave).",
     defaultFilter: "sibFastFlat",
     bodyKey: "sibWaveB3",
     clarityKey: "sibFastFlat",
@@ -194,16 +194,16 @@ const BREWERS = {
     bodyKey: "sibB3UFO",
     clarityKey: "sibFastUFO",
     filters: {
-      sibFastUFO: { label: "Sibarist FAST", sub: "edição UFO", group: "Sibarist", tier: "fast", offsetUm: -45,
+      sibFastUFO: { label: "Sibarist FAST", sub: "edição UFO", group: "Sibarist", tier: "fast", offsetUm: 0,
         flow: "Rápido", bypass: "Zero", cup: "Clareza e intensidade; lavados densos",
-        note: "O preferido dos criadores. Permite moer mais fino para lavados densos sem entupir." },
-      sibB3UFO: { label: "Sibarist B3", sub: "edição UFO", group: "Sibarist", tier: "mod", offsetUm: 0,
+        note: "O papel para o qual o UFO foi projetado. Permite moer bem mais fino para lavados densos sem entupir — é a referência de moagem do coador." },
+      sibB3UFO: { label: "Sibarist B3", sub: "edição UFO", group: "Sibarist", tier: "mod", offsetUm: 45,
         flow: "Mais lento que o FAST", bypass: "Zero", cup: "Corpo e contato mais longo; naturais e fermentados intensos",
-        note: "Fluxo mais lento = mais tempo de contato. Ideal para naturais, anaeróbicos e co-fermentados, com moagem mais grossa." },
+        note: "Fluxo mais lento = mais tempo de contato. Para naturais, anaeróbicos e co-fermentados, os criadores indicam moagem mais grossa que no FAST." },
     },
     recipes: [
-      { name: "Pulse — criadores", coffee: 15, water: "250 ml", temp: "93 °C", ratio: "1:16,7", c40Lo: 28, c40Hi: 32, native: "sibB3UFO", proc: ["washed","natural"],
-        procNote: "Pré-infusão e 2 pulsos centrais. FAST para lavados (mais fina) · B3 para naturais e fermentados (mais grossa).",
+      { name: "Pulse — criadores", coffee: 15, water: "250 ml", temp: "93 °C", ratio: "1:16,7", c40Lo: 17, c40Hi: 21, native: "sibFastUFO", proc: ["washed","natural"],
+        procNote: "Pré-infusão e 2 pulsos centrais. FAST para lavados · B3 para naturais e fermentados (um degrau mais grossa).",
         tag: "Receita dos criadores do UFO (Jay e Kenzie) e da comunidade: pré-infusão e dois pulsos centrais.",
         events: [
           ["00:00", 50, "pré-infusão · 45 s"],
@@ -211,7 +211,7 @@ const BREWERS = {
           ["01:20", 250, "+100 · pulso central"],
         ],
         enjoy: ["02:10","02:40"],
-        note: "Mantenha o leito sempre úmido. Ácido/rápido → mais fina · amargo/lento → mais grossa." },
+        note: "Orientação oficial do UFO: moagem no lado fino do médio, mais fina que a sua de V60. Mantenha o leito sempre úmido; ácido/rápido → mais fina · amargo/lento → mais grossa." },
     ],
   },
 };
