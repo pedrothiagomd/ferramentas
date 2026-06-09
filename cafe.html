@@ -27,7 +27,6 @@ const { useState, useMemo } = React;
    cliques_C60 = cliques_C40 × (UM_C40 / UM_C60) = ×30/21 ≈ ×1,43 */
 const UM_C40 = 30;
 const UM_C60 = 21;
-const R = UM_C40 / UM_C60;
 
 const Svg = ({ size = 16, children }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -168,7 +167,7 @@ function Pours({ r }) {
     </div>
   );
   return (
-    <div className="mt-2 rounded-md overflow-hidden border divide-y" style={{ borderColor: "#E3DCCE", divideColor: "#EFE9DD" }}>
+    <div className="mt-2 rounded-md overflow-hidden border" style={{ borderColor: "#E3DCCE" }}>
       {r.events.map((e, i) => (
         <Row key={i} t={e[0]} g={e[1] + " g"} note={e[2]} tc="#0f766e" bg={i % 2 ? "#F6F1E8" : "#FAF7F0"} />
       ))}
@@ -232,7 +231,7 @@ function App() {
           <div className="font-data text-[11px] tracking-[0.2em] uppercase mb-2" style={{ color: "#A0571A" }}>Guia interativo · Comandante C60</div>
           <h1 className="font-display font-bold leading-none tracking-tight" style={{ fontSize: "clamp(26px,7vw,42px)" }}>Seletor de Receitas</h1>
           <p className="mt-3 text-sm" style={{ color: "#43392f", maxWidth: "62ch" }}>
-            Escolha o coador, o filtro e o processamento do café. A moagem é recalculada em <b>cliques do C60</b>
+            Escolha o coador, o filtro e o processamento do café. A moagem é recalculada em <b>cliques do C60</b>{" "}
             conforme o fluxo do filtro, e as receitas recomendadas para o processo ficam em destaque. Tudo é ponto
             de partida — ajuste pelo tempo e pelo paladar.
           </p>
@@ -278,7 +277,7 @@ function App() {
           ))}
         </div>
 
-        <section className="rounded-md p-4 mb-3" style={{ background: "#211C17", color: "#EAE4D8" }}>
+        <section className="rounded-md p-4 mb-6" style={{ background: "#211C17", color: "#EAE4D8" }}>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
             <span className="font-display font-bold text-lg" style={{ color: "#fff" }}>{f.label}</span>
             <span className="font-data text-[11px]" style={{ color: "#E0A86A" }}>
@@ -297,11 +296,6 @@ function App() {
             </p>
           )}
         </section>
-
-        <p className="font-data text-[11px] mb-5" style={{ color: "#776D5E" }}>
-          Moagem em cliques do C60. Base de cada receita: cliques do C40 × 30 µm. O ajuste do filtro é somado em µm
-          (relativo ao papel base de cada coador) e o total é dividido por 21 µm = 1 clique do C60.
-        </p>
 
         <div className="grid md:grid-cols-2 gap-4">
           {recipes.map((r) => {
