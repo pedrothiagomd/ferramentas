@@ -155,6 +155,9 @@ const BREWERS = {
       cafecAbaca: { label: "CAFEC Abaca", sub: "cone 1–2 xícaras", group: "CAFEC", tier: "mod", offsetUm: -45,
         flow: "Rápido", bypass: "—", cup: "Limpo, doce, intenso e complexo",
         note: "Abacá japonês com produção 'fine-grained' — fluxo rápido e estável. Pede moagem mais fina que o papel original." },
+      gcCoinWave: { label: "Papel ondulado + Coin", sub: "Origami/Kalita 155 · fundo plano", group: "Graycano", tier: "mod", offsetUm: 160,
+        flow: "Moderado (fundo plano)", bypass: "Baixo", cup: "Doce, redondo, com textura",
+        note: "Com o acessório Coin no fundo, o cone vira fundo plano e aceita papéis ondulados 01/155. Use com a receita própria de 3 despejos." },
       sibFastCone: { label: "Sibarist FAST", sub: "cone Graycano SE", group: "Sibarist", tier: "fast", offsetUm: -85,
         flow: "Muito rápido (15–40%+)", bypass: "Mínimo", cup: "Brilhante, clareza e intensidade, floral/frutado",
         note: "Cone que encaixa nas Lava Ribs eliminando bolsas de ar. O mais rápido — pede moagem bem mais fina que o original." },
@@ -165,6 +168,17 @@ const BREWERS = {
         tag: "A receita-padrão da Graycano: 5 pulsos iguais de 50 g.",
         events: [["00:00",50,"+50 · pré-infusão"],["00:40",100,"+50"],["01:20",150,"+50"],["02:00",200,"+50"],["02:40",250,"+50"]],
         enjoy: ["03:15","03:45"], note: "Espere a água quase tocar o leito entre os pulsos; mantenha a mesma velocidade." },
+      { name: "3 Despejos · Coin (fundo plano)", coffee: 15, water: "250 ml", temp: "93 °C", ratio: "1:16,7", umLo: 850, umHi: 950, native: "gcCoinWave", proc: ["washed","natural"],
+        procNote: "O Graycano vira fundo plano: mais doçura e textura, moagem bem mais grossa.",
+        tag: "A 2ª receita oficial da Basic Barista: Coin no fundo + papel ondulado, três despejos iguais até escoar.",
+        prestep: "ANTES · Coloque o Graycano Coin no fundo e o papel ondulado (Origami/Kalita 155) por cima; enxágue",
+        events: [
+          ["00:00", 50, "pré-infusão · deixe escoar quase tudo"],
+          ["~00:50", 150, "+100 · ritmo constante"],
+          ["~01:40", 250, "+100 · ritmo constante"],
+        ],
+        enjoy: ["02:30","03:10"],
+        note: "Moagem de referência da receita: ~30 cliques no C40 (~900 µm). Requer o acessório Graycano Coin." },
       { name: "3-Pour (rápida)", coffee: 17, water: "240 ml", temp: "92 °C", ratio: "1:14", c40Lo: 24, c40Hi: 27, native: "gcStock", proc: ["washed","natural"],
         procNote: "Forte e rápida; a temperatura menor favorece naturais e fermentados.",
         tag: "Estilo de competição: 3 despejos de 80 g, ~2 min.",
@@ -177,12 +191,18 @@ const BREWERS = {
     label: "Hario Switch · V60",
     note: "Usado como V60 puro, com a válvula aberta do início ao fim.",
     defaultFilter: "cafecAbaca",
-    bodyKey: "cafecAbaca",
-    clarityKey: "cafecAbaca",
+    bodyKey: "sibB3V60",
+    clarityKey: "sibFastV60",
     filters: {
       cafecAbaca: { label: "CAFEC Abaca", sub: "cone V60 02", group: "CAFEC", tier: "mod", offsetUm: 0,
-        flow: "Rápido e estável", bypass: "—", cup: "Limpo e intenso",
-        note: "Cone CAFEC Abaca (V60 02), abacá japonês de fluxo rápido e estável." },
+        flow: "Rápido e estável", bypass: "Normal de cone", cup: "Limpo e intenso",
+        note: "Cone CAFEC Abaca (V60 02), abacá japonês de fluxo rápido e estável — a referência das receitas." },
+      sibFastV60: { label: "Sibarist FAST", sub: "cone M", group: "Sibarist", tier: "fast", offsetUm: -60,
+        flow: "Muito rápido", bypass: "Normal de cone", cup: "Alta extração com clareza",
+        note: "O cone FAST permite moer mais fino que o Abaca sem entupir — ideal para lavados densos. Ajuste de −60 µm estimado pela família Sibarist." },
+      sibB3V60: { label: "Sibarist B3", sub: "cone", group: "Sibarist", tier: "mod", offsetUm: -15,
+        flow: "Mais lento que o FAST", bypass: "Normal de cone", cup: "Mais contato e corpo; fermentados",
+        note: "Tecnologia B3 em cone: fluxo mais lento que o FAST para naturais e fermentados intensos. Ajuste estimado pelo espaçamento FAST→B3 da própria Sibarist." },
     },
     recipes: [
       { name: "Dois Despejos — Lance Hedrick", coffee: 15, water: "250 ml", temp: "95 °C", ratio: "1:16,7", umLo: 580, umHi: 680, native: "cafecAbaca", proc: ["washed","natural"],
@@ -209,7 +229,7 @@ const BREWERS = {
 
   ufo: {
     label: "UFO",
-    note: "Cônico de 80° com canais de ar — entre o cone e o fundo plano: clareza do cone com a doçura do plano. Projetado para os filtros Sibarist.",
+    note: "Cônico de 80° com canais de ar — entre o cone e o fundo plano. Projetado para os Sibarist; os papéis oficiais Type F (rápido) e Type A (regulado) ampliam o leque.",
     defaultFilter: "sibFastUFO",
     bodyKey: "sibB3UFO",
     clarityKey: "sibFastUFO",
@@ -220,11 +240,28 @@ const BREWERS = {
       sibB3UFO: { label: "Sibarist B3", sub: "edição UFO", group: "Sibarist", tier: "mod", offsetUm: 45,
         flow: "Mais lento que o FAST", bypass: "Zero", cup: "Corpo e contato mais longo; naturais e fermentados intensos",
         note: "Fluxo mais lento = mais tempo de contato. Para naturais, anaeróbicos e co-fermentados, os criadores indicam moagem mais grossa que no FAST." },
+      ufoTypeF: { label: "UFO Type F", sub: "papel oficial · Fast", group: "UFO", tier: "fast", offsetUm: 0,
+        flow: "Muito rápido (lyocell)", bypass: "Zero", cup: "Limpo e estruturado em alta extração",
+        note: "Papel oficial rápido do UFO, em lyocell e PLA: escoamento veloz que convida a moagens finas sem afogar. Encaixe perfeito no V3." },
+      ufoTypeA: { label: "UFO Type A", sub: "papel oficial · regulado", group: "UFO", tier: "mod", offsetUm: 475,
+        flow: "Regulado, mais lento", bypass: "Zero", cup: "Doce e uniforme, sem pressa",
+        note: "Papel oficial que regula o escoamento: indicação do fabricante de moagem bem mais grossa (~950–1150 µm) com baixa agitação. Na mesma receita, encurta o tempo em 30–45 s vs. o papel padrão." },
     },
     recipes: [
-      { name: "Pulse — criadores", coffee: 15, water: "250 ml", temp: "93 °C", ratio: "1:16,7", umLo: 500, umHi: 600, native: "sibFastUFO", proc: ["washed","natural"],
-        procNote: "Pré-infusão e 2 pulsos centrais. FAST para lavados · B3 para naturais e fermentados (um degrau mais grossa).",
-        tag: "Receita dos criadores do UFO (Jay e Kenzie) e da comunidade: pré-infusão e dois pulsos centrais.",
+      { name: "Oficial — Jay e Kenzie", coffee: 15, water: "250 ml", temp: "92 °C", ratio: "1:16,7", umLo: 500, umHi: 600, native: "sibFastUFO", proc: ["washed","natural"],
+        procNote: "A arquitetura de controle de finos dos criadores — a mesma base levada a pódios de Brewers Cup (Wataru Iidaka, 2º no mundial).",
+        tag: "A receita oficial do UFO: 3 pulsos lentos e baixos + despejo final rápido e alto para controlar os finos.",
+        events: [
+          ["00:00", 50, "pulso BAIXO e lento (<7 g/s), rente ao leito"],
+          ["~01:00", 100, "+50 · mesmo pulso baixo, após quase escoar"],
+          ["~01:40", 150, "+50 · idem"],
+          ["~02:10", 250, "+100 RÁPIDO (16+ g/s) e ALTO: 50 g em círculos (descola os finos da parede) + 50 g no centro (suspende-os)"],
+        ],
+        enjoy: ["03:00","03:30"],
+        note: "Dose até 16 g para mais corpo ou menos extração. Os 3 primeiros pulsos extraem; o último cria equilíbrio e evita entupimento. Moagem oficial: lado fino do médio, mais fina que a sua de V60." },
+      { name: "3 Despejos — Goldchild", coffee: 15, water: "250 ml", temp: "93 °C", ratio: "1:16,7", umLo: 500, umHi: 600, native: "sibFastUFO", proc: ["washed","natural"],
+        procNote: "A versão simples do dia a dia: pré-infusão e dois pulsos centrais.",
+        tag: "Adaptação replicável da Goldchild Coffee: três despejos e pronto.",
         events: [
           ["00:00", 50, "pré-infusão · 45 s"],
           ["00:45", 150, "+100 · pulso central"],
@@ -593,7 +630,7 @@ function App() {
             <li>· Receitas pensadas para torra clara. Torra média/escura: moa um pouco mais fina e baixe a temperatura.</li>
           </ul>
           <p className="font-data text-[10.5px] mt-3 leading-relaxed" style={{ color: "#776D5E" }}>
-            Calibração de moedores (µm de partícula por clique): C60 = 21 · C40 = 30 · ZP6 ≈ 11,5 (curso de 22 µm; efetivo ancorado nos pontos do Lance e na faixa de 240–1050 µm) · K Ultra ≈ 10,5 (curso de 20 µm, mesma regra dos cônicos) · Pietro = 15 (mó plana: gap ≈ partícula). ZP6 e K Ultra exibidos como número.clique; sempre calibre o zero no toque das mós. Receitas: OREA O1 Guides; Graycano via Basic Barista;
+            Calibração de moedores (µm de partícula por clique): C60 = 21 · C40 = 30 · ZP6 ≈ 11,5 (curso de 22 µm; efetivo ancorado nos pontos do Lance e na faixa de 240–1050 µm) · K Ultra ≈ 10,5 (curso de 20 µm, mesma regra dos cônicos) · Pietro = 15 (mó plana: gap ≈ partícula). ZP6 e K Ultra exibidos como número.clique; sempre calibre o zero no toque das mós. Receitas: OREA O1 Guides; Graycano via Basic Barista (5-Stage e Coin); UFO oficial de Jay e Kenzie via Asa Brew (papéis Type A/F via Slow Pour Supply e Rogue Wave);
             V60 e Zuppa Lunga de Lance Hedrick; Soup no OXO via Bean & Bean Coffee Roasters; BIRD: coleção oficial completa Weber Workshops (13 receitas, weberworkshops.com/blogs/journal/bird-recipes); UFO de Jay e Kenzie
             (criadores) via Goldchild Coffee. Filtros: Sibarist, OREA/Rogue Wave, CAFEC, Basic Barista, A.M.O.C.,
             Slow Pour Supply, Standout Coffee, Nordic Brew Lab. Âncoras de µm: Jonathan Gagné / Coffee ad Astra (V60 ≈ 600–700 µm de partícula média; Pulsar ≈ 800 µm), Lance Hedrick (coado ≈ 600 µm; soup = coado ÷2 ≈ 300 µm; OXO soup 450 µm via Espresso Aficionado Discord; Zuppa Lunga ≈ 75% do coado), protocolo de cupping da SCA (peneira 850 µm) e tabelas Honest Coffee Guide / Basic Barista para extremos (espresso, prensa, cold brew). Cliques do C60 são pontos de partida calculados —
