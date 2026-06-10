@@ -203,6 +203,13 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
     <button class="atb-btn" onclick="selAtb('tigeciclina')">Tigeciclina<small>Glicilciclina / MDR</small></button>
     <button class="atb-btn" onclick="selAtb('anidulafungina')">Anidulafungina<small>Equinocandina / Candida</small></button>
     <button class="atb-btn" onclick="selAtb('vanco-oral')">Vancomicina oral<small>C. difficile</small></button>
+    <button class="atb-btn" onclick="selAtb('ampicilina')">Ampicilina<small>Aminopenicilina / endocardite</small></button>
+    <button class="atb-btn" onclick="selAtb('aztreonam')">Aztreonam<small>Monobactam / Gram-neg (alergia a beta-lactamico)</small></button>
+    <button class="atb-btn" onclick="selAtb('ceftolozano')">Ceftolozano-Tazobactam<small>Anti-Pseudomonas / MDR</small></button>
+    <button class="atb-btn" onclick="selAtb('cefta-avi')">Ceftazidima-Avibactam<small>KPC / OXA-48 / MDR Gram-neg</small></button>
+    <button class="atb-btn" onclick="selAtb('micafungina')">Micafungina<small>Equinocandina / Candida</small></button>
+    <button class="atb-btn" onclick="selAtb('anfotericina')">Anfotericina B<small>Antifungico poliênico</small></button>
+    <button class="atb-btn" onclick="selAtb('nitro')">Nitrofurantoína<small>ITU não complicada / cistite (VO)</small></button>
   </div>
   <div id="atb-opcoes" style="display:none;margin-bottom:10px"></div>
   <div id="r-atb" class="res-area"></div>
@@ -497,37 +504,34 @@ function calcAtb(){
   else if(atbSel === 'polb'){
     var pesoR = fv('peso');
     if(!pesoR){ box.innerHTML = al('w','Informe o peso do paciente para calcular a dose de Polimixina B.'); return; }
-    /* Guia HAB 2023:
-       Ataque:     25.000 UI/kg/dia dividido em 2 doses (12/12h) = 12.500 UI/kg por dose
+    /* Guia HAB 2026:
+       Ataque:     25.000 UI/kg em DOSE UNICA (nao dividido)
        Manutencao: 15.000 UI/kg/dia dividido em 2 doses (12/12h) = 7.500 UI/kg por dose
        Equivalencia: 10.000 UI = 1 mg */
-    var ataqueUIdia  = Math.round(25000 * pesoR);
+    var ataqueUI     = Math.round(25000 * pesoR);
     var mantUIdia    = Math.round(15000 * pesoR);
-    var ataqueUIdose = Math.round(ataqueUIdia / 2);
-    var mantUIdose   = Math.round(mantUIdia  / 2);
-    var ataqueMGdia  = (ataqueUIdia  / 10000).toFixed(1);
-    var mantMGdia    = (mantUIdia    / 10000).toFixed(1);
-    var ataqueMGdose = (ataqueUIdose / 10000).toFixed(1);
-    var mantMGdose   = (mantUIdose   / 10000).toFixed(1);
+    var mantUIdose   = Math.round(mantUIdia / 2);
+    var ataqueMG     = (ataqueUI   / 10000).toFixed(1);
+    var mantMGdia    = (mantUIdia  / 10000).toFixed(1);
+    var mantMGdose   = (mantUIdose / 10000).toFixed(1);
 
     h += '<div class="nums-grid">' +
       nb(fmt(pesoR,1)+' kg','peso real') +
-      nb(ataqueUIdia.toLocaleString('pt-BR')+' UI/dia','ataque (HAB)') +
-      nb(mantUIdia.toLocaleString('pt-BR')+' UI/dia','manutencao (HAB)') +
+      nb(ataqueUI.toLocaleString('pt-BR')+' UI','ataque (dose unica)') +
+      nb(mantUIdia.toLocaleString('pt-BR')+' UI/dia','manutencao') +
       '</div>';
 
-    h += rb('blue','Polimixina B &mdash; Guia HAB 2023 &mdash; SEM ajuste renal',
-      'Ataque: ' + ataqueUIdose.toLocaleString('pt-BR') + ' UI ('+ataqueMGdose+'mg) q12h x1 dia' +
+    h += rb('blue','Polimixina B &mdash; Guia HAB 2026 &mdash; SEM ajuste renal',
+      'Ataque: ' + ataqueUI.toLocaleString('pt-BR') + ' UI ('+ataqueMG+'mg) &mdash; DOSE UNICA' +
       '<br>Manutencao: ' + mantUIdose.toLocaleString('pt-BR') + ' UI ('+mantMGdose+'mg) q12h',
-      'Guia HAB 2023: doses em UI/kg/dia &mdash; 10.000 UI = 1 mg<br>' +
-      'Ataque: 25.000 UI/kg/dia = ' + ataqueUIdia.toLocaleString('pt-BR') + ' UI/dia (' + ataqueMGdia + ' mg/dia) em 2 doses<br>' +
-      'Manutencao: 15.000 UI/kg/dia = ' + mantUIdia.toLocaleString('pt-BR') + ' UI/dia (' + mantMGdia + ' mg/dia) em 2 doses<br>' +
-      'Polimixina B e eliminada principalmente por vias nao-renais (&lt;4% renal) &mdash; NAO ajustar por funcao renal<br>' +
-      'Infundir cada dose em SF 0,9% por 1h'
+      'HAB 2026: ataque de 25.000 UI/kg em DOSE UNICA; manutencao 15.000 UI/kg/dia em 2 doses (12/12h).<br>' +
+      '10.000 UI = 1 mg &mdash; ataque = ' + ataqueMG + ' mg; manutencao = ' + mantMGdia + ' mg/dia.<br>' +
+      'Polimixina B e eliminada principalmente por vias nao-renais (&lt;4% renal) &mdash; NAO ajustar por funcao renal.<br>' +
+      'Infundir cada dose em SF 0,9% por 1h.'
     );
 
     if(emHD){
-      h += rb('purple','Em HD intermitente (HAB)',
+      h += rb('purple','Em HD intermitente (HAB 2026)',
         'Manutencao: ' + mantUIdose.toLocaleString('pt-BR') + ' UI ('+mantMGdose+'mg) q12h &mdash; inalterado',
         'Polimixina B NAO e dializavel de forma significativa &mdash; manter dose sem ajuste em HD'
       );
@@ -625,10 +629,9 @@ function calcAtb(){
   }
 
   else if(atbSel === 'clinda'){
-    if(c >= 10)      h += rb('green','Dose ajustada (HAB)','600mg q8h','CrCl &ge;10: sem ajuste');
-    else             h += rb('amber','Dose ajustada (HAB) &mdash; CrCl &lt;10','600mg q12h','Reduzir frequencia para q12h');
-    if(emHD) h += rb('purple','Em HD intermitente (HAB)','600mg q12h &mdash; sem dose adicional','NAO suplementar apos HD');
-    h += info('Metabolismo hepatico. Risco elevado de C. difficile em uso prolongado.');
+    h += rb('green','Dose ajustada (HAB 2026) &mdash; SEM ajuste renal','600mg q8h','Metabolismo hepatico &mdash; nao necessita ajuste renal em nenhuma faixa de clearance (HAB 2026: 20&ndash;40 mg/kg/dia 6/6h a 8/8h)');
+    if(emHD) h += rb('purple','Em HD intermitente (HAB 2026)','600mg q8h &mdash; sem dose adicional','Nao dialisavel de forma relevante; manter dose habitual sem suplementacao');
+    h += info('HAB 2026: clindamicina nao necessita de ajuste renal nem dose pos-dialise. Risco elevado de C. difficile em uso prolongado.');
   }
 
   else if(atbSel === 'claritro'){
@@ -718,6 +721,82 @@ function calcAtb(){
     h += aviso('Indicada apenas para colite por C. difficile. Para infec&ccedil;&otilde;es sist&ecirc;micas por Gram-positivos use vancomicina EV (bot&atilde;o Vancomicina).');
   }
 
+  else if(atbSel === 'ampicilina'){
+    var pesoR = fv('peso');
+    /* Ampicilina nao consta no quadro padronizado HAB 2026; ajuste por referencia padrao (Sanford). */
+    h += rb('blue','Ampicilina &mdash; endocardite (esquema HAB: Genta + Ampicilina)','2g q4h (12g/dia)','Dose para endocardite de valva nativa por enterococo/estreptococo, associada a aminoglicosideo');
+    if(c > 50)       h += rb('green','Ajuste renal (referencia padrao)','2g q4h','CrCl &gt;50: sem ajuste');
+    else if(c >= 10) h += rb('amber','Ajuste renal (referencia padrao) &mdash; CrCl 10&ndash;50','2g q6&ndash;8h','Estender intervalo');
+    else             h += rb('red','Ajuste renal (referencia padrao) &mdash; CrCl &lt;10','2g q8&ndash;12h','Intervalo estendido');
+    if(emHD) h += rb('purple','Em HD intermitente','2g q12h + dose adicional apos HD','Ampicilina e dializavel &mdash; administrar dose suplementar apos a sessao');
+    h += aviso('Ampicilina N&Atilde;O consta no quadro de antimicrobianos padronizados do Guia HAB 2026. Doses por refer&ecirc;ncia padr&atilde;o (Sanford) &mdash; validar localmente com a CCIH/farm&aacute;cia.');
+    h += info('Em endocardite, manter aminoglicosideo (gentamicina) por no maximo 14 dias ou conforme discussao com a CCIH.');
+  }
+
+  else if(atbSel === 'aztreonam'){
+    /* HAB 2026: 2g 6/6h a 8/8h; 50-90 e 30-50 sem ajuste; 10-30: 1g 8/8h a 12/12h; <10: 1-2g 24h; HD +1-2g apos */
+    h += '<div class="nums-grid">' + nb(fmt(c,0)+' mL/min','CrCl') + nb('2g','dose habitual') + nb('q6&ndash;8h','intervalo base') + '</div>';
+    if(c >= 30)      h += rb('green','Dose ajustada (HAB 2026)','2g q6&ndash;8h','CrCl &ge;30: sem ajuste');
+    else if(c >= 10) h += rb('amber','Dose ajustada (HAB 2026) &mdash; CrCl 10&ndash;30','1g q8&ndash;12h','Reducao de dose');
+    else             h += rb('red','Dose ajustada (HAB 2026) &mdash; CrCl &lt;10','1&ndash;2g q24h','Reducao de dose e intervalo estendido');
+    if(emHD) h += rb('purple','Em HD intermitente (HAB 2026)','1&ndash;2g q24h + dose adicional 1&ndash;2g apos HD','Suplementar apos cada sessao');
+    h += info('Monobactam: cobertura para Gram-negativos aerobios (incl. Pseudomonas), sem cobertura Gram-positivos/anaerobios. Opcao segura em alergia grave a beta-lactamicos (sem reatividade cruzada, exceto ceftazidima).');
+  }
+
+  else if(atbSel === 'ceftolozano'){
+    /* HAB 2026 (dose pela ceftolozano): 1,5-3g 8/8h; 50-90 sem ajuste; 30-50: 1,5g 8/8h; 10-30: 750mg 8/8h; <10: ataque 1,5g + manut 300mg 8/8h; HD apos sem adicional */
+    h += '<div class="nums-grid">' + nb(fmt(c,0)+' mL/min','CrCl') + nb('1,5&ndash;3g','dose (ceftolozano)') + nb('q8h','intervalo') + '</div>';
+    if(c > 50)       h += rb('green','Dose ajustada (HAB 2026)','1,5&ndash;3g q8h','CrCl &gt;50: sem ajuste (3g q8h para pneumonia)');
+    else if(c >= 30) h += rb('amber','Dose ajustada (HAB 2026) &mdash; CrCl 30&ndash;50','1,5g q8h','Reducao de dose');
+    else if(c >= 10) h += rb('amber','Dose ajustada (HAB 2026) &mdash; CrCl 10&ndash;30','750mg q8h','Reducao de dose');
+    else             h += rb('red','Dose ajustada (HAB 2026) &mdash; CrCl &lt;10','Ataque 1,5g, depois 300mg q8h','Dose de ataque seguida de manutencao reduzida');
+    if(emHD) h += rb('purple','Em HD intermitente (HAB 2026)','Realizar dose apos HD &mdash; sem dose adicional','Administrar a dose programada apos a sessao');
+    h += info('Anti-Pseudomonas (incl. cepas MDR/com perda de porina). Doses referidas pelo componente ceftolozano. Pneumonia hospitalar/PAV: usar 3g q8h.');
+    h += aviso('Reservar para Pseudomonas MDR/XDR &mdash; exige consulta com ID/CCIH.');
+  }
+
+  else if(atbSel === 'cefta-avi'){
+    /* HAB 2026 (dose pela ceftazidima): 2,5g 8/8h; 50-90 sem ajuste; 30-50: 1,25g 8/8h; 10-30: 1g 24h; <10: 1g 48/48h; HD +1g apos */
+    h += '<div class="nums-grid">' + nb(fmt(c,0)+' mL/min','CrCl') + nb('2,5g','dose q8h') + nb('q8h','intervalo') + '</div>';
+    if(c > 50)       h += rb('green','Dose ajustada (HAB 2026)','2,5g q8h','CrCl &gt;50: sem ajuste');
+    else if(c >= 30) h += rb('amber','Dose ajustada (HAB 2026) &mdash; CrCl 30&ndash;50','1,25g q8h','Reducao de dose');
+    else if(c >= 10) h += rb('amber','Dose ajustada (HAB 2026) &mdash; CrCl 10&ndash;30','1g q24h','Reducao de dose e intervalo');
+    else             h += rb('red','Dose ajustada (HAB 2026) &mdash; CrCl &lt;10','1g q48h','Intervalo estendido');
+    if(emHD) h += rb('purple','Em HD intermitente (HAB 2026)','1g q48h + dose adicional 1g apos HD','Suplementar apos cada sessao');
+    h += info('Atividade contra Enterobacterales produtoras de KPC e OXA-48. Sem atividade contra metalo-beta-lactamases (NDM/VIM/IMP) &mdash; nesses casos associar aztreonam. Doses referidas pela ceftazidima.');
+    h += aviso('Reservar para Gram-negativos MDR/carbapenemase &mdash; exige consulta com ID/CCIH.');
+  }
+
+  else if(atbSel === 'micafungina'){
+    h += rb('green','Dose ajustada (HAB 2026) &mdash; SEM ajuste renal','100mg q24h','Nao necessita de ajuste renal nem dose pos-dialise');
+    if(emHD) h += rb('purple','Em HD intermitente (HAB 2026)','100mg q24h &mdash; sem dose adicional','Nao dialisavel');
+    h += info('Equinocandina de escolha empirica para candidemia/candidiase invasiva e endocardite fungica (HAB 2026). Sem ajuste hepatico leve/moderado. Cobre maioria das Candida (incl. C. glabrata e C. krusei).');
+    h += aviso('Penetracao limitada em SNC, olho e urina &mdash; candiduria/endoftalmite/SNC: preferir fluconazol ou anfotericina B.');
+  }
+
+  else if(atbSel === 'anfotericina'){
+    var pesoR = fv('peso');
+    h += rb('blue','Anfotericina B desoxicolato (HAB 2026) &mdash; SEM ajuste renal','0,3&ndash;1 mg/kg/dia (max 50mg/dia)' + (pesoR ? ' &mdash; ' + fmt(0.3*pesoR,0) + '&ndash;' + Math.min(50, Math.round(pesoR)) + 'mg/dia' : ''),'Nao necessita de ajuste pela funcao renal nem dose pos-dialise (mas e nefrotoxica per se)');
+    h += rb('slate','Forma lipossomal','Candida resistente / endocardite fungica','Preferir a formulacao lipossomal quando disponivel (menor nefrotoxicidade); dose conforme protocolo');
+    if(emHD) h += rb('purple','Em HD intermitente (HAB 2026)','Mesma dose &mdash; sem dose adicional','Nao dialisavel');
+    h += aviso('Nefrotoxicidade e hipocalemia/hipomagnesemia dose-dependentes: hidratar, monitorar funcao renal e eletrolitos diariamente. Reacoes infusionais (febre/calafrios) comuns com o desoxicolato.');
+    h += info('Indicacoes: endocardite fungica por Candida resistente, infeccoes fungicas invasivas graves. Preferir formulacao lipossomal em disfuncao renal ou intolerancia.');
+  }
+
+  else if(atbSel === 'nitro'){
+    /* Nitrofurantoina: agente urinario VO. Sem ajuste de DOSE, mas decisao dependente de CrCl.
+       Contraindicada em CrCl < 30 (concentracao urinaria insuficiente -> falha; risco de neuropatia/toxicidade pulmonar). */
+    h += '<div class="nums-grid">' + nb(fmt(c,0)+' mL/min','CrCl') + nb('100mg','dose VO') + nb('q6h','ou 100mg q12h LF') + '</div>';
+    if(c >= 30){
+      h += rb('green','Nitrofurantoina &mdash; pode ser usada','100mg VO q6h (ou 100mg q12h liberacao lenta)','CrCl &ge;30 mL/min: concentracao urinaria adequada. Apenas cistite/ITU limitada a bexiga.');
+    } else {
+      h += rb('red','Nitrofurantoina &mdash; CONTRAINDICADA','&mdash;','CrCl &lt;30 mL/min: NAO usar. Concentracao urinaria insuficiente (falha terapeutica) e risco aumentado de neuropatia periferica e toxicidade pulmonar.');
+    }
+    if(emHD) h += rb('red','Em HD / anefrico','&mdash; NAO usar','Contraindicada: ausencia de excrecao urinaria eficaz e risco de acumulo/toxicidade.');
+    h += danger('Apenas para cistite / ITU NAO complicada (limitada a bexiga). NAO usar em pielonefrite, ITU complicada, bacteremia ou foco sistemico &mdash; nao atinge niveis sericos/teciduais terapeuticos.');
+    h += info('Sem ajuste de dose pela funcao renal &mdash; a decisao e binaria pelo CrCl (corte em 30 mL/min). Evitar no 3o trimestre/proximo ao termo (>38 semanas) pelo risco de hemolise neonatal por deficiencia de G6PD.');
+  }
+
   box.innerHTML = h;
 }
 
@@ -747,11 +826,12 @@ var DRUGS = {
   'vanco-oral':  {name:'Vancomicina oral', link:true},
   'smxtmp':      {name:'Sulfametoxazol-Trimetoprim', link:true},
   'amoxiclav':   {name:'Amoxicilina-Clavulanato', link:true},
+  /* agora com cálculo de dose na Aba 2 */
+  'ampicilina':    {name:'Ampicilina', link:true},
+  'micafungina':   {name:'Micafungina', link:true},
+  'anfotericina':  {name:'Anfotericina B', link:true},
   /* informativas (não no quadro de ajuste renal da Aba 2) */
-  'ampicilina':    {name:'Ampicilina', link:false, dose:'esquema de endocardite (associada a aminoglicosídeo)'},
-  'micafungina':   {name:'Micafungina', link:false, dose:'100mg q24h — sem ajuste renal'},
-  'anfotericina':  {name:'Anfotericina B lipossomal', link:false, dose:'Candida resistente'},
-  'nitro':         {name:'Nitrofurantoína', link:false, dose:'100mg VO — ambulatorial'},
+  'nitro':         {name:'Nitrofurantoína', link:true},
   'fosfo':         {name:'Fosfomicina', link:false, dose:'3g VO dose única'},
   'cefalexina':    {name:'Cefalexina', link:false, dose:'VO — ambulatorial'},
   'cefuroxima':    {name:'Cefuroxima', link:false, dose:'VO — gestante'},
