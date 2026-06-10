@@ -402,10 +402,11 @@ function App() {
   const recipes = useMemo(() => {
     const list = B.recipes.map((r) => {
       const dUm = f.offsetUm - B.filters[r.native].offsetUm; // ajuste do filtro vs. o nativo da receita, em µm
-      const sizeLo = r.c40Lo * UM_C40 + dUm; // tamanho-alvo em µm
-      const sizeHi = r.c40Hi * UM_C40 + dUm;
+      const sizeLo = (r.umLo != null ? r.umLo : r.c40Lo * UM_C40) + dUm; // alvo em µm (direto ou via cliques C40 do guia)
+      const sizeHi = (r.umHi != null ? r.umHi : r.c40Hi * UM_C40) + dUm;
       return {
         ...r,
+        uLo: Math.round(sizeLo), uHi: Math.round(sizeHi),
         gLo: clampGrind(Math.round(sizeLo / UM_C60)), // µm -> cliques do C60
         gHi: clampGrind(Math.round(sizeHi / UM_C60)),
         match: proc === "all" || r.proc.includes(proc),
@@ -506,7 +507,7 @@ function App() {
               { ic: <Coffee size={12} />, k: "Café", v: String(r.coffee).replace(".", ",") + " g" },
               { ic: <Droplets size={12} />, k: "Água", v: r.water },
               { ic: <Thermometer size={12} />, k: "Temp.", v: r.temp },
-              { ic: <Scale size={12} />, k: "Moagem · cliques", v: r.gLo + "–" + r.gHi, hl: true },
+              { ic: <Scale size={12} />, k: "Moagem · cliques", v: r.gLo + "–" + r.gHi, sub: "≈" + r.uLo + "–" + r.uHi + " µm", hl: true },
             ];
             return (
               <article key={r.name} className="rounded-lg p-4 border transition"
@@ -528,6 +529,7 @@ function App() {
                     <div key={i} className="px-2.5 py-2" style={{ background: c.hl ? "#F3E7D4" : "#FAF7F0" }}>
                       <div className="font-data text-[9px] uppercase tracking-wider flex items-center gap-1" style={{ color: c.hl ? "#A0571A" : "#A39684" }}>{c.ic}{c.k}</div>
                       <div className="font-data text-[15px] font-bold mt-0.5" style={{ color: c.hl ? "#A0571A" : "#211C17" }}>{c.v}</div>
+                      {c.sub && <div className="font-data text-[9.5px] mt-0.5" style={{ color: "#A39684" }}>{c.sub}</div>}
                     </div>
                   ))}
                 </div>
