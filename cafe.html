@@ -42,6 +42,22 @@ const GRINDERS = {
   pietro: { label: "Pietro",  short: "cliques Pietro", um: 15,     dial: false },
 };
 const GRINDER_ORDER = ["c60","c40","zp6","kultra","pietro"];
+
+/* Ajuste fino: diagnóstico de sabor (princípios de extração; aprofunde no
+   Coffee Compass do Barista Hustle). passo() converte ~50 µm p/ o moedor. */
+const passo = (G) => Math.max(1, Math.round(50 / G.um));
+const TASTE_FIX = {
+  "Azedo · salgado": { diag: "Subextração.",
+    fix: (G) => "Moa mais fino (≈" + passo(G) + "–" + passo(G)*2 + " cliques no " + G.label + "), suba a temperatura e/ou estenda o contato (despejos mais lentos). Se escoar rápido demais, o grão fino também segura o fluxo." },
+  "Amargo · seco · adstringente": { diag: "Sobre-extração.",
+    fix: (G) => "Moa mais grosso (≈" + passo(G) + "–" + passo(G)*2 + " cliques no " + G.label + "), baixe a temperatura e reduza a agitação. Escoamentos muito longos também indicam excesso de finos." },
+  "Aguado · fraco": { diag: "Força baixa.",
+    fix: (G) => "Encurte a proporção (ex.: de 1:16,7 para 1:15) ou aumente a dose. Se também estiver azedo, moa mais fino em vez de só dosar mais." },
+  "Pesado · intenso demais": { diag: "Força alta.",
+    fix: (G) => "Alongue a proporção ou faça bypass na xícara (água quente direto no café pronto). Mantenha a moagem: força e extração são alavancas diferentes." },
+  "Oco · sem doçura": { diag: "Extração desigual.",
+    fix: (G) => "Busque uniformidade: nivele o leito, sature tudo na pré-infusão, despeje com ritmo constante e finalize com um giro suave. Se o leito tiver crateras ou paredes altas, é canalização." },
+};
 function grindFmt(um, g){
   const clk = Math.max(1, Math.round(um / g.um));
   if(!g.dial) return String(clk);
@@ -443,6 +459,7 @@ function App() {
   const [filter, setFilter] = useState(BREWERS.oreaO1.defaultFilter);
   const [proc, setProc] = useState("all");
   const [grinder, setGrinder] = useState("c60");
+  const [taste, setTaste] = useState(null);
   const G = GRINDERS[grinder];
 
   const B = BREWERS[brewer];
@@ -621,6 +638,34 @@ function App() {
           })}
         </div>
 
+        {/* ===== Ajuste fino ===== */}
+        <div className="mt-8 rounded-lg border-2 p-4" style={{ borderColor: "#211C17", background: "#FAF7F0" }}>
+          <div className="font-data text-[11px] tracking-[0.16em] uppercase mb-1" style={{ color: "#A0571A" }}>Ajuste fino · o que você sentiu na xícara?</div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {Object.keys(TASTE_FIX).map((k) => (
+              <button key={k} onClick={() => setTaste(taste === k ? null : k)}
+                className="rounded-md px-3 py-1.5 text-[12.5px] font-display font-semibold border transition grow sm:grow-0"
+                style={btn(taste === k, "#A0571A")}>
+                {k}
+              </button>
+            ))}
+          </div>
+          {taste && (
+            <div className="mt-3 rounded-md p-3 text-[13px] leading-relaxed" style={{ background: "#211C17", color: "#EAE4D8" }}>
+              <span className="font-bold" style={{ color: "#E8B04B" }}>{TASTE_FIX[taste].diag}</span>{" "}
+              {TASTE_FIX[taste].fix(G)}
+            </div>
+          )}
+          <p className="text-[12px] mt-3" style={{ color: "#776D5E" }}>
+            Para um diagnóstico completo de sabor, use o{" "}
+            <a href="https://www.baristahustle.com/app-archive-main/the-coffee-compass/" target="_blank" rel="noopener noreferrer"
+              className="font-semibold underline" style={{ color: "#A0571A" }}>
+              Coffee Compass do Barista Hustle ↗
+            </a>{" "}
+            — a bússola que cruza extração e força para apontar a correção.
+          </p>
+        </div>
+
         <footer className="mt-8 border-t-2 pt-5" style={{ borderColor: "#211C17" }}>
           <div className="font-data text-[11px] tracking-[0.14em] uppercase mb-2" style={{ color: "#A0571A" }}>Notas</div>
           <ul className="text-[12.5px] space-y-1" style={{ color: "#43392f" }}>
@@ -629,13 +674,6 @@ function App() {
             <li>· Graycano: o alumínio segura bem o calor — ótimo para temperaturas mais baixas em florais e frutados.</li>
             <li>· Receitas pensadas para torra clara. Torra média/escura: moa um pouco mais fina e baixe a temperatura.</li>
           </ul>
-          <p className="font-data text-[10.5px] mt-3 leading-relaxed" style={{ color: "#776D5E" }}>
-            Calibração de moedores (µm de partícula por clique): C60 = 21 · C40 = 30 · ZP6 ≈ 11,5 (curso de 22 µm; efetivo ancorado nos pontos do Lance e na faixa de 240–1050 µm) · K Ultra ≈ 10,5 (curso de 20 µm, mesma regra dos cônicos) · Pietro = 15 (mó plana: gap ≈ partícula). ZP6 e K Ultra exibidos como número.clique; sempre calibre o zero no toque das mós. Receitas: OREA O1 Guides; Graycano via Basic Barista (5-Stage e Coin); UFO oficial de Jay e Kenzie via Asa Brew (papéis Type A/F via Slow Pour Supply e Rogue Wave);
-            V60 e Zuppa Lunga de Lance Hedrick; Soup no OXO via Bean & Bean Coffee Roasters; BIRD: coleção oficial completa Weber Workshops (13 receitas, weberworkshops.com/blogs/journal/bird-recipes); UFO de Jay e Kenzie
-            (criadores) via Goldchild Coffee. Filtros: Sibarist, OREA/Rogue Wave, CAFEC, Basic Barista, A.M.O.C.,
-            Slow Pour Supply, Standout Coffee, Nordic Brew Lab. Âncoras de µm: Jonathan Gagné / Coffee ad Astra (V60 ≈ 600–700 µm de partícula média; Pulsar ≈ 800 µm), Lance Hedrick (coado ≈ 600 µm; soup = coado ÷2 ≈ 300 µm; OXO soup 450 µm via Espresso Aficionado Discord; Zuppa Lunga ≈ 75% do coado), protocolo de cupping da SCA (peneira 850 µm) e tabelas Honest Coffee Guide / Basic Barista para extremos (espresso, prensa, cold brew). Cliques do C60 são pontos de partida calculados —
-            o ajuste final é sempre pelo tempo de escoamento e pelo paladar.
-          </p>
         </footer>
       </div>
     </div>
