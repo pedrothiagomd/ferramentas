@@ -43,21 +43,46 @@ const GRINDERS = {
 };
 const GRINDER_ORDER = ["c60","c40","zp6","kultra","pietro"];
 
-/* Ajuste fino: diagnóstico de sabor (princípios de extração; aprofunde no
-   Coffee Compass do Barista Hustle). passo() converte ~50 µm p/ o moedor. */
+/* Ajuste fino: dois eixos independentes (extração × força), no espírito do
+   Coffee Compass do Barista Hustle — a correção certa depende da COMBINAÇÃO.
+   passo() converte ~50 µm para o moedor selecionado. */
 const passo = (G) => Math.max(1, Math.round(50 / G.um));
-const TASTE_FIX = {
-  "Azedo · salgado": { diag: "Subextração.",
-    fix: (G) => "Moa mais fino (≈" + passo(G) + "–" + passo(G)*2 + " cliques no " + G.label + "), suba a temperatura e/ou estenda o contato (despejos mais lentos). Se escoar rápido demais, o grão fino também segura o fluxo." },
-  "Amargo · seco · adstringente": { diag: "Sobre-extração.",
-    fix: (G) => "Moa mais grosso (≈" + passo(G) + "–" + passo(G)*2 + " cliques no " + G.label + "), baixe a temperatura e reduza a agitação. Escoamentos muito longos também indicam excesso de finos." },
-  "Aguado · fraco": { diag: "Força baixa.",
-    fix: (G) => "Encurte a proporção (ex.: de 1:16,7 para 1:15) ou aumente a dose. Se também estiver azedo, moa mais fino em vez de só dosar mais." },
-  "Pesado · intenso demais": { diag: "Força alta.",
-    fix: (G) => "Alongue a proporção ou faça bypass na xícara (água quente direto no café pronto). Mantenha a moagem: força e extração são alavancas diferentes." },
-  "Oco · sem doçura": { diag: "Extração desigual.",
-    fix: (G) => "Busque uniformidade: nivele o leito, sature tudo na pré-infusão, despeje com ritmo constante e finalize com um giro suave. Se o leito tiver crateras ou paredes altas, é canalização." },
-};
+const EXT_OPTS = [["sour","Azedo · verde"],["ok","Equilibrado"],["bitter","Amargo · seco"]];
+const STR_OPTS = [["weak","Aguado"],["ok","Boa"],["heavy","Pesado"]];
+const EXTRA_OPTS = [["adstr","Adstringente"],["oco","Oco · sem doçura"],["rapido","Escoou rápido demais"],["lento","Escoou devagar demais"]];
+
+function ajusteFino(ext, str, extras, G, brewer) {
+  const p1 = passo(G), p2 = p1 * 2;
+  const fino = "moa mais fino (≈" + p1 + "–" + p2 + " cliques no " + G.label + ")";
+  const grosso = "moa mais grosso (≈" + p1 + "–" + p2 + " cliques no " + G.label + ")";
+  const M = {
+    "sour|weak":   { t: "Subextraído e fraco",        a: [fino + " — uma única alavanca corrige os dois sintomas", "mantenha proporção e temperatura por enquanto"] },
+    "sour|ok":     { t: "Subextraído",                a: [fino, "ou suba a temperatura / estenda o contato (despejos mais lentos)"] },
+    "sour|heavy":  { t: "Subextraído, porém forte",   a: ["alongue a proporção — mais água extrai mais e ainda dilui", fino + ", se continuar verde"] },
+    "bitter|weak": { t: "Sobre-extraído e fraco",     a: [grosso + " — sinal clássico de finos canalizando", "encurte a proporção ou aumente a dose para devolver corpo"] },
+    "bitter|ok":   { t: "Sobre-extraído",             a: [grosso, "ou baixe a temperatura e reduza a agitação"] },
+    "bitter|heavy":{ t: "Sobre-extraído e pesado",    a: [grosso, "alongue a proporção — ou salve esta xícara com bypass (água quente no café pronto)"] },
+    "ok|weak":     { t: "Extração boa, força baixa",  a: ["aumente a dose ou encurte a proporção (ex.: 1:16,7 → 1:15)", "não mexa na moagem — força e extração são alavancas diferentes"] },
+    "ok|heavy":    { t: "Extração boa, força alta",   a: ["alongue a proporção ou dilua na xícara", "a moagem fica como está"] },
+    "ok|ok":       { t: extras.length ? "Equilíbrio bom, com ressalvas" : "Xícara equilibrada", a: extras.length ? [] : ["anote estes parâmetros — você achou o ponto"] },
+  };
+  const base = M[ext + "|" + str];
+  const EX = {
+    adstr:  "adstringência = finos migrando: reduza a agitação, despeje mais baixo e devagar; um papel mais rápido (FAST) também ajuda",
+    oco:    "falta de doçura costuma ser extração desigual: nivele o leito, sature tudo na pré-infusão e finalize com um giro suave",
+    rapido: "escoou rápido demais: confira o assentamento do papel; um passo mais fino ou um papel mais lento devolvem contato",
+    lento:  "escoou devagar demais: excesso de finos ou papel saturado — um passo mais grosso ou um papel mais rápido (FAST)",
+  };
+  const TIP = {
+    oreaO1:   "No O1, trocar entre papel plano, ondulado e FAST muda o contato sem tocar na moagem — explore o painel do filtro.",
+    graycano: "No Graycano, o alumínio segura o calor: 2 °C para cima ou para baixo já são uma alavanca forte.",
+    switch:   "No Switch, fechar a válvula por 30–60 s no meio do preparo ganha contato sem mudar a moagem.",
+    ufo:      "No UFO, o despejo final rápido e alto é a alavanca de equilíbrio dos criadores — ajuste altura e velocidade dele antes da moagem.",
+    oxo:      "No OXO, calibre primeiro pela bombeada e pelo rendimento de 66 g; a temperatura é o ajuste fino de sabor.",
+    bird:     "No BIRD, 30 s a mais de infusão ou uma subida mais lenta do pod equivalem a um passo de moagem.",
+  };
+  return { title: base.t, acts: base.a.concat(extras.map((e) => EX[e])), tip: TIP[brewer] };
+}
 function grindFmt(um, g){
   const clk = Math.max(1, Math.round(um / g.um));
   if(!g.dial) return String(clk);
@@ -459,7 +484,10 @@ function App() {
   const [filter, setFilter] = useState(BREWERS.oreaO1.defaultFilter);
   const [proc, setProc] = useState("all");
   const [grinder, setGrinder] = useState("c60");
-  const [taste, setTaste] = useState(null);
+  const [ext, setExt] = useState("ok");
+  const [strg, setStrg] = useState("ok");
+  const [extras, setExtras] = useState([]);
+  const touched = ext !== "ok" || strg !== "ok" || extras.length > 0;
   const G = GRINDERS[grinder];
 
   const B = BREWERS[brewer];
@@ -640,24 +668,60 @@ function App() {
 
         {/* ===== Ajuste fino ===== */}
         <div className="mt-8 rounded-lg border-2 p-4" style={{ borderColor: "#211C17", background: "#FAF7F0" }}>
-          <div className="font-data text-[11px] tracking-[0.16em] uppercase mb-1" style={{ color: "#A0571A" }}>Ajuste fino · o que você sentiu na xícara?</div>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {Object.keys(TASTE_FIX).map((k) => (
-              <button key={k} onClick={() => setTaste(taste === k ? null : k)}
+          <div className="font-data text-[11px] tracking-[0.16em] uppercase" style={{ color: "#A0571A" }}>Ajuste fino · diagnostique a xícara</div>
+
+          <div className="font-data text-[10.5px] tracking-[0.12em] uppercase mt-3 mb-1.5" style={{ color: "#776D5E" }}>Equilíbrio (extração)</div>
+          <div className="flex flex-wrap gap-2">
+            {EXT_OPTS.map(([k, lbl]) => (
+              <button key={k} onClick={() => setExt(k)}
                 className="rounded-md px-3 py-1.5 text-[12.5px] font-display font-semibold border transition grow sm:grow-0"
-                style={btn(taste === k, "#A0571A")}>
-                {k}
-              </button>
+                style={btn(ext === k, "#A0571A")}>{lbl}</button>
             ))}
           </div>
-          {taste && (
-            <div className="mt-3 rounded-md p-3 text-[13px] leading-relaxed" style={{ background: "#211C17", color: "#EAE4D8" }}>
-              <span className="font-bold" style={{ color: "#E8B04B" }}>{TASTE_FIX[taste].diag}</span>{" "}
-              {TASTE_FIX[taste].fix(G)}
-            </div>
-          )}
+
+          <div className="font-data text-[10.5px] tracking-[0.12em] uppercase mt-3 mb-1.5" style={{ color: "#776D5E" }}>Força (intensidade)</div>
+          <div className="flex flex-wrap gap-2">
+            {STR_OPTS.map(([k, lbl]) => (
+              <button key={k} onClick={() => setStrg(k)}
+                className="rounded-md px-3 py-1.5 text-[12.5px] font-display font-semibold border transition grow sm:grow-0"
+                style={btn(strg === k, "#0f766e")}>{lbl}</button>
+            ))}
+          </div>
+
+          <div className="font-data text-[10.5px] tracking-[0.12em] uppercase mt-3 mb-1.5" style={{ color: "#776D5E" }}>Extras (opcional)</div>
+          <div className="flex flex-wrap gap-2">
+            {EXTRA_OPTS.map(([k, lbl]) => {
+              const on = extras.includes(k);
+              return (
+                <button key={k} onClick={() => setExtras(on ? extras.filter((x) => x !== k) : extras.concat(k))}
+                  className="rounded-md px-3 py-1.5 text-[12.5px] font-display font-semibold border transition grow sm:grow-0"
+                  style={btn(on, "#5b4a8a")}>{lbl}</button>
+              );
+            })}
+          </div>
+
+          {touched && (() => {
+            const r = ajusteFino(ext, strg, extras, G, brewer);
+            return (
+              <div className="mt-4 rounded-md p-3.5" style={{ background: "#211C17", color: "#EAE4D8" }}>
+                <div className="font-display font-bold text-[14px] mb-1.5" style={{ color: "#E8B04B" }}>{r.title}</div>
+                {r.acts.length > 0 && (
+                  <ol className="text-[13px] leading-relaxed space-y-1.5">
+                    {r.acts.map((a, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="font-data font-bold shrink-0" style={{ color: "#0f9488" }}>{i + 1}.</span>
+                        <span>{a}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                {r.tip && <div className="text-[12px] mt-2.5 pt-2.5 border-t" style={{ borderColor: "#3a3328", color: "#C9BEA9" }}>{r.tip}</div>}
+              </div>
+            );
+          })()}
+
           <p className="text-[12px] mt-3" style={{ color: "#776D5E" }}>
-            Para um diagnóstico completo de sabor, use o{" "}
+            Mude UMA variável por vez e prove de novo. Para o diagnóstico completo de sabor, use o{" "}
             <a href="https://www.baristahustle.com/app-archive-main/the-coffee-compass/" target="_blank" rel="noopener noreferrer"
               className="font-semibold underline" style={{ color: "#A0571A" }}>
               Coffee Compass do Barista Hustle ↗
