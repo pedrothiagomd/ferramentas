@@ -92,6 +92,8 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
 .drug-chip{display:flex;flex-direction:column;gap:6px;background:#fafaf8;border:1px solid #e6e6e2;border-radius:9px;padding:10px 12px;min-width:148px;flex:1}
 .drug-chip-name{font-size:13.5px;font-weight:700;color:#1a1a18;line-height:1.2}
 .drug-chip-role{font-size:10.5px;color:#888;font-weight:500}
+.drug-chip-dose{font-size:11px;color:#475569;line-height:1.45;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:5px 7px;margin-top:1px}
+.drug-chip-dose-lbl{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:2px}
 .drug-chip-btn{margin-top:2px;padding:6px 10px;border-radius:6px;border:none;background:#1a1a18;color:#fff;font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;transition:opacity .12s}
 .drug-chip-btn:hover{opacity:.82}
 .drug-chip-btn.muted{background:#e8e8e5;color:#999;cursor:default}
@@ -832,12 +834,12 @@ var DRUGS = {
   'anfotericina':  {name:'Anfotericina B', link:true},
   /* informativas (não no quadro de ajuste renal da Aba 2) */
   'nitro':         {name:'Nitrofurantoína', link:true},
-  'fosfo':         {name:'Fosfomicina', link:false, dose:'3g VO dose única'},
-  'cefalexina':    {name:'Cefalexina', link:false, dose:'VO — ambulatorial'},
-  'cefuroxima':    {name:'Cefuroxima', link:false, dose:'VO — gestante'},
-  'doxiciclina':   {name:'Doxiciclina', link:false, dose:'VO — alternativa MRSA'},
-  'sulfadiazina':  {name:'Sulfadiazina + Pirimetamina + ác. folínico', link:false, dose:'neurotoxoplasmose'},
-  'mupirocina':    {name:'Mupirocina tópica', link:false, dose:'impetigo (tópico)'}
+  'fosfo':         {name:'Fosfomicina', link:false, dose:'3g VO — dose única (guia HAB)'},
+  'cefalexina':    {name:'Cefalexina', link:false, dose:'500mg VO 6/6h (ref.)'},
+  'cefuroxima':    {name:'Cefuroxima axetil', link:false, dose:'250–500mg VO 12/12h (ref.)'},
+  'doxiciclina':   {name:'Doxiciclina', link:false, dose:'100mg VO 12/12h (ref.)'},
+  'sulfadiazina':  {name:'Sulfadiazina + Pirimetamina + ác. folínico', link:false, dose:'Sulfadiazina 1–1,5g 6/6h + Pirimetamina 200mg → 50–75mg/dia + ác. folínico 10–25mg/dia (ref.)'},
+  'mupirocina':    {name:'Mupirocina (tópica)', link:false, dose:'pomada 2% — aplicar 8/8h por 5–10 dias (ref.)'}
 };
 
 var TREE = {
@@ -1264,7 +1266,7 @@ function navRender(){
         if(info.link){
           h += '<button class="drug-chip-btn" onclick="linkAdjust(\'' + d.id + '\')">Calcular dose &#8594;</button>';
         } else {
-          h += '<div class="drug-chip-role">' + esc(info.dose || 'sem cálculo de dose na ferramenta') + '</div>';
+          h += '<div class="drug-chip-dose"><span class="drug-chip-dose-lbl">Posologia</span>' + esc(info.dose || 'não padronizada') + '</div>';
         }
         h += '</div>';
       });
