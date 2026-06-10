@@ -116,7 +116,7 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
 
 <div style="margin-bottom:1rem">
   <h1>ATB &mdash; Antibioticoterapia HAB</h1>
-  <div class="subtitle">Guia de Antibioticoterapia Emp&iacute;rica HAB 2023 &middot; Escolha &middot; Ajuste renal (Cockcroft-Gault) &middot; HD intermitente</div>
+  <div class="subtitle">Guia de Antibioticoterapia Emp&iacute;rica HAB 2026 &middot; Escolha &middot; Ajuste renal (Cockcroft-Gault) &middot; HD intermitente</div>
 </div>
 
 <div class="tabs">
@@ -127,13 +127,13 @@ h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
 <!-- ════════ ABA 1 — NAVEGADOR DE ESCOLHA EMPIRICA ════════ -->
 <div id="tab-nav">
   <div class="card">
-    <div class="card-title">Navegador de escolha emp&iacute;rica &middot; Guia HAB 2023</div>
+    <div class="card-title">Navegador de escolha emp&iacute;rica &middot; Guia HAB 2026</div>
     <div id="nav-crumbs" class="nav-crumbs"></div>
     <div id="nav-body"></div>
     <div style="margin-top:14px;display:flex;justify-content:flex-end">
       <button class="nav-reset" onclick="navReset()">&#8635; Reiniciar fluxo</button>
     </div>
-    <div class="flow-cite">Baseado no Guia de Antibioticoterapia Emp&iacute;rica do Hospital Adventista de Bel&eacute;m (MAN.INS.001.V0, 2023). Terapia <b>emp&iacute;rica inicial</b> &mdash; direcionar conforme cultura/antibiograma. N&atilde;o substitui o ju&iacute;zo cl&iacute;nico nem a discuss&atilde;o com a CCIH.</div>
+    <div class="flow-cite">Baseado no Guia de Antibioticoterapia Emp&iacute;rica para Infec&ccedil;&otilde;es Adquiridas na Comunidade e IRAS para Adultos &mdash; Hospital Adventista de Bel&eacute;m, 2026 (Figuras 1&ndash;18). Terapia <b>emp&iacute;rica inicial</b> &mdash; direcionar conforme cultura/antibiograma. N&atilde;o substitui o ju&iacute;zo cl&iacute;nico nem a discuss&atilde;o com o SCIRAS/CCIH.</div>
   </div>
 </div>
 
@@ -722,267 +722,432 @@ function calcAtb(){
 }
 
 /* ══════════════════════════════════════════════════════════════
-   NAVEGADOR DE ESCOLHA EMPÍRICA — Fluxogramas Guia HAB 2023
+   NAVEGADOR DE ESCOLHA EMPÍRICA — Fluxogramas Guia HAB 2026
+   (Figuras 1–18). Estrutura de decisão fiel ao guia.
    ══════════════════════════════════════════════════════════════ */
 
-/* id → rótulo e papel; id deve casar com os botões da aba de ajuste renal */
+/* Drogas: link=true → tem cálculo de dose/ajuste renal na Aba 2 (id casa com selAtb).
+   link=false → opção informativa (dose conforme guia, exibida inline). */
 var DRUGS = {
-  'levo':          {name:'Levofloxacina'},
-  'cefepime':      {name:'Cefepime'},
-  'claritro':      {name:'Claritromicina'},
-  'ceftriaxona':   {name:'Ceftriaxona'},
-  'oxacilina':     {name:'Oxacilina'},
-  'clinda':        {name:'Clindamicina'},
-  'cipro':         {name:'Ciprofloxacina'},
-  'metro':         {name:'Metronidazol'},
-  'tigeciclina':   {name:'Tigeciclina'},
-  'pip-taz':       {name:'Piperacilina-Tazobactam'},
-  'meropenem':     {name:'Meropenem'},
-  'gentamicina':   {name:'Gentamicina'},
-  'amicacina':     {name:'Amicacina'},
-  'vanco':         {name:'Vancomicina'},
-  'vanco-oral':    {name:'Vancomicina oral'},
-  'dapto':         {name:'Daptomicina'},
-  'anidulafungina':{name:'Anidulafungina'},
-  'ertapenem':     {name:'Ertapenem'}
+  'cefepime':    {name:'Cefepime', link:true},
+  'claritro':    {name:'Claritromicina', link:true},
+  'levo':        {name:'Levofloxacino', link:true},
+  'ceftriaxona': {name:'Ceftriaxona', link:true},
+  'pip-taz':     {name:'Piperacilina-Tazobactam', link:true},
+  'meropenem':   {name:'Meropenem', link:true},
+  'clinda':      {name:'Clindamicina', link:true},
+  'oxacilina':   {name:'Oxacilina', link:true},
+  'vanco':       {name:'Vancomicina', link:true},
+  'dapto':       {name:'Daptomicina', link:true},
+  'ertapenem':   {name:'Ertapenem', link:true},
+  'cipro':       {name:'Ciprofloxacino', link:true},
+  'metro':       {name:'Metronidazol', link:true},
+  'gentamicina': {name:'Gentamicina', link:true},
+  'amicacina':   {name:'Amicacina', link:true},
+  'vanco-oral':  {name:'Vancomicina oral', link:true},
+  'smxtmp':      {name:'Sulfametoxazol-Trimetoprim', link:true},
+  'amoxiclav':   {name:'Amoxicilina-Clavulanato', link:true},
+  /* informativas (não no quadro de ajuste renal da Aba 2) */
+  'ampicilina':    {name:'Ampicilina', link:false, dose:'esquema de endocardite (associada a aminoglicosídeo)'},
+  'micafungina':   {name:'Micafungina', link:false, dose:'100mg q24h — sem ajuste renal'},
+  'anfotericina':  {name:'Anfotericina B lipossomal', link:false, dose:'Candida resistente'},
+  'nitro':         {name:'Nitrofurantoína', link:false, dose:'100mg VO — ambulatorial'},
+  'fosfo':         {name:'Fosfomicina', link:false, dose:'3g VO dose única'},
+  'cefalexina':    {name:'Cefalexina', link:false, dose:'VO — ambulatorial'},
+  'cefuroxima':    {name:'Cefuroxima', link:false, dose:'VO — gestante'},
+  'doxiciclina':   {name:'Doxiciclina', link:false, dose:'VO — alternativa MRSA'},
+  'sulfadiazina':  {name:'Sulfadiazina + Pirimetamina + ác. folínico', link:false, dose:'neurotoxoplasmose'},
+  'mupirocina':    {name:'Mupirocina tópica', link:false, dose:'impetigo (tópico)'}
 };
 
 var TREE = {
   root: { grid:true, q:'Aquisição da infecção?',
-    help:'Comunitária = manifestação clínica até 48h da internação. Após 48h, ou se relacionada a dispositivo usado por ≥48h, classificar como IRAS.',
+    help:'Comunitária = manifestação clínica até 48h da admissão. Após 48h, ou associada a dispositivo invasivo / procedimento cirúrgico, classificar como IRAS.',
     opts:[
-      {t:'Comunitária', hint:'< 48h de internação', to:'com_site'},
-      {t:'IRAS', hint:'≥ 48h / dispositivo / assistência à saúde', to:'iras_site'}
+      {t:'Comunitária', hint:'< 48h da admissão', to:'com_site'},
+      {t:'IRAS', hint:'≥ 48h / dispositivo / pós-cirúrgica', to:'iras_site'}
     ]},
 
-  /* ───────── COMUNITÁRIAS ───────── */
-  com_site: { q:'Sítio / foco da infecção (comunitária)?',
+  /* ════════ COMUNITÁRIAS (seção 4) ════════ */
+  com_site: { q:'Sítio / foco (comunitária)?',
     opts:[
-      {t:'Pneumonia — PAC / aspirativa', to:'pac'},
+      {t:'Pneumonia — PAC', to:'pac'},
+      {t:'Pneumonia broncoaspirativa', to:'aspirativa'},
       {t:'Trato urinário (ITU)', to:'itu_com'},
       {t:'Pele e partes moles (IPPM)', to:'ippm'},
-      {t:'Diarreia / gastroenterite', to:'itgi_diarr'},
-      {t:'Intra-abdominal', to:'iia_tipo'},
+      {t:'Trato gastrointestinal (ITGI)', to:'itgi'},
+      {t:'Intra-abdominal (IAB)', to:'iab'},
       {t:'Sistema nervoso central', to:'snc'},
-      {t:'Endocardite', to:'endocardite'},
-      {t:'Neutropenia febril', to:'neutro'},
+      {t:'Endocardite', to:'endo'},
+      {t:'Neutropenia febril', to:'r_neutro_cefe'},
       {t:'Foco indeterminado', to:'foco_com'}
     ]},
 
-  pac: { q:'Paciente em sepse?',
+  /* ─── PAC (Figura 1) ─── */
+  pac: { q:'Sepse  OU  idade > 60 anos  OU  doença pulmonar crônica?',
+    help:'Qualquer um destes direciona para o esquema ampliado.',
     opts:[
-      {t:'Sim — sepse', to:'r_pac_sepse'},
+      {t:'Sim', to:'r_pac_grave'},
       {t:'Não', to:'pac_quino'}
     ]},
-  pac_quino: { q:'Uso prévio de quinolona nos últimos 30 dias?',
+  pac_quino: { q:'Fez uso de quinolona nos últimos 30 dias?',
     opts:[
       {t:'Não', to:'r_pac_levo'},
       {t:'Sim', to:'r_pac_ceftriax'}
     ]},
-  r_pac_sepse: { r:true, kind:'atb', regimen:'Cefepime + Claritromicina',
+  r_pac_grave: { r:true, kind:'atb', regimen:'Cefepime + Claritromicina',
     drugs:[{id:'cefepime'},{id:'claritro'}],
-    notes:['Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'PAC / Aspirativa' },
-  r_pac_levo: { r:true, kind:'atb', regimen:'Levofloxacina',
+    notes:['Reavaliar em 48–72h: com melhora, manter até alta e avaliar desospitalização; sem melhora, contatar SCIH para escalonamento.','Duração 5–7 dias (até 10 dias com quinolona).'], cite:'Fig 1 — PAC' },
+  r_pac_levo: { r:true, kind:'atb', regimen:'Levofloxacino',
     drugs:[{id:'levo'}],
-    notes:['Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'PAC / Aspirativa' },
+    notes:['Reavaliar em 48–72h: melhora → manter; sem melhora → contatar SCIH.','SARS-CoV-2 leve/moderada de alto risco: considerar Paxlovid (laudo + receita).','Ciprofloxacino NÃO é opção em PAC (sem ação contra pneumococo).'], cite:'Fig 1 — PAC' },
   r_pac_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona + Claritromicina',
     drugs:[{id:'ceftriaxona'},{id:'claritro'}],
-    notes:['Esquema preferido quando há uso prévio de quinolona (evitar nova quinolona).','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'PAC / Aspirativa' },
+    notes:['Preferido quando houve quinolona prévia (evitar nova quinolona).','Reavaliar em 48–72h: melhora → manter; sem melhora → contatar SCIH.'], cite:'Fig 1 — PAC' },
 
-  itu_com: { q:'Idade > 60 anos OU uso de sonda vesical de demora / cateterismo intermitente?',
+  /* ─── Broncoaspirativa (Figura 2) ─── */
+  aspirativa: { q:'Critério para sepse?',
     opts:[
-      {t:'Não — ≤ 60 anos, sem dispositivo', to:'r_itu_ceftriax'},
-      {t:'Sim — > 60 anos ou dispositivo urinário', to:'r_itu_erta'}
+      {t:'Sim', to:'r_asp_sim'},
+      {t:'Não', to:'r_asp_nao'}
     ]},
-  r_itu_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona',
-    drugs:[{id:'ceftriaxona'}],
-    notes:['Casos associados a foco pulmonar: seguir o fluxo de PAC.','ITU de repetição: seguir a última cultura positiva ou, na ausência, a orientação de ITU hospitalar (IRAS).','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'ITU comunitária' },
-  r_itu_erta: { r:true, kind:'atb', regimen:'Ertapenem',
-    drugs:[{id:'ertapenem'}],
-    notes:['Cobertura para ESBL na população de maior risco (idoso / dispositivo).','Não cobre Pseudomonas — se suspeita, rever esquema.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'ITU comunitária' },
-
-  ippm: { q:'Apresentação clínica?',
-    opts:[
-      {t:'Erisipela / celulite + abscesso ou furúnculo extenso', to:'r_ippm_oxa'},
-      {t:'Úlcera crônica / pé diabético / fasceíte necrosante', to:'r_ippm_ceftriax'}
-    ]},
-  r_ippm_oxa: { r:true, kind:'atb', regimen:'Oxacilina  OU  Clindamicina',
-    drugs:[{id:'oxacilina'},{id:'clinda'}],
-    notes:['Choque séptico com internação recente (30 dias) e/ou ATB prévio: avaliar ampliação de cobertura.','Fatores de risco para Pseudomonas: considerar ceftazidima ou cefepime.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'IPPM comunitária' },
-  r_ippm_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona + Clindamicina + desbridamento cirúrgico + cultura',
+  r_asp_sim: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam',
+    drugs:[{id:'pip-taz'}],
+    notes:['Se houver piora clínica: escalonar para Meropenem.','Manter até estabilidade clínica.'], cite:'Fig 2 — Broncoaspirativa' },
+  r_asp_nao: { r:true, kind:'atb', regimen:'Ceftriaxona + Clindamicina',
     drugs:[{id:'ceftriaxona'},{id:'clinda'}],
-    notes:['** Acionar a equipe cirúrgica para desbridamento.','Fatores de risco para Pseudomonas: considerar ceftazidima ou cefepime.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'IPPM comunitária' },
+    notes:['Se houver piora clínica: escalonar para Piperacilina-Tazobactam.','Manter até estabilidade; avaliar desospitalização.'], cite:'Fig 2 — Broncoaspirativa' },
 
-  itgi_diarr: { q:'Mais de 3 evacuações líquidas por dia?',
+  /* ─── ITU comunitária (Figuras 3 e 4) ─── */
+  itu_com: { q:'Tipo / contexto de ITU?',
     opts:[
-      {t:'Não', to:'r_itgi_hidrat'},
-      {t:'Sim', to:'itgi_atbprev'}
+      {t:'Não complicada', hint:'cistite, limitada à bexiga', to:'itu_nc'},
+      {t:'Complicada', hint:'febre, bacteremia, dispositivo', to:'itu_c'},
+      {t:'Bacteriúria assintomática', to:'r_itu_bac'},
+      {t:'Gestante', to:'r_itu_gest'}
     ]},
-  itgi_atbprev: { q:'Uso prévio de antibióticos nos últimos 7 dias?',
+  itu_nc: { q:'Critério de internação?',
+    opts:[
+      {t:'Não', to:'r_itu_nc_amb'},
+      {t:'Sim', to:'r_itu_nc_ceftriax'}
+    ]},
+  r_itu_nc_amb: { r:true, kind:'atb', regimen:'Terapia ambulatorial oral',
+    drugs:[{id:'nitro'},{id:'fosfo'},{id:'smxtmp'}],
+    notes:['1ª opção: Nitrofurantoína 100mg VO.','Outras: Fosfomicina 3g VO dose única; SMX-TMP VO.','Se piora ou necessidade de internação: seguir o fluxo de internação.'], cite:'Fig 3 — ITU não complicada' },
+  r_itu_nc_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona',
+    drugs:[{id:'ceftriaxona'}],
+    notes:['Avaliar resultado de culturas em 48–72h para guiar terapia.'], cite:'Fig 3 — ITU não complicada' },
+  itu_c: { q:'Paciente com estabilidade clínica?',
+    opts:[
+      {t:'Sim', to:'itu_c_esbl'},
+      {t:'Não', to:'r_itu_c_mero'}
+    ]},
+  itu_c_esbl: { q:'Risco de germe ESBL?',
+    help:'Infecções prévias por ESBL, ITU de repetição ou uso de dispositivos invasivos.',
+    opts:[
+      {t:'Não', to:'r_itu_c_piptaz'},
+      {t:'Sim', to:'r_itu_c_erta'}
+    ]},
+  r_itu_c_mero: { r:true, kind:'atb', regimen:'Meropenem',
+    drugs:[{id:'meropenem'}],
+    notes:['Instabilidade clínica → carbapenêmico de amplo espectro.','Avaliar culturas em 48–72h.'], cite:'Fig 4 — ITU complicada' },
+  r_itu_c_piptaz: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam',
+    drugs:[{id:'pip-taz'}],
+    notes:['Avaliar culturas em 48–72h.'], cite:'Fig 4 — ITU complicada' },
+  r_itu_c_erta: { r:true, kind:'atb', regimen:'Ertapenem',
+    drugs:[{id:'ertapenem'}],
+    notes:['Cobertura para ESBL.','Ertapenem NÃO cobre Pseudomonas — se resistência/Pseudomonas, usar Meropenem.','Avaliar culturas em 48–72h.'], cite:'Fig 4 — ITU complicada' },
+  r_itu_bac: { r:true, kind:'noatb', regimen:'Em geral NÃO tratar',
+    drugs:[],
+    notes:['Tratar apenas: gestantes, preparo para procedimento urológico e transplante renal recente.','Nesses grupos, seguir a gravidade e particularidades do grupo.'], cite:'4.3.3 — Bacteriúria assintomática' },
+  r_itu_gest: { r:true, kind:'atb', regimen:'ITU em gestante',
+    drugs:[{id:'amoxiclav'},{id:'nitro'},{id:'fosfo'},{id:'cefalexina'},{id:'cefuroxima'},{id:'ceftriaxona'},{id:'cefepime'},{id:'meropenem'}],
+    notes:['Toda ITU/bacteriúria na gestante deve ser tratada; complicada sempre hospitalar e endovenosa.','Cistite simples / bacteriúria assintomática: Amoxicilina-clavulanato, Cefalexina, Cefuroxima, Fosfomicina ou Nitrofurantoína (até 38 semanas).','ITU complicada: Ceftriaxona ou Cefepime; casos graves: Meropenem.'], cite:'4.3.4 — ITU em gestantes' },
+
+  /* ─── IPPM (Figuras 5 e 6) ─── */
+  ippm: { q:'Apresentação da IPPM?',
+    opts:[
+      {t:'Impetigo', to:'r_ippm_impetigo'},
+      {t:'Celulite / erisipela / abscesso / furúnculo extenso', to:'ippm_celulite'},
+      {t:'Complicada / profunda', hint:'fasceíte, gangrena', to:'ippm_prof'}
+    ]},
+  r_ippm_impetigo: { r:true, kind:'atb', regimen:'Impetigo',
+    drugs:[{id:'mupirocina'},{id:'cefalexina'},{id:'amoxiclav'},{id:'smxtmp'},{id:'doxiciclina'},{id:'clinda'}],
+    notes:['Tópico: Mupirocina; tratamento sistêmico nos casos mais extensos.','Opções sistêmicas: Cefalexina ou Amoxicilina-clavulanato.','Suspeita de MRSA: SMX-TMP, Doxiciclina ou Clindamicina.'], cite:'4.4.1 — Impetigo' },
+  ippm_celulite: { q:'Risco de MRSA?',
+    help:'Swab ou infecção prévia por MRSA, infecções de pele crônicas, internações recentes ou uso de dispositivos.',
+    opts:[
+      {t:'Não', to:'r_ippm_oxa'},
+      {t:'Sim', to:'ippm_mrsa_sepse'}
+    ]},
+  ippm_mrsa_sepse: { q:'Presença de sepse?',
+    opts:[
+      {t:'Não', to:'r_ippm_ceftriax_clinda'},
+      {t:'Sim', to:'r_ippm_cefe_vanco'}
+    ]},
+  r_ippm_oxa: { r:true, kind:'atb', regimen:'Oxacilina',
+    drugs:[{id:'oxacilina'}],
+    notes:['Se piora ou ausência de melhora: contatar CCIH para escalonamento.','Considerar drenagem cirúrgica no controle de foco.','Manter e avaliar desospitalização.'], cite:'Fig 5 — IPPM' },
+  r_ippm_ceftriax_clinda: { r:true, kind:'atb', regimen:'Ceftriaxona + Clindamicina',
+    drugs:[{id:'ceftriaxona'},{id:'clinda'}],
+    notes:['Avaliar necessidade de abordagem cirúrgica e desospitalização se estabilidade.'], cite:'Fig 5 — IPPM (risco MRSA, sem sepse)' },
+  r_ippm_cefe_vanco: { r:true, kind:'atb', regimen:'Cefepime + Vancomicina',
+    drugs:[{id:'cefepime'},{id:'vanco'}],
+    notes:['Avaliar necessidade de abordagem cirúrgica e desospitalização se estabilidade.'], cite:'Fig 5 — IPPM (risco MRSA + sepse)' },
+  ippm_prof: { q:'Sepse ou instabilidade?',
+    opts:[
+      {t:'Não', to:'r_ippm_prof_nao'},
+      {t:'Sim', to:'r_ippm_prof_sim'}
+    ]},
+  r_ippm_prof_nao: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam + Vancomicina',
+    drugs:[{id:'pip-taz'},{id:'vanco'}],
+    notes:['Na impossibilidade de vancomicina: Daptomicina.','Abordagem cirúrgica + amplo espectro; duração até 21 dias.','Avaliar desospitalização diariamente.'], cite:'Fig 6 — IPPM profunda' },
+  r_ippm_prof_sim: { r:true, kind:'atb', regimen:'Meropenem + Vancomicina',
+    drugs:[{id:'meropenem'},{id:'vanco'}],
+    notes:['Na impossibilidade de vancomicina: Daptomicina.','Abordagem cirúrgica + amplo espectro; duração até 21 dias.','Avaliar desospitalização diariamente.'], cite:'Fig 6 — IPPM profunda' },
+
+  /* ─── ITGI (Figura 7) ─── */
+  itgi: { q:'Mais de 3 evacuações líquidas por dia?',
+    opts:[
+      {t:'Não', to:'r_itgi_sint'},
+      {t:'Sim', to:'itgi_atb'}
+    ]},
+  itgi_atb: { q:'Uso prévio de ATB nos últimos 7 dias?',
     opts:[
       {t:'Não', to:'r_itgi_cipro'},
-      {t:'Sim', to:'clost_susp'}
+      {t:'Sim', to:'clost'}
     ]},
-  r_itgi_hidrat: { r:true, kind:'noatb', regimen:'Hidratação + sintomáticos',
-    drugs:[], notes:['Sem indicação de antibiótico empírico neste cenário.'], cite:'Diarreia / gastroenterite' },
-  r_itgi_cipro: { r:true, kind:'atb', regimen:'Ciprofloxacina',
-    drugs:[{id:'cipro'}], notes:['Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Diarreia / gastroenterite' },
+  r_itgi_sint: { r:true, kind:'noatb', regimen:'Sintomáticos + hidratação',
+    drugs:[],
+    notes:['Maioria não requer antibiótico. Tratar parasitoses, febre tifoide, cólera e disenteria.'], cite:'Fig 7 — ITGI' },
+  r_itgi_cipro: { r:true, kind:'atb', regimen:'Ciprofloxacino',
+    drugs:[{id:'cipro'}],
+    notes:['Manter até estabilidade; avaliar desospitalização.'], cite:'Fig 7 — ITGI' },
 
-  iia_tipo: { q:'Classificação da infecção intra-abdominal?',
-    help:'Complicada = ultrapassa os limites do órgão, causando peritonite e/ou disfunções orgânicas (sepse). Não complicada = limitada ao órgão, sem peritonite/manifestação sistêmica grave.',
+  /* ─── IAB (Figura 8) ─── */
+  iab: { q:'Sepse ou instabilidade?',
     opts:[
-      {t:'Não complicada', hint:'limitada ao órgão', to:'iia_nc'},
-      {t:'Complicada', hint:'peritonite / sepse', to:'iia_c'}
+      {t:'Não', to:'r_iab_ceftriax'},
+      {t:'Sim', to:'iab_esbl'}
     ]},
-  iia_nc: { q:'Uso prévio de ATB (últimos 30 dias) e/ou colonização por ESBL documentada em cultura?',
+  iab_esbl: { q:'Risco de ESBL?',
+    help:'Infecções prévias por ESBL, uso de dispositivos, uso prévio de ATB de amplo espectro.',
     opts:[
-      {t:'Não', to:'r_iia_nc_ceftriax'},
-      {t:'Sim', to:'r_iia_nc_tige'}
+      {t:'Não', to:'r_iab_piptaz'},
+      {t:'Sim', to:'r_iab_mero'}
     ]},
-  r_iia_nc_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona + Metronidazol',
+  r_iab_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona + Metronidazol',
     drugs:[{id:'ceftriaxona'},{id:'metro'}],
-    notes:['Alérgicos a penicilina: (1) Ciprofloxacina + Metronidazol  OU  (2) Moxifloxacina.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Intra-abdominal não complicada' },
-  r_iia_nc_tige: { r:true, kind:'atb', regimen:'Tigeciclina',
-    drugs:[{id:'tigeciclina'}],
-    notes:['Não usar isoladamente em bacteremia/ITU.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Intra-abdominal não complicada' },
-  iia_c: { q:'Uso prévio de ATB (últimos 30 dias) e/ou colonização prévia por ESBL documentada em cultura?',
-    opts:[
-      {t:'Não', to:'r_iia_c_piptaz'},
-      {t:'Sim', to:'iia_c_mdr'}
-    ]},
-  iia_c_mdr: { q:'Paciente com fatores de risco para germe multirresistente em choque séptico?',
-    opts:[
-      {t:'Não', to:'r_iia_c_piptaz'},
-      {t:'Sim', to:'r_iia_c_mero'}
-    ]},
-  r_iia_c_piptaz: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam',
-    drugs:[{id:'pip-taz'}], notes:['Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Intra-abdominal complicada' },
-  r_iia_c_mero: { r:true, kind:'atb', regimen:'Meropenem',
-    drugs:[{id:'meropenem'}], notes:['Escalonamento para carbapenêmico no choque séptico com risco de MDR.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Intra-abdominal complicada' },
+    notes:['Controle de foco (cirurgia/drenagem) é parte do tratamento.','Manter se estabilidade; suspender após controle da fonte nos casos não complicados.'], cite:'Fig 8 — IAB' },
+  r_iab_piptaz: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam',
+    drugs:[{id:'pip-taz'}],
+    notes:['Controle de foco. Avaliar desospitalização.'], cite:'Fig 8 — IAB (risco ESBL)' },
+  r_iab_mero: { r:true, kind:'atb', regimen:'Meropenem',
+    drugs:[{id:'meropenem'}],
+    notes:['Controle de foco. Avaliar desospitalização.'], cite:'Fig 8 — IAB (risco ESBL)' },
 
-  snc: { q:'Apresentação clínica?',
-    help:'Meningite relacionada a procedimento cirúrgico deve ser considerada como "pós-traumática".',
+  /* ─── SNC (Figura 9) ─── */
+  snc: { q:'Classificação (clínica + imagem radiológica)?',
     opts:[
       {t:'Meningite bacteriana', to:'r_snc_mening'},
-      {t:'Meningite pós-traumática / pós-cirúrgica', to:'r_snc_postrauma'},
-      {t:'Abscesso cerebral', to:'r_snc_abscesso'}
+      {t:'Pós-trauma / pós-cirurgia', to:'r_snc_postrauma'},
+      {t:'Abscesso cerebral', to:'snc_abscesso'},
+      {t:'Neurotoxoplasmose', hint:'imagem compatível', to:'r_snc_toxo'}
     ]},
-  r_snc_mening: { r:true, kind:'atb', regimen:'Ceftriaxona (dose dobrada — 2g q12h)',
-    drugs:[{id:'ceftriaxona'}], notes:['Dose dobrada para penetração liquórica.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'SNC' },
+  snc_abscesso: { q:'Risco de MRSA ou procedimento cirúrgico prévio?',
+    opts:[
+      {t:'Não', to:'r_snc_abscesso_ceftriax'},
+      {t:'Sim', to:'r_snc_postrauma'}
+    ]},
+  r_snc_mening: { r:true, kind:'atb', regimen:'Ceftriaxona (dose para SNC)',
+    drugs:[{id:'ceftriaxona'}],
+    notes:['Dose dobrada para penetração liquórica.','Avaliar resultado de cultura em 48–72h.'], cite:'Fig 9 — SNC' },
   r_snc_postrauma: { r:true, kind:'atb', regimen:'Cefepime + Vancomicina',
-    drugs:[{id:'cefepime'},{id:'vanco'}], notes:['Cobertura para Gram-negativos hospitalares e estafilococos (incl. MRSA).','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'SNC' },
-  r_snc_abscesso: { r:true, kind:'atb', regimen:'Oxacilina + Ceftriaxona + Metronidazol',
-    drugs:[{id:'oxacilina'},{id:'ceftriaxona'},{id:'metro'}], notes:['Cobertura para Gram-positivos, Gram-negativos e anaeróbios.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'SNC' },
+    drugs:[{id:'cefepime'},{id:'vanco'}],
+    notes:['Se piora: trocar para Meropenem + Vancomicina.','Retirar dispositivos quando possível.'], cite:'Fig 9 — SNC (pós-trauma / abscesso com risco MRSA)' },
+  r_snc_abscesso_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona + Metronidazol',
+    drugs:[{id:'ceftriaxona'},{id:'metro'}],
+    notes:['Acionar neurocirurgia conforme o tamanho (drenagem).'], cite:'Fig 9 — SNC (abscesso, sem risco MRSA)' },
+  r_snc_toxo: { r:true, kind:'atb', regimen:'Neurotoxoplasmose',
+    drugs:[{id:'smxtmp'},{id:'sulfadiazina'}],
+    notes:['SMX-TMP  OU  Sulfadiazina + Pirimetamina + ácido folínico.'], cite:'4.7 — SNC' },
 
-  endocardite: { q:'Tipo de valva?',
+  /* ─── Endocardite (Figura 10) ─── */
+  endo: { q:'Tipo de valva / suspeita?',
     opts:[
-      {t:'Nativa  OU  protética > 12 meses', to:'r_endo_nativa'},
-      {t:'Protética < 12 meses', to:'r_endo_protetica'}
+      {t:'Nativa', to:'endo_nativa'},
+      {t:'Protética', to:'endo_prot'},
+      {t:'Suspeita de endocardite fúngica', to:'r_endo_fung'}
     ]},
-  r_endo_nativa: { r:true, kind:'atb', regimen:'Oxacilina + Ceftriaxona + Gentamicina',
-    drugs:[{id:'oxacilina'},{id:'ceftriaxona'},{id:'gentamicina'}],
-    notes:['Solicitar 3 pares de hemoculturas (cada par com intervalo de 1h ou na vigência de bacteremia).','Etilistas crônicos e/ou usuários de drogas injetáveis: substituir oxacilina por vancomicina.','Aminoglicosídeos por no máximo 14 dias ou conforme discussão com a CCIH.'], cite:'Endocardite' },
-  r_endo_protetica: { r:true, kind:'atb', regimen:'Vancomicina + Amicacina',
-    drugs:[{id:'vanco'},{id:'amicacina'}],
-    notes:['Solicitar 3 pares de hemoculturas.','Aminoglicosídeos por no máximo 14 dias ou conforme discussão com a CCIH.'], cite:'Endocardite' },
+  endo_nativa: { q:'Risco de MRSA?',
+    opts:[
+      {t:'Não', to:'r_endo_nativa'},
+      {t:'Sim', to:'r_endo_nativa_mrsa'}
+    ]},
+  endo_prot: { q:'Tempo desde a troca valvar?',
+    opts:[
+      {t:'Precoce (< 1 ano)', to:'r_endo_prot_prec'},
+      {t:'Tardia (> 1 ano)', to:'r_endo_prot_tard'}
+    ]},
+  r_endo_nativa: { r:true, kind:'atb', regimen:'Gentamicina + Ampicilina',
+    drugs:[{id:'gentamicina'},{id:'ampicilina'}],
+    notes:['Coletar 3 pares de hemoculturas (intervalo de 1h ou na vigência de bacteremia).','Avaliar resultado de culturas em 48–72h.'], cite:'Fig 10 — Endocardite (valva nativa)' },
+  r_endo_nativa_mrsa: { r:true, kind:'atb', regimen:'Ceftriaxona + Vancomicina',
+    drugs:[{id:'ceftriaxona'},{id:'vanco'}],
+    notes:['Troca de esquema por risco de MRSA.','3 pares de hemoculturas. Avaliar culturas em 48–72h.'], cite:'Fig 10 — Endocardite (nativa, risco MRSA)' },
+  r_endo_prot_prec: { r:true, kind:'atb', regimen:'Cefepime + Vancomicina',
+    drugs:[{id:'cefepime'},{id:'vanco'}],
+    notes:['Protética precoce (< 1 ano).','3 pares de hemoculturas. Avaliar culturas em 48–72h.'], cite:'Fig 10 — Endocardite (protética precoce)' },
+  r_endo_prot_tard: { r:true, kind:'atb', regimen:'Ceftriaxona + Vancomicina',
+    drugs:[{id:'ceftriaxona'},{id:'vanco'}],
+    notes:['Protética tardia (> 1 ano).','3 pares de hemoculturas. Avaliar culturas em 48–72h.'], cite:'Fig 10 — Endocardite (protética tardia)' },
+  r_endo_fung: { r:true, kind:'atb', regimen:'Endocardite fúngica',
+    drugs:[{id:'micafungina'},{id:'anfotericina'}],
+    notes:['1ª escolha: Micafungina.','Candida resistente: Anfotericina B lipossomal.','Acionar cirurgia cardíaca para avaliação; iniciar antifúngico o mais rápido possível.'], cite:'4.8 — Endocardite fúngica' },
 
-  neutro: { q:'Febre + (< 500 neutrófilos OU 500–1000 com tendência à queda*)?',
-    help:'* Tendência à queda: paciente entre o 5º e o 15º dia pós-quimioterapia (independente do número de neutrófilos).',
-    opts:[
-      {t:'Não', to:'r_neutro_outro'},
-      {t:'Sim', to:'neutro_inst'}
-    ]},
-  neutro_inst: { q:'Instabilidade hemodinâmica e/ou infecção de cateter venoso central?',
-    opts:[
-      {t:'Não', to:'r_neutro_cefe'},
-      {t:'Sim', to:'r_neutro_cefe_vanco'}
-    ]},
-  r_neutro_outro: { r:true, kind:'noatb', regimen:'Buscar outro diagnóstico',
-    drugs:[], notes:['Não preenche critério de neutropenia febril.'],
-    nav:{t:'Ir para o fluxo de Foco indeterminado', to:'foco_com'}, cite:'Neutropenia febril' },
+  /* ─── Neutropenia febril (Figura 11) ─── */
   r_neutro_cefe: { r:true, kind:'atb', regimen:'Cefepime',
-    drugs:[{id:'cefepime'}], notes:['** Cefepime sempre na dose de 2g a cada 8 horas.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Neutropenia febril' },
-  r_neutro_cefe_vanco: { r:true, kind:'atb', regimen:'Cefepime + Vancomicina',
-    drugs:[{id:'cefepime'},{id:'vanco'}], notes:['** Cefepime sempre na dose de 2g a cada 8 horas.','Vancomicina associada por instabilidade hemodinâmica e/ou infecção de cateter.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Neutropenia febril' },
+    drugs:[{id:'cefepime'}],
+    notes:['NÃO usar vancomicina empírica (sem redução de mortalidade; Gram-positivos não são causa comum de deterioração precoce).','Classificar pelo escore MASCC — baixo risco pode receber terapia ambulatorial (Ciprofloxacino ou Amoxicilina-clavulanato).','Sem piora + neutrófilos > 500 e melhora dos sintomas: guiar por culturas e finalizar.','Se houver piora: escalonar para Meropenem; se Candida score elevado e risco de MRSA, contatar SCIH para ampliar cobertura.'], cite:'Fig 11 — Neutropenia febril' },
 
-  foco_com: { q:'Sinais clínicos e/ou laboratoriais de infecção bacteriana, sem foco aparente?',
+  /* ─── Foco indeterminado comunitário (Figura 12) ─── */
+  foco_com: { q:'Sinais e sintomas de infecção bacteriana?',
     opts:[
-      {t:'Não', to:'r_foco_com_sint'},
+      {t:'Não', to:'r_foco_com_outras'},
       {t:'Sim', to:'r_foco_com_ceftriax'}
     ]},
-  r_foco_com_sint: { r:true, kind:'noatb', regimen:'Sintomáticos',
-    drugs:[], notes:['Sem indicação de antibiótico empírico.'], cite:'Foco indeterminado comunitário' },
+  r_foco_com_outras: { r:true, kind:'noatb', regimen:'Avaliar outras causas de instabilidade clínica',
+    drugs:[],
+    notes:['Sem sinais de infecção bacteriana — investigar causas não infecciosas.'], cite:'Fig 12 — Foco indeterminado' },
   r_foco_com_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona',
-    drugs:[{id:'ceftriaxona'}], notes:['Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'Foco indeterminado comunitário' },
+    drugs:[{id:'ceftriaxona'}],
+    notes:['Se houver piora ou sinais de sepse: escalonar para Piperacilina-Tazobactam.','Avaliar resposta clínica e resultado de culturas.'], cite:'Fig 12 — Foco indeterminado' },
 
-  /* ───────── CLOSTRIDIUM (compartilhado) ───────── */
-  clost_susp: { q:'Suspeita de colite pseudomembranosa e/ou fatores de risco?',
-    help:'Colite: quadro diarreico com ≥ 3 evacuações líquidas/dia. Fatores de risco: uso de antibióticos, quimioterapia, cirurgia gastrointestinal.',
+  /* ════════ IRAS (seção 5) ════════ */
+  iras_site: { q:'Sítio / foco (IRAS)?',
     opts:[
-      {t:'Não', to:'r_clost_afastado'},
-      {t:'Sim', to:'clost_lax'}
+      {t:'Trato urinário — associado ou não a dispositivo', to:'iras_itu'},
+      {t:'PAV / traqueobronquite / pneumonia hospitalar', to:'iras_pav'},
+      {t:'Corrente sanguínea — dispositivo (IPCS)', to:'iras_ipcs'},
+      {t:'Sítio cirúrgico (ISC)', to:'iras_isc'},
+      {t:'Clostridioides difficile', to:'clost'},
+      {t:'Foco indeterminado', to:'iras_foco'}
     ]},
-  clost_lax: { q:'Uso de laxativos nas últimas 48h?',
+
+  /* ─── ITU IRAS (Figura 13) ─── */
+  iras_itu: { q:'Presença de dispositivo invasivo vesical?',
+    opts:[
+      {t:'Não', to:'r_iras_itu_ceftriax'},
+      {t:'Sim', to:'iras_itu_sepse'}
+    ]},
+  iras_itu_sepse: { q:'Sepse?',
+    opts:[
+      {t:'Não', to:'r_iras_itu_erta'},
+      {t:'Sim', to:'r_iras_itu_mero'}
+    ]},
+  r_iras_itu_ceftriax: { r:true, kind:'atb', regimen:'Ceftriaxona',
+    drugs:[{id:'ceftriaxona'}],
+    notes:['Se piora ou sinais de sepse: escalonar para Piperacilina-Tazobactam.','Avaliar culturas em 48–72h.'], cite:'Fig 13 — ITU IRAS' },
+  r_iras_itu_erta: { r:true, kind:'atb', regimen:'Ertapenem',
+    drugs:[{id:'ertapenem'}],
+    notes:['Dispositivo presente, sem sepse.','Avaliar culturas em 48–72h.'], cite:'Fig 13 — ITU IRAS' },
+  r_iras_itu_mero: { r:true, kind:'atb', regimen:'Meropenem',
+    drugs:[{id:'meropenem'}],
+    notes:['Dispositivo presente, com sepse.','Avaliar culturas em 48–72h.'], cite:'Fig 13 — ITU IRAS' },
+
+  /* ─── PAV / pneumonia hospitalar (Figura 14) ─── */
+  iras_pav: { q:'Presença de instabilidade?',
+    opts:[
+      {t:'Não', to:'r_iras_pav_nao'},
+      {t:'Sim', to:'r_iras_pav_sim'}
+    ]},
+  r_iras_pav_nao: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam  OU  Cefepime',
+    drugs:[{id:'pip-taz'},{id:'cefepime'},{id:'smxtmp'}],
+    notes:['Ausência de melhora: escalonar para Meropenem.','Suspeita de Burkholderia/Stenotrophomonas (UTI, sem melhora ou infecção prévia): esquema preferencial com SMX-TMP.','Avaliar estabilidade e culturas.'], cite:'Fig 14 — PAV / pneumonia hospitalar' },
+  r_iras_pav_sim: { r:true, kind:'atb', regimen:'Meropenem + Amicacina',
+    drugs:[{id:'meropenem'},{id:'amicacina'},{id:'smxtmp'}],
+    notes:['Avaliar estabilidade clínica e resultado de culturas.','Suspeita de Burkholderia/Stenotrophomonas: esquema preferencial com SMX-TMP.'], cite:'Fig 14 — PAV / pneumonia hospitalar' },
+
+  /* ─── IPCS (Figura 15) ─── */
+  iras_ipcs: { q:'Sepse ou instabilidade?',
+    opts:[
+      {t:'Não', to:'r_iras_ipcs_nao'},
+      {t:'Sim', to:'r_iras_ipcs_sim'}
+    ]},
+  r_iras_ipcs_nao: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam + Vancomicina',
+    drugs:[{id:'pip-taz'},{id:'vanco'}],
+    notes:['Retirar o dispositivo relacionado; coletar 2 pares de hemoculturas de sítios diferentes.','Avaliar culturas em 48–72h.'], cite:'Fig 15 — IPCS' },
+  r_iras_ipcs_sim: { r:true, kind:'atb', regimen:'Meropenem + Vancomicina',
+    drugs:[{id:'meropenem'},{id:'vanco'}],
+    notes:['Retirar o dispositivo relacionado; coletar 2 pares de hemoculturas de sítios diferentes.','Avaliar culturas em 48–72h.'], cite:'Fig 15 — IPCS' },
+
+  /* ─── ISC (Figura 16) ─── */
+  iras_isc: { q:'Sepse ou instabilidade?',
+    opts:[
+      {t:'Não', to:'r_iras_isc_nao'},
+      {t:'Sim', to:'r_iras_isc_sim'}
+    ]},
+  r_iras_isc_nao: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam',
+    drugs:[{id:'pip-taz'},{id:'vanco'}],
+    notes:['Cirurgia cardíaca / próteses / plásticas / ortopédicas: acrescentar Vancomicina.','ISC superficial: drenagem/retirada de prótese e seguir o fluxo de IPPM complicada.','Avaliar controle de foco, estabilidade e culturas.'], cite:'Fig 16 — ISC' },
+  r_iras_isc_sim: { r:true, kind:'atb', regimen:'Meropenem + Vancomicina',
+    drugs:[{id:'meropenem'},{id:'vanco'},{id:'micafungina'}],
+    notes:['Presença de candidemia: acrescentar Micafungina.','Avaliar controle de foco, estabilidade e culturas.'], cite:'Fig 16 — ISC' },
+
+  /* ─── Clostridioides difficile (Figura 17) ─── */
+  clost: { q:'Uso de laxativos nas últimas 48h?',
+    help:'Início do fluxo de C. difficile (compartilhado entre ITGI comunitária e IRAS).',
     opts:[
       {t:'Sim', to:'r_clost_afastado'},
       {t:'Não', to:'clost_conf'}
     ]},
-  clost_conf: { q:'Confirmação diagnóstica?',
-    help:'Achados histopatológicos de colite pseudomembranosa e/ou pesquisa de toxina A/B (ou PCR) positiva.',
+  clost_conf: { q:'Clínica compatível E achados histopatológicos?',
     opts:[
       {t:'Não', to:'r_clost_afastado'},
       {t:'Sim', to:'clost_grav'}
     ]},
-  clost_grav: { q:'Preenche critérios de gravidade?',
-    help:'Qualquer um, atribuído à infecção por C. difficile: hipotensão (com ou sem necessidade de droga); temperatura ≥ 38,5°C; íleo paralítico ou distensão abdominal; confusão mental; leucocitose ≥ 15.000 ou leucopenia < 2.000; aumento ≥ 50% da creatinina basal.',
+  clost_grav: { q:'Classificar conforme gravidade',
+    help:'Para tempo e dose, consultar o protocolo de Clostridium.',
     opts:[
-      {t:'Não — quadro leve a moderado', to:'r_clost_leve'},
-      {t:'Sim — quadro grave', to:'r_clost_grave'}
+      {t:'Leve a moderado', to:'r_clost_leve'},
+      {t:'Grave / recorrente', to:'r_clost_grave'},
+      {t:'Fulminante', to:'r_clost_fulm'}
     ]},
-  r_clost_afastado: { r:true, kind:'noatb', regimen:'Infecção por C. difficile afastada',
-    drugs:[], notes:['Reavaliar diagnóstico diferencial da diarreia.'], cite:'Clostridioides difficile' },
-  r_clost_leve: { r:true, kind:'atb', regimen:'Metronidazol 500mg VO q8h por 10 dias',
-    drugs:[{id:'metro'}], notes:['Quadro leve a moderado: diarreia + ausência de sinais de gravidade.'], cite:'Clostridioides difficile' },
-  r_clost_grave: { r:true, kind:'atb', regimen:'Vancomicina oral 125mg q6h (10 dias) + Metronidazol EV 500mg q8h (10 dias)',
-    drugs:[{id:'vanco-oral'},{id:'metro'}], notes:['Quadro grave. Vancomicina por via oral/SNG (ação luminal) + metronidazol endovenoso.'], cite:'Clostridioides difficile' },
+  r_clost_afastado: { r:true, kind:'noatb', regimen:'Clostridioides difficile afastado',
+    drugs:[],
+    notes:['Reavaliar o diagnóstico diferencial da diarreia.'], cite:'Fig 17 — C. difficile' },
+  r_clost_leve: { r:true, kind:'atb', regimen:'Vancomicina VO',
+    drugs:[{id:'vanco-oral'}],
+    notes:['Quadro leve a moderado.','Para tempo e dose, consultar o protocolo de Clostridium.'], cite:'Fig 17 — C. difficile' },
+  r_clost_grave: { r:true, kind:'atb', regimen:'Vancomicina VO por tempo prolongado',
+    drugs:[{id:'vanco-oral'}],
+    notes:['Quadro grave / recorrente.','Para tempo e dose, consultar o protocolo de Clostridium.'], cite:'Fig 17 — C. difficile' },
+  r_clost_fulm: { r:true, kind:'atb', regimen:'Vancomicina VO em dose aumentada',
+    drugs:[{id:'vanco-oral'}],
+    notes:['Quadro fulminante.','Para tempo e dose, consultar o protocolo de Clostridium.'], cite:'Fig 17 — C. difficile' },
 
-  /* ───────── IRAS ───────── */
-  iras_site: { q:'Sítio / foco da infecção (IRAS)?',
+  /* ─── Foco indeterminado IRAS (Figura 18) ─── */
+  iras_foco: { q:'Sepse ou instabilidade?',
+    help:'Sinais de bacteremia em paciente já hospitalizado.',
     opts:[
-      {t:'Trato urinário — associado ou não a dispositivo', to:'r_iras_itu'},
-      {t:'Traqueobronquite / pneumonia / PAV', to:'r_iras_pnm'},
-      {t:'Corrente sanguínea — cateter venoso central', to:'r_iras_ipcs'},
-      {t:'Sítio cirúrgico', to:'r_iras_isc'},
-      {t:'Clostridium', to:'clost_susp'},
-      {t:'Foco indeterminado', to:'iras_foco'}
+      {t:'Não', to:'r_iras_foco_nao'},
+      {t:'Sim', to:'r_iras_foco_sim'}
     ]},
-  r_iras_itu: { r:true, kind:'atb', regimen:'Ertapenem',
-    drugs:[{id:'ertapenem'}], notes:['Mesmo esquema para unidade de internação e UCI.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'IRAS — ITU' },
-  r_iras_pnm: { r:true, kind:'atb', regimen:'Meropenem + Amicacina',
-    drugs:[{id:'meropenem'},{id:'amicacina'}], notes:['Mesmo esquema para unidade de internação e UCI.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'IRAS — Traqueobronquite / Pneumonia / PAV' },
-  r_iras_ipcs: { r:true, kind:'atb', regimen:'(Vancomicina ou Daptomicina) + Meropenem + Anidulafungina',
-    drugs:[{id:'vanco'},{id:'dapto'},{id:'meropenem'},{id:'anidulafungina'}],
-    notes:['Mesmo esquema para unidade de internação e UCI.','Escolher entre Vancomicina OU Daptomicina para cobertura de Gram-positivos.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'IRAS — IPCS associada a CVC' },
-  r_iras_isc: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam',
-    drugs:[{id:'pip-taz'}], notes:['Mesmo esquema para unidade de internação e UCI.','Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'IRAS — Sítio cirúrgico' },
-  iras_foco: { q:'Paciente em sepse, sem foco aparente?',
-    opts:[
-      {t:'Não', to:'r_iras_foco_sint'},
-      {t:'Sim', to:'r_iras_foco_ami'}
-    ]},
-  r_iras_foco_sint: { r:true, kind:'noatb', regimen:'Sintomáticos',
-    drugs:[], notes:['Sem indicação de antibiótico empírico.'], cite:'IRAS — Foco indeterminado' },
-  r_iras_foco_ami: { r:true, kind:'atb', regimen:'Amicacina',
-    drugs:[{id:'amicacina'}], notes:['Reavaliação clínica em 48h e/ou aguardar culturas.'], cite:'IRAS — Foco indeterminado' }
+  r_iras_foco_nao: { r:true, kind:'atb', regimen:'Piperacilina-Tazobactam',
+    drugs:[{id:'pip-taz'},{id:'vanco'}],
+    notes:['Dispositivo venoso como provável fonte: acrescentar Vancomicina.','Avaliar resultado de culturas em 48–72h.'], cite:'Fig 18 — Foco indeterminado IRAS' },
+  r_iras_foco_sim: { r:true, kind:'atb', regimen:'Meropenem',
+    drugs:[{id:'meropenem'},{id:'vanco'}],
+    notes:['Dispositivo venoso como provável fonte: acrescentar Vancomicina.','Avaliar resultado de culturas em 48–72h.'], cite:'Fig 18 — Foco indeterminado IRAS' }
 };
 
-var navStack = [];  /* [{node, label}] */
+var navStack = [];
 
 function navReset(){ navStack = [{node:'root', label:'Início'}]; navRender(); }
 function navBack(){ if(navStack.length > 1){ navStack.pop(); navRender(); } }
 function navGo(toNode, label){ navStack.push({node:toNode, label:label}); navRender(); }
 
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function navRender(){
   var crumbsEl = g('nav-crumbs');
@@ -990,7 +1155,6 @@ function navRender(){
   var cur = navStack[navStack.length - 1];
   var node = TREE[cur.node];
 
-  /* breadcrumbs */
   var ch = '';
   navStack.forEach(function(s, i){
     ch += '<span class="crumb' + (i === 0 ? ' head' : '') + '">' + esc(s.label) + '</span>';
@@ -1003,7 +1167,6 @@ function navRender(){
   }
 
   if(node.r){
-    /* ── nó de resultado ── */
     var tagTxt = node.kind === 'atb' ? 'Conduta empírica' : 'Sem antibiótico';
     h += '<div class="rec-box ' + (node.kind === 'atb' ? 'green' : 'blue') + '" style="margin-top:2px">';
     h += '<div class="res-head"><span class="res-tag ' + node.kind + '">' + tagTxt + '</span>' +
@@ -1012,14 +1175,18 @@ function navRender(){
     h += '</div>';
 
     if(node.drugs && node.drugs.length){
-      h += '<div class="sec-div">Ajuste renal / dose por antibiótico</div>';
+      h += '<div class="sec-div">Antibióticos do esquema &middot; ajuste renal / dose</div>';
       h += '<div class="drug-row">';
       node.drugs.forEach(function(d){
-        var info = DRUGS[d.id] || {name:d.id};
+        var info = DRUGS[d.id] || {name:d.id, link:false};
         h += '<div class="drug-chip">' +
-               '<div class="drug-chip-name">' + esc(info.name) + '</div>' +
-               '<button class="drug-chip-btn" onclick="linkAdjust(\'' + d.id + '\')">Calcular dose &#8594;</button>' +
-             '</div>';
+               '<div class="drug-chip-name">' + esc(info.name) + '</div>';
+        if(info.link){
+          h += '<button class="drug-chip-btn" onclick="linkAdjust(\'' + d.id + '\')">Calcular dose &#8594;</button>';
+        } else {
+          h += '<div class="drug-chip-role">' + esc(info.dose || 'sem cálculo de dose na ferramenta') + '</div>';
+        }
+        h += '</div>';
       });
       h += '</div>';
     }
@@ -1032,7 +1199,6 @@ function navRender(){
       h += '<div style="margin-top:12px"><button class="nav-opt" style="font-size:13px" onclick="navGo(\'' + node.nav.to + '\',\'' + esc(node.nav.t).replace(/'/g,"\\'") + '\')"><span class="nav-opt-arrow">&#8594;</span>' + esc(node.nav.t) + '</button></div>';
     }
   } else {
-    /* ── nó de pergunta ── */
     h += '<div class="nav-q">' + esc(node.q) + '</div>';
     if(node.help){ h += '<div class="nav-help">' + esc(node.help) + '</div>'; }
     h += '<div class="nav-opts' + (node.grid ? ' nav-start-grid' : '') + '">';
@@ -1049,18 +1215,12 @@ function navRender(){
   body.innerHTML = h;
 }
 
-/* link da escolha → aba de ajuste renal */
 function linkAdjust(id){
   switchTab('renal');
   selAtb(id);
   window.scrollTo({top:0, behavior:'smooth'});
-  var btn = document.querySelector('.atb-btn.sel');
-  /* breve destaque do resultado */
-  var rbox = g('r-atb');
-  if(rbox){ rbox.style.transition='background .2s'; }
 }
 
-/* alternância de abas */
 function switchTab(which){
   var isNav = (which === 'nav');
   g('tab-nav').style.display   = isNav ? 'block' : 'none';
@@ -1069,7 +1229,6 @@ function switchTab(which){
   g('tabbtn-renal').className = 'tab' + (isNav ? '' : ' active');
 }
 
-/* inicialização */
 navReset();
 </script>
 
