@@ -46,6 +46,7 @@ body{
 .hdr h1{font-size:clamp(26px,6vw,40px);font-weight:700;line-height:1.05;letter-spacing:-.025em;color:var(--ink)}
 .hdr .sub{margin-top:12px;font-size:14.5px;color:var(--ink-2);max-width:62ch}
 .hdr .clinica{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:12px}
+.hdr .disclaimer{margin-top:14px;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:7px;font-size:13px;color:var(--ink-3);max-width:74ch}
 
 /* ===== Aviso ===== */
 .aviso{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--terra);border-radius:8px;padding:13px 16px;font-size:14px;color:var(--ink-2);margin-bottom:20px}
@@ -200,6 +201,7 @@ body.c-hk tr.cond.hk, body.c-dmo tr.cond.dmo, body.c-aco tr.cond.aco{display:tab
     <h1>Alimentação na Hemodiálise</h1>
     <p class="sub">Marque as condições do paciente: os blocos de dieta e as janelas de medicação se ajustam, e o resumo de uma página sai personalizado para entregar na sessão.</p>
     <div class="clinica">Centro de Hemodiálise de Belém · CHB · 2026</div>
+    <p class="disclaimer">Estas recomendações são <strong>genéricas e de caráter informativo</strong>. Elas não substituem o acompanhamento com o nutricionista nem a avaliação da sua equipe: o plano alimentar individual depende dos seus exames, do seu peso seco e da sua diurese.</p>
   </header>
 
   <div class="aviso">
@@ -307,7 +309,8 @@ body.c-hk tr.cond.hk, body.c-dmo tr.cond.dmo, body.c-aco tr.cond.aco{display:tab
       <div class="grade g2" style="margin-bottom:0">
         <div>
           <ul class="lista" style="margin-top:0">
-            <li><strong>Açaí:</strong> pode ser consumido em <strong>porção pequena</strong>, conforme seus exames. O problema quase nunca é a polpa isolada, e sim o prato completo — a tigela grande com banana, granola, leite condensado ou leite em pó soma potássio, fósforo e líquido de uma vez. Combine com farinha d'água ou de tapioca e evite os acréscimos industrializados.</li>
+            <li><strong>Açaí:</strong> pode ser consumido em <strong>porção pequena</strong>, conforme seus exames. Nos dias em que comer, <strong>troque os outros carboidratos da refeição pelo açaí</strong> — nada de arroz, macarrão, pão ou batata junto — e <strong>limite a farinha d'água ou a tapioca a pouca quantidade</strong>. Nada de banana, granola, leite condensado ou leite em pó por cima, que somam potássio e fósforo. Se tomar como bebida (batido, mais ralo), entra na conta do líquido do dia.</li>
+            <li><strong>Açaí com farinha ou tapioca é muito calórico e cheio de carboidrato:</strong> a polpa é gordurosa e a farinha é carboidrato quase puro. <strong>Quem tem diabetes deve evitar</strong> — o prato dispara a glicemia. Para os demais, é uma refeição, não um lanche: comeu açaí, reduza o arroz e a farinha do restante do dia.</li>
             <li><strong>Açaí com peixe ou camarão:</strong> o camarão é rico em fósforo — prefira peixe fresco (filhote, dourada, pescada) no lugar dele.</li>
             <li><strong>Farinha d'água e de tapioca:</strong> liberadas, são pobres em potássio e fósforo. Cuidado só com o sal do tucupi e das pimentas industrializadas.</li>
           </ul>
@@ -334,7 +337,7 @@ body.c-hk tr.cond.hk, body.c-dmo tr.cond.dmo, body.c-aco tr.cond.aco{display:tab
           <li><strong>Para corrigir hipoglicemia:</strong> açúcar, bala ou glicose. <strong>Não use suco de laranja nem banana prata</strong> — são ricos em potássio</li>
           <li><strong>Frutas com menos açúcar:</strong> morango, maçã e pera, em porções pequenas</li>
           <li><strong>Distribua os carboidratos</strong> ao longo do dia; evite jejum prolongado</li>
-          <li><strong>Açaí:</strong> peça sem açúcar e sem leite condensado; a farinha entra na conta dos carboidratos</li>
+          <li><strong>Açaí com farinha ou tapioca: evite.</strong> A combinação é muito calórica e rica em carboidrato — polpa gordurosa mais farinha, que é carboidrato quase puro. O efeito na glicemia é grande, ainda mais com açúcar ou leite condensado. Se a equipe liberar alguma exceção, será porção pequena, sem açúcar, e com glicemia medida depois</li>
         </ul>
         <ul class="lista" style="margin-top:0">
           <li><strong>Insulina em dia de diálise:</strong> a dose pode precisar de ajuste — leve as glicemias anotadas</li>
@@ -591,7 +594,7 @@ var COMORB = {
     'Hipoglicemia no dia da diálise: corrigir com açúcar ou bala — <b>nunca suco de laranja ou banana prata</b>',
     'Metformina é contraindicada; a dose de insulina pode mudar em dia de sessão',
     'Medir glicemia antes e depois da sessão; examinar os pés todos os dias',
-    'Açaí sem açúcar e sem leite condensado; a farinha conta como carboidrato'
+    '<b>Evitar açaí com farinha ou tapioca:</b> muito calórico e rico em carboidrato, eleva bastante a glicemia'
   ]},
   has: { titulo: 'Hipertensão', itens: [
     'Controle da pressão = menos sal + menos líquido + peso seco em dia',
@@ -668,7 +671,8 @@ function imprimirResumo() {
        '<li>Sopa, gelatina, sorvete, café, tacacá e gelo contam como líquido</li>' +
        '<li>Menos sal = menos sede. Temperar com alho, cebola, limão, coentro e chicória</li></ul></div>';
   h += '<div class="r-box"><h2>Cotidiano do Norte</h2><ul>' +
-       '<li><b>Açaí:</b> porção pequena conforme os exames, com farinha — sem banana, granola, leite condensado ou leite em pó</li>' +
+       '<li><b>Açaí:</b> porção pequena conforme os exames — sem banana, granola, leite condensado ou leite em pó</li>' +
+       '<li>Açaí com farinha ou tapioca é calórico e rico em carboidrato: conta como refeição e <b>deve ser evitado por quem tem diabetes</b></li>' +
        '<li>Açaí com peixe fresco em vez de camarão (camarão tem muito fósforo)</li>' +
        '<li>Tacacá: muito sal e líquido em uma cuia — evite na véspera da sessão</li>' +
        '<li>Maniçoba e feijoada: raras, em porção pequena</li></ul></div>';
@@ -685,7 +689,7 @@ function imprimirResumo() {
        '<li>Não faltar às sessões · pesar-se em jejum · cuidar da fístula (sem pressão nem coleta nesse braço)</li>' +
        '<li>Procurar atendimento imediato: falta de ar, dor no peito, inchaço súbito, batimento irregular, febre ou problema no acesso</li></ul></div>';
   h += '</div>';
-  h += '<div class="r-ftr"><span>CHB · orientação educativa: siga sempre a prescrição da sua equipe</span>' +
+  h += '<div class="r-ftr"><span>CHB · orientações genéricas e informativas: não substituem o acompanhamento com o nutricionista nem a prescrição da sua equipe</span>' +
        '<span>KDIGO / KDOQI · ' + data + '</span></div>';
 
   document.getElementById('resumo').innerHTML = h;
