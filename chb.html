@@ -174,6 +174,10 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 
 .pname{font-weight:600;line-height:1.25}
 .pmeta{font-size:11px;color:var(--muted);line-height:1.3}
+.autor{
+  display:inline-block;font-size:10.5px;font-weight:600;color:#6b6154;background:#f4f1ec;
+  border:1px solid #e6e0d6;border-radius:5px;padding:0 5px;white-space:nowrap;cursor:help;
+}
 .med-cell{text-align:center;white-space:nowrap;border-left:1px solid var(--line-2)}
 .med-wrap{display:inline-flex;align-items:center;gap:5px}
 .med-wrap input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand);cursor:pointer;margin:0;flex:0 0 auto}
@@ -362,6 +366,7 @@ table.vtab td.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:7
 table.vtab .grp{background:#f6f6f6;font-weight:800;font-size:6.5pt;text-transform:uppercase;letter-spacing:.06em;padding:.6mm 1.8mm}
 table.vtab .mk{font-size:9.4pt;font-weight:900;line-height:1}
 table.vtab .sub{font-size:6.3pt;color:#555;line-height:1.15}
+table.vtab .who{font-size:6.2pt;color:#333;line-height:1.1;font-weight:700;letter-spacing:.01em}
 .vnone{font-size:7.8pt;color:#555;font-style:italic;padding:1.2mm 0 2mm;flex:0 0 auto}
 
 .vobs{border:.7pt solid #999;padding:1.1mm 2mm;min-height:8mm;flex:0 0 auto}
@@ -409,6 +414,10 @@ table.vtab .sub{font-size:6.3pt;color:#555;line-height:1.15}
 .via.d3 table.vtab{font-size:6.6pt}
 .via.d3 table.vtab td{padding:.28mm 1.1mm;line-height:1.12}
 .via.d3 table.vtab th,.via.d3 table.vtab .grp{padding:.3mm 1.1mm;font-size:5.7pt}
+/* no modo compacto o responsavel passa para a mesma linha do horario */
+.via.d2 table.vtab .who{display:inline;font-size:5.8pt}
+.via.d2 table.vtab .who::before{content:" · "}
+.via.d3 table.vtab .who{font-size:5.4pt}
 .via.d3 table.vtab .mk{font-size:7.6pt}
 .via.d3 .vinfo .v{font-size:7pt}
 .via.d3 .vinfo .v.sm{font-size:6.5pt}
@@ -978,6 +987,41 @@ function salvarCfg() {
 }
 function sessDocId(iso, turnoId) { return iso + '_' + turnoId; }
 
+/* ---------- autoria dos lançamentos ---------- */
+function usuarioAtual() { return (CUR_USER && CUR_USER.email) || ''; }
+function usuarioCurto(e) { return String(e || '').split('@')[0] || '—'; }
+function carimbar(o) { if (!o) return o; o.por = usuarioAtual(); o.em = Date.now(); return o; }
+function descarimbar(o) { if (!o) return o; delete o.por; delete o.em; return o; }
+function fmtHora(ms) {
+  if (!ms) return '';
+  var d = new Date(ms);
+  return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+}
+function fmtDataHora(ms) {
+  if (!ms) return '';
+  var d = new Date(ms);
+  return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + ' ' + fmtHora(ms);
+}
+function tipAutoria(o, prefixo) {
+  if (!o || !o.por) return '';
+  return (prefixo || 'Lançado') + ' por ' + usuarioCurto(o.por) + ' em ' + fmtDataHora(o.em);
+}
+/* lançamento mais recente do paciente na sessão (medicação, resgate, presença ou observação) */
+function ultimoLanc(it) {
+  var b = { por: it.por || '', em: it.em || 0 };
+  Object.keys(it.meds || {}).forEach(function (k) { var m = it.meds[k]; if (m && m.em > b.em) b = { por: m.por, em: m.em }; });
+  (it.resg || []).forEach(function (r) { if (r.em > b.em) b = { por: r.por, em: r.em }; });
+  return b.em ? b : null;
+}
+/* lista de responsáveis distintos por um item, em ordem de lançamento */
+function autoresDoItem(it) {
+  var m = {}, ord = [];
+  function add(o) { if (o && o.por && !m[o.por]) { m[o.por] = 1; ord.push(o.por); } }
+  Object.keys(it.meds || {}).forEach(function (k) { if (it.meds[k] && it.meds[k].f) add(it.meds[k]); });
+  (it.resg || []).forEach(add); add(it);
+  return ord;
+}
+
 /* ---------- indicador de sincronização ---------- */
 var SYNC_T = null;
 function setSync(st, msg) {
@@ -1090,7 +1134,7 @@ function limpa(o) {
   return o;
 }
 function itemToDoc(it) {
-  return limpa({ presente: it.presente !== false, meds: it.meds || {}, resg: it.resg || [], obs: it.obs || '' });
+  return limpa({ presente: it.presente !== false, meds: it.meds || {}, resg: it.resg || [], obs: it.obs || '', por: it.por || '', em: it.em || 0 });
 }
 function sessToDoc(s) {
   var m = {};
@@ -1102,7 +1146,7 @@ function docToSess(d, iso, turnoId) {
   var m = d.itens || {};
   Object.keys(m).forEach(function (pid) {
     var x = m[pid] || {};
-    s.itens.push({ pid: pid, presente: x.presente !== false, meds: x.meds || {}, resg: x.resg || [], obs: x.obs || '' });
+    s.itens.push({ pid: pid, presente: x.presente !== false, meds: x.meds || {}, resg: x.resg || [], obs: x.obs || '', por: x.por || '', em: x.em || 0 });
   });
   ordenaItens(s);
   return s;
@@ -1384,24 +1428,28 @@ function renderShiftTable(sess) {
     var meds = DB.medsCont.map(function (m) {
       var st = it.meds[m.id] || (it.meds[m.id] = { f: false, d: m.dose, rot: false });
       return '<td class="med-cell"><div class="med-wrap">' +
-        '<input type="checkbox" ' + (st.f ? 'checked' : '') + ' onchange="tglMed(' + ix + ',\'' + m.id + '\',this.checked)" title="' + (st.rot ? 'Medicação de rotina deste paciente' : 'Marcar como realizada') + '">' +
+        '<input type="checkbox" ' + (st.f ? 'checked' : '') + ' onchange="tglMed(' + ix + ',\'' + m.id + '\',this.checked)" title="' +
+        esc(st.f ? (tipAutoria(st, 'Marcado') || 'Realizada') : (st.rot ? 'Medicação de rotina deste paciente' : 'Marcar como realizada')) + '">' +
         '<input class="dose-in" value="' + esc(fmtNum(st.d)) + '" ' + (st.f ? '' : 'disabled') + ' onchange="setDose(' + ix + ',\'' + m.id + '\',this.value)">' +
         '<span class="dose-un">' + esc(m.un) + '</span></div></td>';
     }).join('');
 
     var chips = (it.resg || []).map(function (r, ri) {
       var m = medById(r.mid);
-      return '<span class="chip" title="' + esc((m ? m.via : '') + ' · ' + (r.h || '')) + '">' + esc(m ? m.nome : '?') + ' ' + esc(fmtNum(r.d)) + (m ? ' ' + esc(m.un) : '') +
+      return '<span class="chip" title="' + esc([(m ? m.via : ''), (r.h ? 'às ' + r.h : ''), tipAutoria(r, 'Registrado')].filter(Boolean).join(' · ')) + '">' + esc(m ? m.nome : '?') + ' ' + esc(fmtNum(r.d)) + (m ? ' ' + esc(m.un) : '') +
         ' <a href="#" onclick="delResg(' + ix + ',' + ri + ');return false" style="text-decoration:none;color:inherit;opacity:.6">✕</a></span>';
     }).join('');
 
     var alerta = p.acesso === 'CDL' ? ' <span class="badge b-cdl" title="Cateter — atenção ao selo de cateter">CDL</span>' : '';
+    var ult = ultimoLanc(it);
 
     return '<tr class="' + (it.presente ? '' : 'absent') + '">' +
       '<td class="mono" style="color:var(--muted)">' + (ix + 1) + '</td>' +
       '<td><div class="pname">' + esc(p.nome) + alerta + '</div>' +
       '<div class="pmeta">' + (p.prontuario ? 'Pront. ' + esc(p.prontuario) + ' · ' : '') +
-      '<span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(LINHA_LBL[p.linha] || '—') + '</span></div></td>' +
+      '<span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(LINHA_LBL[p.linha] || '—') + '</span>' +
+      (ult ? ' <span class="autor" title="' + esc(tipAutoria(ult, 'Último lançamento')) + '">✎ ' + esc(usuarioCurto(ult.por)) + ' ' + fmtHora(ult.em) + '</span>' : '') +
+      '</div></td>' +
       '<td class="tac"><label class="sw" style="justify-content:center"><input type="checkbox" ' + (it.presente ? 'checked' : '') +
       ' onchange="tglPres(' + ix + ',this.checked)"><span style="font-size:11.5px">' + (it.presente ? 'Sim' : 'Falta') + '</span></label></td>' +
       meds +
@@ -1419,20 +1467,23 @@ function tglMed(ix, mid, v) {
   var s = curSess(); var it = s.itens[ix]; if (!it) return;
   if (!it.meds[mid]) it.meds[mid] = { f: false, d: (medById(mid) || {}).dose, rot: false };
   it.meds[mid].f = v;
-  if (v && (it.meds[mid].d == null || it.meds[mid].d === '')) it.meds[mid].d = (medById(mid) || {}).dose;
+  if (v) {
+    if (it.meds[mid].d == null || it.meds[mid].d === '') it.meds[mid].d = (medById(mid) || {}).dose;
+    carimbar(it.meds[mid]);
+  } else descarimbar(it.meds[mid]);
   saveSess(it.pid); renderShiftTable(s); renderStats(s);
 }
 function setDose(ix, mid, v) {
   var s = curSess(); var it = s.itens[ix]; if (!it || !it.meds[mid]) return;
-  it.meds[mid].d = num(v, 0); saveSess(it.pid);
+  it.meds[mid].d = num(v, 0); if (it.meds[mid].f) carimbar(it.meds[mid]); saveSess(it.pid);
 }
 function tglPres(ix, v) {
   var s = curSess(); var it = s.itens[ix]; if (!it) return;
-  it.presente = v;
-  if (!v) { Object.keys(it.meds).forEach(function (k) { it.meds[k].f = false; }); it.resg = []; }
+  it.presente = v; carimbar(it);
+  if (!v) { Object.keys(it.meds).forEach(function (k) { it.meds[k].f = false; descarimbar(it.meds[k]); }); it.resg = []; }
   saveSess(it.pid); renderShiftTable(s); renderStats(s); renderEscala();
 }
-function setObs(ix, v) { var s = curSess(); if (s.itens[ix]) { s.itens[ix].obs = v; saveSess(s.itens[ix].pid); } }
+function setObs(ix, v) { var s = curSess(); if (s.itens[ix]) { s.itens[ix].obs = v; carimbar(s.itens[ix]); saveSess(s.itens[ix].pid); } }
 function delResg(ix, ri) {
   var s = curSess(); s.itens[ix].resg.splice(ri, 1); saveSess(s.itens[ix].pid); renderShiftTable(s); renderStats(s);
 }
@@ -1446,7 +1497,7 @@ function markAllRoutine() {
   s.itens.forEach(function (it) {
     if (!it.presente) return;
     Object.keys(it.meds).forEach(function (k) {
-      if (it.meds[k].rot && !it.meds[k].f) { it.meds[k].f = true; n++; }
+      if (it.meds[k].rot && !it.meds[k].f) { it.meds[k].f = true; carimbar(it.meds[k]); n++; }
     });
   });
   saveSess(); renderEscala();
@@ -1501,7 +1552,7 @@ function saveResg() {
   var s = curSess(), it = s.itens[RESG_IX], h = $('#rgHora').value || nowHM(), n = 0;
   DB.medsResg.forEach(function (m) {
     var c = $('#rg_' + m.id);
-    if (c && c.checked) { it.resg.push({ mid: m.id, d: num($('#rgd_' + m.id).value, m.dose), h: h }); n++; }
+    if (c && c.checked) { it.resg.push(carimbar({ mid: m.id, d: num($('#rgd_' + m.id).value, m.dose), h: h })); n++; }
   });
   if (!n) { toast('Selecione ao menos uma medicação.', 'err'); return; }
   saveSess(it.pid); closeModal(); renderEscala(); toast(n + ' medicação(ões) de resgate registrada(s).', 'ok');
@@ -1912,6 +1963,14 @@ function cabecalho(viaN, viaQ) {
     '</div>';
 }
 
+/* célula "hora · responsável" das fichas */
+function quemCel(o, horaManual) {
+  var h = horaManual || (o && o.em ? fmtHora(o.em) : '');
+  var q = o && o.por ? usuarioCurto(o.por) : '';
+  if (!h && !q) return '';
+  return esc(h) + (q ? '<div class="who">' + esc(q) + '</div>' : '');
+}
+
 function viaHTML(sess, it, viaN, viaQ, op) {
   var p = pacById(it.pid) || { nome: '(paciente removido)', endereco: '' };
   var t = turnoById(sess.turno) || {};
@@ -1927,7 +1986,7 @@ function viaHTML(sess, it, viaN, viaQ, op) {
     rows += '<tr><td class="c mk">' + (st.f ? '☑' : '☐') + '</td><td>' + esc(m.nome) +
       (m.desc ? '<div class="sub">' + esc(m.desc) + '</div>' : '') + '</td>' +
       '<td class="r">' + (st.f ? esc(fmtNum(st.d)) + ' ' + esc(m.un) : '—') + '</td>' +
-      '<td class="c">' + esc(m.via || '') + '</td><td class="c">' + (st.f ? '' : 'não realizada') + '</td></tr>';
+      '<td class="c">' + esc(m.via || '') + '</td><td class="c">' + (st.f ? quemCel(st) : 'não realizada') + '</td></tr>';
   });
   var rowsR = '';
   (it.resg || []).forEach(function (r) {
@@ -1936,17 +1995,18 @@ function viaHTML(sess, it, viaN, viaQ, op) {
     rowsR += '<tr><td class="c mk">☑</td><td>' + esc(m.nome) +
       (m.desc ? '<div class="sub">' + esc(m.desc) + '</div>' : '') + '</td>' +
       '<td class="r">' + esc(fmtNum(r.d)) + ' ' + esc(m.un) + '</td>' +
-      '<td class="c">' + esc(m.via || '') + '</td><td class="c">' + esc(r.h || '') + '</td></tr>';
+      '<td class="c">' + esc(m.via || '') + '</td><td class="c">' + quemCel(r, r.h) + '</td></tr>';
   });
 
   var tabela = (anyC || rowsR)
-    ? '<table class="vtab"><thead><tr><th style="width:7mm"></th><th>Medicação</th><th style="width:24mm">Dose</th><th style="width:17mm">Via</th><th style="width:20mm">Hora / obs.</th></tr></thead><tbody>' +
+    ? '<table class="vtab"><thead><tr><th style="width:7mm"></th><th>Medicação</th><th style="width:22mm">Dose</th><th style="width:14mm">Via</th><th style="width:26mm">Hora · responsável</th></tr></thead><tbody>' +
     (anyC ? '<tr><td class="grp" colspan="5">Uso contínuo</td></tr>' + rows : '') +
     (rowsR ? '<tr><td class="grp" colspan="5">Resgate / sintomáticos</td></tr>' + rowsR : '') +
     '</tbody></table>'
     : '<div class="vnone">Nenhuma medicação registrada nesta sessão.</div>';
 
   var pend = [p.endereco, p.bairro].filter(Boolean).join(' — ');
+  var autores = autoresDoItem(it);
 
   return '<div class="via">' + cabecalho(viaN, viaQ) +
     '<div class="vtitle">Controle de medicações — sessão de hemodiálise</div>' +
@@ -1971,7 +2031,9 @@ function viaHTML(sess, it, viaN, viaQ, op) {
     '<div class="s"><div class="n">&nbsp;</div><div class="r">Enfermeiro(a) / Téc. responsável — COREN</div></div>' +
     '<div class="s"><div class="n">&nbsp;</div><div class="r">Farmácia — conferência e baixa</div></div>' +
     '</div>' +
-    '<div class="vfoot">' + esc(c.foot || '') + (c.rt ? ' · RT: ' + esc(c.rt) : '') + ' · Emitido em ' + nowStamp() + '</div>' +
+    '<div class="vfoot">' + esc(c.foot || '') + (c.rt ? ' · RT: ' + esc(c.rt) : '') +
+    (autores.length ? ' · Lançamentos: ' + esc(autores.map(usuarioCurto).join(', ')) : '') +
+    ' · Emitido em ' + nowStamp() + '</div>' +
     '</div>';
 }
 
