@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CHB Medicações">
 <meta name="robots" content="noindex, nofollow">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 /* ============================ TOKENS ============================ */
 :root{
@@ -426,14 +429,72 @@ table.ctab td.c{text-align:center}
 table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
 .csub{font-size:8.6pt;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin:4mm 0 1.6mm;padding-bottom:1mm;border-bottom:.8pt solid #111}
 
+/* ============================ LOGIN ============================ */
+#loginScreen{
+  position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:linear-gradient(155deg,#2a2f36 0%,#15181c 100%);
+}
+.login-card{
+  background:#fff;border-radius:18px;padding:30px 28px;width:100%;max-width:392px;
+  box-shadow:0 24px 70px rgba(0,0,0,.4);animation:pop .22s ease-out;
+}
+.login-logo{height:56px;width:auto;max-width:170px;display:block;margin:0 auto 16px;object-fit:contain}
+.login-card h1{font-size:17px;text-align:center;letter-spacing:-.015em}
+.login-card .lsub{text-align:center;font-size:12.5px;color:var(--muted);margin:5px 0 22px;line-height:1.45}
+.login-card .fld{margin-bottom:12px}
+.login-card .inp{width:100%;min-height:42px;font-size:14.5px}
+#liErr{color:var(--danger);font-size:12.5px;font-weight:600;min-height:19px;text-align:center;margin:2px 0 8px}
+.login-btn{
+  width:100%;min-height:44px;background:var(--brand);color:#fff;border:0;border-radius:var(--radius-s);
+  font-weight:700;font-size:14.5px;cursor:pointer;transition:.15s;
+}
+.login-btn:hover{background:var(--brand-d)}
+.login-btn:disabled{opacity:.6;cursor:wait}
+.login-foot{margin-top:18px;text-align:center;font-size:11px;color:var(--muted);line-height:1.5}
+
+/* ============================ SYNC PILL ============================ */
+.sync{
+  display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+  padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.88);
+  white-space:nowrap;
+}
+.sync .sdot{width:7px;height:7px;border-radius:50%;background:#3ddc97;flex:0 0 auto}
+.sync.sv .sdot{background:#ffcc57;animation:blip .9s ease-in-out infinite}
+.sync.off .sdot{background:#a9b4bf}
+.sync.er{background:rgba(255,107,107,.2)}
+.sync.er .sdot{background:#ff6b6b}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.3}}
+.user-chip{
+  display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+  padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.88);
+  max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
 @media(max-width:900px){
   .brand-name,.brand-sub{max-width:150px}
   .nav button{padding:8px 10px;font-size:12.5px}
+  .sync span:not(.sdot),.user-chip{display:none}
+  .sync{padding:5px 8px}
 }
 </style>
 </head>
 <body>
 
+<!-- ======================= LOGIN ======================= -->
+<div id="loginScreen">
+  <div class="login-card" id="loginBox">
+    <img class="login-logo" id="liLogo" alt="">
+    <h1>Controle de Medicações</h1>
+    <div class="lsub">Centro de Hemodiálise de Belém<br>Acesso restrito à equipe</div>
+    <div class="fld"><label>Usuário</label><input class="inp" id="liMail" autocomplete="username" placeholder="enfermagem" autocapitalize="off" spellcheck="false"></div>
+    <div class="fld"><label>Senha</label><input class="inp" id="liPw" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <div id="liErr"></div>
+    <button class="login-btn" id="liBtn" onclick="fazerLogin()">Entrar</button>
+    <div class="login-foot">Dados de paciente protegidos por login.<br>Não compartilhe sua senha.</div>
+  </div>
+</div>
+
+<div id="appShell" style="display:none">
 <!-- ======================= PREVIEW BAR ======================= -->
 <div class="pv-bar">
   <b id="pvTitle">Pré-visualização</b>
@@ -459,16 +520,15 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
       <button data-v="config">⚙️ Configurações</button>
     </nav>
     <div class="topbar-r">
+      <span class="sync on" id="syncPill"><span class="sdot"></span>Sincronizado</span>
+      <span class="user-chip" id="userMail"></span>
       <button class="ghost" onclick="doExport()">⬇ Backup</button>
-      <button class="ghost" onclick="document.getElementById('impFile').click()">⬆ Restaurar</button>
       <input type="file" id="impFile" accept=".json" style="display:none">
     </div>
   </div>
 </header>
 
 <div class="wrap" id="noPrint">
-
-  <div id="storageWarn"></div>
 
   <!-- ======================= VIEW: ESCALA ======================= -->
   <section class="view on" id="v-escala">
@@ -638,14 +698,23 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Dados e privacidade</h3></div>
+      <div class="card-h"><h3>Conta e dados</h3></div>
       <div class="card-b">
+        <div class="rowline" style="margin-bottom:14px">
+          <div>
+            <div style="font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Conectado como</div>
+            <div id="cfgUser" style="font-weight:650;font-size:14.5px;margin-top:2px"></div>
+          </div>
+          <div class="spacer"></div>
+          <button class="btn dgr" onclick="fazerLogout()">Sair desta conta</button>
+        </div>
         <div class="note">
-          <b>Onde ficam os dados.</b> Tudo é gravado apenas neste navegador, neste computador. Nenhuma informação sai daqui — não há servidor, nuvem ou envio pela internet.
-          Isso favorece a adequação à LGPD, mas traz duas consequências práticas:
-          <b>cada computador ou tablet mantém a sua própria base</b> (o que é lançado em um aparelho não aparece no outro — use Backup/Restaurar para transferir), e
-          <b>o backup é responsabilidade da clínica</b>: use o botão <b>Backup</b> ao final de cada dia e guarde o arquivo em local seguro e restrito.
-          Limpar os dados de navegação do navegador apaga tudo.
+          <b>Onde ficam os dados.</b> Os registros ficam em banco na nuvem (Google Firestore), acessível <b>somente com login</b>.
+          Tudo o que é lançado aparece nos demais computadores e tablets em segundos. Sem internet o sistema continua funcionando
+          com a cópia local e envia as alterações assim que a conexão voltar.
+          <br><br>
+          Como se trata de dado pessoal sensível de saúde (LGPD, art. 11), <b>cada pessoa deve ter o seu próprio usuário</b> —
+          senha compartilhada inviabiliza rastrear quem lançou o quê. Contas são criadas no console do Firebase, em Authentication.
         </div>
         <div class="rowline" style="margin-top:14px">
           <button class="btn acc" onclick="doExport()">⬇ Exportar backup (.json)</button>
@@ -659,6 +728,8 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
     </div>
   </section>
 </div>
+
+</div><!-- /#appShell -->
 
 <!-- ======================= MODAIS ======================= -->
 <div class="mask" id="mask"><div class="modal" id="modal"></div></div>
@@ -675,6 +746,28 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
 "use strict";
 /* Logotipo padrao — Centro de Hemodialise de Belem (marca CHB) */
 var LOGO_PADRAO = "data:image/png;base64,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";
+
+/* ================================================================== */
+
+/* ==================================================================
+   CONFIGURAÇÃO DO FIREBASE
+   Cole aqui o bloco fornecido pelo console do Firebase em
+   Configurações do projeto → Seus apps → Web.
+   Estas chaves são públicas por definição; a proteção real vem das
+   regras de segurança do Firestore + login obrigatório.
+   ================================================================== */
+var FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+/* Nomes das coleções no Firestore (precisam bater com as regras) */
+var COL_APP = 'chb';          // documentos: config, pacientes
+var COL_SESS = 'chb_sessoes'; // um documento por dia+turno: 2026-08-17_T1
 
 /* ================================================================== */
 
@@ -714,24 +807,9 @@ function toast(msg, kind) {
   clearTimeout(t._t); t._t = setTimeout(function () { t.className = 'toast ' + (kind || ''); }, 2600);
 }
 
-/* ================= STORAGE ================= */
-var KEY = 'hd_controle_v1';
-var STORE_OK = true;
-try {
-  window.localStorage.setItem('__t', '1'); window.localStorage.removeItem('__t');
-} catch (e) { STORE_OK = false; }
-var MEM = null;
-
-function loadRaw() {
-  if (!STORE_OK) return MEM;
-  try { return JSON.parse(window.localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
-}
-function saveDB() {
-  DB.atualizadoEm = new Date().toISOString();
-  if (!STORE_OK) { MEM = DB; return; }
-  try { window.localStorage.setItem(KEY, JSON.stringify(DB)); }
-  catch (e) { toast('Não foi possível gravar (armazenamento cheio ou bloqueado). Faça um backup agora.', 'err'); }
-}
+/* ================= ESTADO =================
+   A fonte de verdade é o Firestore (módulo 03-cloud).
+   DB é apenas o espelho em memória, mantido pelos listeners. */
 
 /* ================= DEFAULTS ================= */
 function defaults() {
@@ -774,11 +852,13 @@ function defaults() {
   };
 }
 
-var DB = loadRaw();
-if (!DB) { DB = defaults(); MEM = DB; saveDB(); }
-['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg', 'pacientes', 'sessoes'].forEach(function (k) {
-  if (DB[k] == null) DB[k] = defaults()[k];
-});
+var DB = defaults();
+var CHAVES_CFG = ['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg'];
+function normalizeDB() {
+  var d = defaults();
+  CHAVES_CFG.concat(['pacientes', 'sessoes']).forEach(function (k) { if (DB[k] == null) DB[k] = d[k]; });
+  DB.medicos.forEach(function (m) { if (!m.turnos) m.turnos = []; });
+}
 
 /* ================= HELPERS DE DOMÍNIO ================= */
 function turnosDoDia(iso) {
@@ -814,23 +894,36 @@ function medicoPadrao(turnoId) {
   return l.length ? l[0].id : '';
 }
 
-/* Cria (se necessário) e devolve a sessão daquele dia+turno */
+/* Monta a escala do dia a partir do cadastro (turno + linha de dias) */
+function montaSess(iso, turnoId) {
+  var s = { data: iso, turno: turnoId, medicoId: medicoPadrao(turnoId), itens: [], criadoEm: new Date().toISOString() };
+  var dow = dayOf(iso);
+  DB.pacientes.forEach(function (p) {
+    if (p.ativo === false || p.turno !== turnoId) return;
+    if (!linhaAtendeDia(p.linha, dow)) return;
+    s.itens.push(novoItem(p));
+  });
+  ordenaItens(s);
+  return s;
+}
+
+/* Devolve a sessão do dia+turno.
+   SESS_READY marca que o Firestore já respondeu sobre aquele documento —
+   só então podemos criar a escala, para nunca sobrescrever o que já existe
+   no servidor enquanto o primeiro snapshot está a caminho. */
+var SESS_READY = {};
 function getSess(iso, turnoId, create) {
   var k = sessKey(iso, turnoId);
   var s = DB.sessoes[k];
-  if (!s && create) {
-    s = { data: iso, turno: turnoId, medicoId: medicoPadrao(turnoId), itens: [], criadoEm: new Date().toISOString() };
-    var dow = dayOf(iso);
-    DB.pacientes.forEach(function (p) {
-      if (p.ativo === false) return;
-      if (p.turno !== turnoId) return;
-      if (!linhaAtendeDia(p.linha, dow)) return;
-      s.itens.push(novoItem(p));
-    });
-    ordenaItens(s);
-    DB.sessoes[k] = s;
-    saveDB();
+  if (s) return s;
+  if (!SESS_READY[k]) {
+    var vazia = { data: iso, turno: turnoId, medicoId: '', itens: [], _carregando: true };
+    return create ? vazia : null;
   }
+  if (!create) return null;
+  s = montaSess(iso, turnoId);
+  DB.sessoes[k] = s;
+  saveSess();
   return s;
 }
 function novoItem(p) {
@@ -850,8 +943,330 @@ function ordenaItens(s) {
 
 /* ================================================================== */
 
+/* ==================================================================
+   CAMADA DE NUVEM — Firebase Auth + Cloud Firestore
+   Fonte de verdade: Firestore. DB (memória) é espelho dos listeners.
+   ================================================================== */
+var FB = null, FS = null, AU = null, CUR_USER = null;
+var UNSUB = { cfg: null, pac: null, sess: {} };
+var CFG_OK = false, PAC_OK = false;
+
+var CFG_KEY = 'chb_fbcfg';
+function temConfig() {
+  if (!FIREBASE_CONFIG.apiKey) {
+    try {
+      var s = JSON.parse(localStorage.getItem(CFG_KEY) || 'null');
+      if (s && s.apiKey && s.projectId) FIREBASE_CONFIG = s;
+    } catch (e) { }
+  }
+  return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+}
+/* Extrai as chaves do bloco copiado do console do Firebase */
+function parseCfg(txt) {
+  var o = {}, campos = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+  campos.forEach(function (k) {
+    var m = txt.match(new RegExp(k + '\\s*:\\s*["\']([^"\']+)["\']'));
+    if (m) o[k] = m[1];
+  });
+  return (o.apiKey && o.projectId) ? o : null;
+}
+function salvarCfg() {
+  var o = parseCfg($('#cfgTxt').value || '');
+  if (!o) { $('#cfgErr').textContent = 'Não encontrei apiKey e projectId nesse texto. Cole o bloco inteiro, das chaves { até }.'; return; }
+  localStorage.setItem(CFG_KEY, JSON.stringify(o));
+  location.reload();
+}
+function sessDocId(iso, turnoId) { return iso + '_' + turnoId; }
+
+/* ---------- indicador de sincronização ---------- */
+var SYNC_T = null;
+function setSync(st, msg) {
+  var el = $('#syncPill'); if (!el) return;
+  clearTimeout(SYNC_T);
+  var mapa = {
+    ok: ['on', 'Sincronizado'],
+    saving: ['sv', 'Salvando…'],
+    offline: ['off', 'Offline — será enviado depois'],
+    error: ['er', msg || 'Erro ao salvar']
+  };
+  var m = mapa[st] || mapa.ok;
+  el.className = 'sync ' + m[0];
+  el.innerHTML = '<span class="sdot"></span>' + m[1];
+  if (st === 'saving') SYNC_T = setTimeout(function () { setSync(navigator.onLine ? 'ok' : 'offline'); }, 1400);
+}
+
+/* ---------- inicialização ---------- */
+function cloudInit() {
+  var lg = $('#liLogo');
+  if (lg && typeof LOGO_PADRAO === 'string') lg.src = LOGO_PADRAO;
+  if (!temConfig()) { telaSetup(); return false; }
+  try {
+    FB = firebase.initializeApp(FIREBASE_CONFIG);
+    FS = firebase.firestore();
+    try { FS.enablePersistence({ synchronizeTabs: true }); } catch (e) { }
+    AU = firebase.auth();
+  } catch (e) {
+    telaErro('Não foi possível iniciar o Firebase: ' + e.message);
+    return false;
+  }
+  window.addEventListener('online', function () { setSync('ok'); });
+  window.addEventListener('offline', function () { setSync('offline'); });
+  AU.onAuthStateChanged(function (u) {
+    CUR_USER = u;
+    if (u) { entrarApp(); } else { sairApp(); }
+  });
+  return true;
+}
+
+/* ---------- telas de estado ---------- */
+function telaSetup() {
+  $('#loginBox').innerHTML =
+    '<h1 style="margin-bottom:6px">Conectar ao banco</h1>' +
+    '<div class="lsub" style="margin-bottom:16px">Primeira configuração deste sistema</div>' +
+    '<div class="note" style="margin-bottom:13px;text-align:left">No console do Firebase, abra <b>Configurações do projeto → Seus apps → Web</b> ' +
+    'e copie o bloco <code>firebaseConfig</code>. Cole abaixo — vale só para este aparelho, até que as chaves sejam gravadas no arquivo publicado.</div>' +
+    '<div class="fld"><label>Bloco de configuração</label>' +
+    '<textarea class="inp" id="cfgTxt" style="min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px" ' +
+    'placeholder="const firebaseConfig = {&#10;  apiKey: &quot;...&quot;,&#10;  authDomain: &quot;...&quot;,&#10;  projectId: &quot;...&quot;,&#10;  ...&#10;};"></textarea></div>' +
+    '<div id="cfgErr" style="color:var(--danger);font-size:12.5px;font-weight:600;min-height:19px;text-align:center"></div>' +
+    '<button class="login-btn" onclick="salvarCfg()">Conectar</button>';
+}
+function telaErro(m) { $('#loginBox').innerHTML = '<div class="note dgr" style="text-align:left">' + esc(m) + '</div>'; }
+
+function sairApp() {
+  Object.keys(UNSUB.sess).forEach(function (k) { UNSUB.sess[k](); });
+  UNSUB.sess = {};
+  if (UNSUB.cfg) UNSUB.cfg(); if (UNSUB.pac) UNSUB.pac();
+  UNSUB.cfg = UNSUB.pac = null; CFG_OK = PAC_OK = false;
+  DB = defaults(); DB.sessoes = {}; SESS_READY = {};
+  $('#loginScreen').style.display = 'flex';
+  $('#appShell').style.display = 'none';
+}
+function entrarApp() {
+  $('#loginScreen').style.display = 'none';
+  $('#appShell').style.display = 'block';
+  $('#userMail').textContent = (CUR_USER.email || '').split('@')[0];
+  setSync(navigator.onLine ? 'ok' : 'offline');
+  subConfig(); subPacientes();
+}
+
+/* ---------- login ---------- */
+function fazerLogin() {
+  var e = $('#liMail').value.trim(), p = $('#liPw').value;
+  if (!e || !p) { loginErro('Informe usuário e senha.'); return; }
+  if (e.indexOf('@') < 0) e += '@chb.local';
+  $('#liBtn').disabled = true; $('#liBtn').textContent = 'Entrando…';
+  AU.signInWithEmailAndPassword(e, p).catch(function (err) {
+    var m = {
+      'auth/invalid-email': 'Usuário inválido.',
+      'auth/user-not-found': 'Usuário não encontrado.',
+      'auth/wrong-password': 'Senha incorreta.',
+      'auth/invalid-credential': 'Usuário ou senha incorretos.',
+      'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/network-request-failed': 'Sem conexão com a internet.'
+    }[err.code] || err.message;
+    loginErro(m);
+  }).finally(function () {
+    $('#liBtn').disabled = false; $('#liBtn').textContent = 'Entrar';
+  });
+}
+function loginErro(m) { $('#liErr').textContent = m; }
+function fazerLogout() {
+  if (!confirm('Sair da conta neste aparelho?')) return;
+  closeModal(); AU.signOut();
+}
+
+/* ---------- serialização de sessão ---------- */
+function limpa(o) {
+  if (o === null || o === undefined) return null;
+  if (Array.isArray(o)) return o.map(limpa);
+  if (typeof o === 'object') {
+    if (o._methodName || o instanceof Date) return o;
+    var r = {};
+    Object.keys(o).forEach(function (k) { if (o[k] !== undefined) r[k] = limpa(o[k]); });
+    return r;
+  }
+  if (typeof o === 'number' && !isFinite(o)) return 0;
+  return o;
+}
+function itemToDoc(it) {
+  return limpa({ presente: it.presente !== false, meds: it.meds || {}, resg: it.resg || [], obs: it.obs || '' });
+}
+function sessToDoc(s) {
+  var m = {};
+  s.itens.forEach(function (it) { m[it.pid] = itemToDoc(it); });
+  return limpa({ data: s.data, turno: s.turno, medicoId: s.medicoId || '', itens: m, criadoEm: s.criadoEm || new Date().toISOString() });
+}
+function docToSess(d, iso, turnoId) {
+  var s = { data: d.data || iso, turno: d.turno || turnoId, medicoId: d.medicoId || '', criadoEm: d.criadoEm, itens: [] };
+  var m = d.itens || {};
+  Object.keys(m).forEach(function (pid) {
+    var x = m[pid] || {};
+    s.itens.push({ pid: pid, presente: x.presente !== false, meds: x.meds || {}, resg: x.resg || [], obs: x.obs || '' });
+  });
+  ordenaItens(s);
+  return s;
+}
+
+/* ---------- fila de escrita (agrupa e atrasa 400ms) ---------- */
+var WQ = {}, WT = null;
+function mescla(alvo, novo) {
+  Object.keys(novo).forEach(function (k) {
+    var v = novo[k];
+    if (v && typeof v === 'object' && !Array.isArray(v) && !v._methodName &&
+      alvo[k] && typeof alvo[k] === 'object' && !Array.isArray(alvo[k])) mescla(alvo[k], v);
+    else alvo[k] = v;
+  });
+}
+function enfileira(ref, data) {
+  var p = ref.path;
+  if (!WQ[p]) WQ[p] = { ref: ref, data: {} };
+  mescla(WQ[p].data, data);
+  setSync('saving');
+  clearTimeout(WT); WT = setTimeout(descarrega, 400);
+}
+function descarrega() {
+  var itens = WQ; WQ = {};
+  var ps = Object.keys(itens).map(function (p) { return itens[p].ref.set(itens[p].data, { merge: true }); });
+  if (!ps.length) return;
+  Promise.all(ps).then(function () {
+    setSync(navigator.onLine ? 'ok' : 'offline');
+  }).catch(function (e) {
+    setSync('error', 'Falha ao salvar');
+    toast('Não foi possível salvar: ' + (e.code === 'permission-denied' ? 'sem permissão no banco.' : e.message), 'err');
+  });
+}
+
+/* ---------- listeners ---------- */
+function subConfig() {
+  UNSUB.cfg = FS.collection(COL_APP).doc('config').onSnapshot(function (snap) {
+    if (snap.exists) {
+      var d = snap.data();
+      CHAVES_CFG.forEach(function (k) { if (d[k] != null) DB[k] = d[k]; });
+    } else {
+      FS.collection(COL_APP).doc('config').set(cfgToDoc());
+    }
+    normalizeDB(); CFG_OK = true; aposCarga();
+  }, erroSnap);
+}
+function subPacientes() {
+  UNSUB.pac = FS.collection(COL_APP).doc('pacientes').onSnapshot(function (snap) {
+    DB.pacientes = (snap.exists && snap.data().lista) || [];
+    PAC_OK = true; aposCarga();
+  }, erroSnap);
+}
+function erroSnap(e) {
+  if (e.code === 'permission-denied') {
+    toast('Sem permissão de leitura. Verifique as regras do Firestore.', 'err');
+    telaErro('O banco recusou a leitura (permission-denied). Confira se as regras de segurança foram publicadas.');
+  } else { setSync('error'); }
+}
+var BOOTED = false;
+function aposCarga() {
+  if (!CFG_OK || !PAC_OK) return;
+  if (!BOOTED) { BOOTED = true; iniciarUI(); }
+  else { subDia(CUR.iso); renderPage(); }
+}
+
+/* assina os documentos de todos os turnos do dia visível */
+function subDia(iso) {
+  var alvo = {};
+  turnosDoDia(iso).forEach(function (t) { alvo[sessDocId(iso, t.id)] = t.id; });
+  Object.keys(UNSUB.sess).forEach(function (id) {
+    if (!alvo[id]) { UNSUB.sess[id](); delete UNSUB.sess[id]; }
+  });
+  Object.keys(alvo).forEach(function (id) {
+    if (UNSUB.sess[id]) return;
+    var turnoId = alvo[id], k = sessKey(iso, turnoId);
+    UNSUB.sess[id] = FS.collection(COL_SESS).doc(id).onSnapshot(function (snap) {
+      if (snap.exists) DB.sessoes[k] = docToSess(snap.data(), iso, turnoId);
+      else delete DB.sessoes[k];
+      SESS_READY[k] = true;
+      if (VIEW === 'escala') renderEscala();
+    }, erroSnap);
+  });
+}
+
+/* ---------- gravação ---------- */
+function cfgToDoc() {
+  var o = {}; CHAVES_CFG.forEach(function (k) { o[k] = DB[k]; });
+  return limpa(o);
+}
+function saveConfig() {
+  if (!FS) return;
+  enfileira(FS.collection(COL_APP).doc('config'), cfgToDoc());
+}
+function savePacientes() {
+  if (!FS) return;
+  enfileira(FS.collection(COL_APP).doc('pacientes'), { lista: limpa(DB.pacientes) });
+}
+/* pid informado = grava só aquele paciente (evita sobrescrever edição de outro aparelho) */
+function saveSess(pid) {
+  if (!FS || !CUR.turno) return;
+  var s = DB.sessoes[sessKey(CUR.iso, CUR.turno)];
+  if (!s) return;
+  var ref = FS.collection(COL_SESS).doc(sessDocId(CUR.iso, CUR.turno));
+  if (pid) {
+    var it = s.itens.filter(function (x) { return x.pid === pid; })[0];
+    if (!it) return;
+    var d = { itens: {}, data: s.data, turno: s.turno };
+    d.itens[pid] = itemToDoc(it);
+    enfileira(ref, d);
+  } else {
+    enfileira(ref, sessToDoc(s));
+  }
+}
+function saveSessMeta(campo, valor) {
+  if (!FS || !CUR.turno) return;
+  var d = {}; d[campo] = valor;
+  enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, CUR.turno)), d);
+}
+function removeSessItem(pid) {
+  if (!FS || !CUR.turno) return;
+  var d = { itens: {} };
+  d.itens[pid] = firebase.firestore.FieldValue.delete();
+  enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, CUR.turno)), d);
+}
+
+/* ---------- histórico (consulta pontual) ---------- */
+function carregarHistorico() {
+  if (!FS) return Promise.resolve([]);
+  return FS.collection(COL_SESS)
+    .orderBy(firebase.firestore.FieldPath.documentId(), 'desc').limit(400).get()
+    .then(function (q) {
+      var out = [];
+      q.forEach(function (doc) {
+        var p = doc.id.split('_');
+        out.push(docToSess(doc.data(), p[0], p[1]));
+      });
+      return out;
+    }).catch(function () { return []; });
+}
+function apagarSess(iso, turnoId) {
+  return FS.collection(COL_SESS).doc(sessDocId(iso, turnoId)).delete();
+}
+
+/* ---------- backup / restauração em massa ---------- */
+function gravarTudo(dados) {
+  var lote = FS.batch();
+  lote.set(FS.collection(COL_APP).doc('config'), limpa((function () {
+    var o = {}; CHAVES_CFG.forEach(function (k) { o[k] = dados[k]; }); return o;
+  })()));
+  lote.set(FS.collection(COL_APP).doc('pacientes'), { lista: limpa(dados.pacientes || []) });
+  var chaves = Object.keys(dados.sessoes || {}).slice(0, 400);
+  chaves.forEach(function (k) {
+    var p = k.split('|'), s = dados.sessoes[k];
+    if (!s || !s.itens) return;
+    lote.set(FS.collection(COL_SESS).doc(sessDocId(p[0], p[1])), sessToDoc(s));
+  });
+  return lote.commit();
+}
+
+/* ================================================================== */
+
 /* ================= NAVEGAÇÃO ================= */
 var VIEW = 'escala';
+function renderPage() { go(VIEW); }
 function go(v) {
   VIEW = v;
   $$('.view').forEach(function (s) { s.classList.toggle('on', s.id === 'v-' + v); });
@@ -873,6 +1288,7 @@ function onDateChange() {
     var ok = ts.some(function (t) { return t.id === CUR.turno; });
     if (!ok) CUR.turno = ts[0].id;
   }
+  subDia(CUR.iso);
   renderEscala();
 }
 
@@ -894,12 +1310,20 @@ function renderEscala() {
 
   var t = turnoById(CUR.turno);
   var sess = getSess(iso, CUR.turno, true);
+  if (sess._carregando) {
+    $('#turnoTitle').textContent = t.nome + ' — ' + fmtBR(iso);
+    $('#turnoSub').textContent = t.ini + ' às ' + t.fim + ' · ' + DIAS[dow];
+    $('#shiftTable').innerHTML = '';
+    $('#shiftEmpty').innerHTML = '<div class="empty"><p>Carregando o turno…</p></div>';
+    $('#stats').innerHTML = '';
+    return;
+  }
 
   $('#turnoTitle').textContent = t.nome + ' — ' + fmtBR(iso);
   $('#turnoSub').textContent = t.ini + ' às ' + t.fim + ' · ' + DIAS[dow];
 
   /* médico — vinculado ao turno, com possibilidade de substituição pontual */
-  if (!sess.medicoId) { var pad = medicoPadrao(CUR.turno); if (pad) { sess.medicoId = pad; saveDB(); } }
+  if (!sess.medicoId && !sess._carregando) { var pad = medicoPadrao(CUR.turno); if (pad) { sess.medicoId = pad; saveSessMeta('medicoId', pad); } }
   function opt(m) { return '<option value="' + m.id + '"' + (m.id === sess.medicoId ? ' selected' : '') + '>' + esc(m.nome) + '</option>'; }
   var doTurno = medicosDoTurno(CUR.turno);
   var outros = DB.medicos.filter(function (m) { return (m.turnos || []).indexOf(CUR.turno) < 0; });
@@ -996,26 +1420,26 @@ function tglMed(ix, mid, v) {
   if (!it.meds[mid]) it.meds[mid] = { f: false, d: (medById(mid) || {}).dose, rot: false };
   it.meds[mid].f = v;
   if (v && (it.meds[mid].d == null || it.meds[mid].d === '')) it.meds[mid].d = (medById(mid) || {}).dose;
-  saveDB(); renderShiftTable(s); renderStats(s);
+  saveSess(it.pid); renderShiftTable(s); renderStats(s);
 }
 function setDose(ix, mid, v) {
   var s = curSess(); var it = s.itens[ix]; if (!it || !it.meds[mid]) return;
-  it.meds[mid].d = num(v, 0); saveDB();
+  it.meds[mid].d = num(v, 0); saveSess(it.pid);
 }
 function tglPres(ix, v) {
   var s = curSess(); var it = s.itens[ix]; if (!it) return;
   it.presente = v;
   if (!v) { Object.keys(it.meds).forEach(function (k) { it.meds[k].f = false; }); it.resg = []; }
-  saveDB(); renderShiftTable(s); renderStats(s); renderEscala();
+  saveSess(it.pid); renderShiftTable(s); renderStats(s); renderEscala();
 }
-function setObs(ix, v) { var s = curSess(); if (s.itens[ix]) { s.itens[ix].obs = v; saveDB(); } }
+function setObs(ix, v) { var s = curSess(); if (s.itens[ix]) { s.itens[ix].obs = v; saveSess(s.itens[ix].pid); } }
 function delResg(ix, ri) {
-  var s = curSess(); s.itens[ix].resg.splice(ri, 1); saveDB(); renderShiftTable(s); renderStats(s);
+  var s = curSess(); s.itens[ix].resg.splice(ri, 1); saveSess(s.itens[ix].pid); renderShiftTable(s); renderStats(s);
 }
 function rmFromShift(ix) {
   var s = curSess(); var p = pacById(s.itens[ix].pid);
   if (!confirm('Remover ' + (p ? p.nome : 'este paciente') + ' deste turno?\n\nO cadastro do paciente não é apagado.')) return;
-  s.itens.splice(ix, 1); saveDB(); renderEscala(); toast('Paciente removido do turno.');
+  var pid = s.itens[ix].pid; s.itens.splice(ix, 1); removeSessItem(pid); renderEscala(); toast('Paciente removido do turno.');
 }
 function markAllRoutine() {
   var s = curSess(), n = 0;
@@ -1025,7 +1449,7 @@ function markAllRoutine() {
       if (it.meds[k].rot && !it.meds[k].f) { it.meds[k].f = true; n++; }
     });
   });
-  saveDB(); renderEscala();
+  saveSess(); renderEscala();
   toast(n ? n + ' medicação(ões) de rotina marcada(s).' : 'Nenhuma medicação de rotina pendente. Defina a rotina no cadastro do paciente.', n ? 'ok' : '');
 }
 function resyncShift() {
@@ -1036,7 +1460,7 @@ function resyncShift() {
     if (!linhaAtendeDia(p.linha, dow)) return;
     s.itens.push(novoItem(p)); add++;
   });
-  ordenaItens(s); saveDB(); renderEscala();
+  ordenaItens(s); saveSess(); renderEscala();
   toast(add ? add + ' paciente(s) incluído(s) a partir do cadastro.' : 'Escala já está sincronizada com o cadastro.', add ? 'ok' : '');
 }
 function openAddToShift() {
@@ -1053,7 +1477,7 @@ function openAddToShift() {
 }
 function addToShift() {
   var id = $('#addSel').value; var p = pacById(id); if (!p) return;
-  var s = curSess(); s.itens.push(novoItem(p)); ordenaItens(s); saveDB(); closeModal(); renderEscala();
+  var s = curSess(); s.itens.push(novoItem(p)); ordenaItens(s); saveSess(p.id); closeModal(); renderEscala();
   toast(p.nome + ' incluído no turno.', 'ok');
 }
 
@@ -1080,7 +1504,7 @@ function saveResg() {
     if (c && c.checked) { it.resg.push({ mid: m.id, d: num($('#rgd_' + m.id).value, m.dose), h: h }); n++; }
   });
   if (!n) { toast('Selecione ao menos uma medicação.', 'err'); return; }
-  saveDB(); closeModal(); renderEscala(); toast(n + ' medicação(ões) de resgate registrada(s).', 'ok');
+  saveSess(it.pid); closeModal(); renderEscala(); toast(n + ' medicação(ões) de resgate registrada(s).', 'ok');
 }
 
 /* ================================================================== */
@@ -1197,13 +1621,13 @@ function savePat(id) {
   DB.medsCont.forEach(function (m) {
     p.meds[m.id] = { on: $('#pm_' + m.id).checked, dose: num($('#pmd_' + m.id).value, m.dose) };
   });
-  saveDB(); closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
+  savePacientes(); closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
 }
 function delPat(id) {
   var p = pacById(id); if (!p) return;
   if (!confirm('Excluir ' + p.nome + ' do cadastro?\n\nOs turnos já registrados no histórico são mantidos.\nSe o paciente apenas saiu do programa, prefira marcá-lo como Inativo.')) return;
   DB.pacientes = DB.pacientes.filter(function (x) { return x.id !== id; });
-  saveDB(); renderPacientes(); toast('Paciente excluído.');
+  savePacientes(); renderPacientes(); toast('Paciente excluído.');
 }
 
 /* ================= CONFIG ================= */
@@ -1240,11 +1664,12 @@ function renderConfig() {
     : '<tbody><tr><td class="empty">Nenhum médico cadastrado. O nome e o CRM saem impressos na ficha da farmácia.</td></tr></tbody>';
 
   renderMedTable('cont'); renderMedTable('resg');
-  $('#storeInfo').innerHTML = 'Registros: <b>' + DB.pacientes.length + '</b> pacientes · <b>' + Object.keys(DB.sessoes).length + '</b> turnos gravados · ' +
-    'armazenamento: <b>' + (STORE_OK ? 'navegador (localStorage)' : 'memória temporária') + '</b>' +
-    (DB.atualizadoEm ? ' · última gravação: <b>' + new Date(DB.atualizadoEm).toLocaleString('pt-BR') + '</b>' : '');
+  $('#cfgUser').textContent = (CUR_USER && CUR_USER.email) || '—';
+  $('#storeInfo').innerHTML = 'Cadastro: <b>' + DB.pacientes.length + '</b> pacientes · <b>' + DB.medicos.length + '</b> médicos · ' +
+    'banco: <b>' + esc(FIREBASE_CONFIG.projectId || '—') + '</b> (Firestore) · ' +
+    'conexão: <b>' + (navigator.onLine ? 'online' : 'offline — alterações em fila') + '</b>';
 }
-function setTurno(i, k, v) { DB.turnos[i][k] = v; saveDB(); renderEscala(); }
+function setTurno(i, k, v) { DB.turnos[i][k] = v; saveConfig(); subDia(CUR.iso); renderEscala(); }
 function saveClinic() {
   var c = DB.clinic;
   c.nome = $('#cNome').value.trim() || 'Clínica de Hemodiálise';
@@ -1252,7 +1677,7 @@ function saveClinic() {
   c.cidade = $('#cCidade').value.trim(); c.cep = $('#cCep').value.trim();
   c.tel = $('#cTel').value.trim(); c.cnpj = $('#cCnpj').value.trim();
   c.rt = $('#cRt').value.trim(); c.foot = $('#cFoot').value.trim();
-  saveDB(); paintBrand(); toast('Identificação da clínica salva.', 'ok');
+  saveConfig(); paintBrand(); toast('Identificação da clínica salva.', 'ok');
 }
 function paintBrand() {
   var c = DB.clinic;
@@ -1261,7 +1686,7 @@ function paintBrand() {
   $('#tbSub').textContent = sub || 'Configure os dados da clínica';
   $('#tbLogo').innerHTML = c.logo ? '<img src="' + c.logo + '">' : '<span>HD</span>';
 }
-function removeLogo() { DB.clinic.logo = ''; saveDB(); renderConfig(); paintBrand(); toast('Logotipo removido.'); }
+function removeLogo() { DB.clinic.logo = ''; saveConfig(); renderConfig(); paintBrand(); toast('Logotipo removido.'); }
 
 /* médicos */
 function openDoc(id) {
@@ -1286,12 +1711,12 @@ function saveDoc(id) {
   m.nome = n; m.crm = c; m.uf = $('#dUf').value.trim().toUpperCase();
   m.turnos = DB.turnos.filter(function (t) { return $('#dt_' + t.id).checked; }).map(function (t) { return t.id; });
   DB.medicos.sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
-  saveDB(); closeModal(); renderConfig(); renderEscala(); toast('Médico salvo.', 'ok');
+  saveConfig(); closeModal(); renderConfig(); renderEscala(); toast('Médico salvo.', 'ok');
 }
 function delDoc(id) {
   if (!confirm('Excluir este médico do cadastro?')) return;
   DB.medicos = DB.medicos.filter(function (x) { return x.id !== id; });
-  saveDB(); renderConfig(); renderEscala();
+  saveConfig(); renderConfig(); renderEscala();
 }
 
 /* medicações */
@@ -1326,47 +1751,59 @@ function saveMed(kind, id) {
   var m = id ? medById(id) : null;
   if (!m) { m = { id: uid('m') }; arr.push(m); }
   m.nome = n; m.un = u; m.desc = $('#mDesc').value.trim(); m.dose = num($('#mDose').value, 1); m.via = $('#mVia').value.trim();
-  saveDB(); closeModal(); renderConfig(); renderEscala(); toast('Medicação salva.', 'ok');
+  saveConfig(); closeModal(); renderConfig(); renderEscala(); toast('Medicação salva.', 'ok');
 }
 function delMed(kind, id) {
   var m = medById(id);
   if (!confirm('Excluir "' + (m ? m.nome : '') + '"?\n\nOs registros já gravados no histórico são preservados.')) return;
   if (kind === 'cont') DB.medsCont = DB.medsCont.filter(function (x) { return x.id !== id; });
   else DB.medsResg = DB.medsResg.filter(function (x) { return x.id !== id; });
-  saveDB(); renderConfig(); renderEscala();
+  saveConfig(); renderConfig(); renderEscala();
 }
 
 /* ================= HISTÓRICO ================= */
+var HIST = [];
 function renderHistorico() {
-  var keys = Object.keys(DB.sessoes).sort().reverse();
-  if (!keys.length) {
-    $('#histTable').innerHTML = '';
-    $('#histEmpty').innerHTML = '<div class="empty"><h4>Nenhum turno registrado ainda</h4><p>Os turnos aparecem aqui automaticamente conforme forem abertos na escala.</p></div>';
-    return;
-  }
-  $('#histEmpty').innerHTML = '';
-  $('#histTable').innerHTML = '<thead><tr><th>Data</th><th>Dia</th><th>Turno</th><th>Médico</th><th class="ctr">Presentes</th><th class="ctr">Faltas</th><th class="ctr">Med. contínuas</th><th class="ctr">Resgates</th><th style="width:130px"></th></tr></thead><tbody>' +
-    keys.map(function (k) {
-      var s = DB.sessoes[k], t = turnoById(s.turno) || {}, d = docById(s.medicoId);
-      var pres = s.itens.filter(function (i) { return i.presente; }).length;
-      var mc = 0, mr = 0;
-      s.itens.forEach(function (i) {
-        if (!i.presente) return;
-        Object.keys(i.meds).forEach(function (x) { if (i.meds[x].f) mc++; });
-        mr += (i.resg || []).length;
-      });
-      return '<tr><td class="mono nowrap">' + fmtBR(s.data) + '</td><td>' + DIAS_C[dayOf(s.data)] + '</td>' +
-        '<td class="nowrap">' + esc(t.nome || s.turno) + '</td><td>' + esc(d ? d.nome : '—') + '</td>' +
-        '<td class="tac mono">' + pres + '</td><td class="tac mono">' + (s.itens.length - pres) + '</td>' +
-        '<td class="tac mono">' + mc + '</td><td class="tac mono">' + mr + '</td>' +
-        '<td class="nowrap"><button class="btn sm sec" onclick="abrirHist(\'' + s.data + '\',\'' + s.turno + '\')">Abrir</button> ' +
-        '<button class="icon-btn dgr" onclick="delSess(\'' + k + '\')" title="Apagar registro">🗑</button></td></tr>';
-    }).join('') + '</tbody>';
+  $('#histTable').innerHTML = '';
+  $('#histEmpty').innerHTML = '<div class="empty"><p>Carregando turnos registrados…</p></div>';
+  carregarHistorico().then(function (lista) {
+    HIST = lista;
+    if (!lista.length) {
+      $('#histTable').innerHTML = '';
+      $('#histEmpty').innerHTML = '<div class="empty"><h4>Nenhum turno registrado ainda</h4><p>Os turnos aparecem aqui automaticamente conforme forem abertos na escala.</p></div>';
+      return;
+    }
+    $('#histEmpty').innerHTML = '';
+    $('#histTable').innerHTML = '<thead><tr><th>Data</th><th>Dia</th><th>Turno</th><th>Médico</th><th class="ctr">Presentes</th><th class="ctr">Faltas</th><th class="ctr">Med. contínuas</th><th class="ctr">Resgates</th><th style="width:130px"></th></tr></thead><tbody>' +
+      lista.map(function (s, i) {
+        var t = turnoById(s.turno) || {}, d = docById(s.medicoId);
+        var pres = s.itens.filter(function (x) { return x.presente; }).length;
+        var mc = 0, mr = 0;
+        s.itens.forEach(function (x) {
+          if (!x.presente) return;
+          Object.keys(x.meds || {}).forEach(function (y) { if (x.meds[y].f) mc++; });
+          mr += (x.resg || []).length;
+        });
+        return '<tr><td class="mono nowrap">' + fmtBR(s.data) + '</td><td>' + DIAS_C[dayOf(s.data)] + '</td>' +
+          '<td class="nowrap">' + esc(t.nome || s.turno) + '</td><td>' + esc(d ? d.nome : '—') + '</td>' +
+          '<td class="tac mono">' + pres + '</td><td class="tac mono">' + (s.itens.length - pres) + '</td>' +
+          '<td class="tac mono">' + mc + '</td><td class="tac mono">' + mr + '</td>' +
+          '<td class="nowrap"><button class="btn sm sec" onclick="abrirHist(\'' + s.data + '\',\'' + s.turno + '\')">Abrir</button> ' +
+          '<button class="icon-btn dgr" onclick="delSess(' + i + ')" title="Apagar registro">🗑</button></td></tr>';
+      }).join('') + '</tbody>';
+  });
 }
-function abrirHist(iso, turno) { $('#dtSel').value = iso; CUR.iso = iso; CUR.turno = turno; go('escala'); renderEscala(); }
-function delSess(k) {
-  if (!confirm('Apagar definitivamente o registro deste turno?')) return;
-  delete DB.sessoes[k]; saveDB(); renderHistorico(); renderEscala(); toast('Registro apagado.');
+function abrirHist(iso, turno) {
+  $('#dtSel').value = iso; CUR.iso = iso; CUR.turno = turno;
+  subDia(iso); go('escala'); renderEscala();
+}
+function delSess(i) {
+  var s = HIST[i]; if (!s) return;
+  if (!confirm('Apagar definitivamente o registro de ' + fmtBR(s.data) + ' — ' + ((turnoById(s.turno) || {}).nome || s.turno) + '?')) return;
+  apagarSess(s.data, s.turno).then(function () {
+    delete DB.sessoes[sessKey(s.data, s.turno)];
+    renderHistorico(); renderEscala(); toast('Registro apagado.');
+  }).catch(function (e) { toast('Não foi possível apagar: ' + e.message, 'err'); });
 }
 
 /* ================================================================== */
@@ -1609,10 +2046,19 @@ function download(nome, conteudo, tipo) {
   a.href = u; a.download = nome; document.body.appendChild(a); a.click();
   setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 400);
 }
+function pacoteAtual(sessoes) {
+  var o = { v: 2, geradoEm: new Date().toISOString(), pacientes: DB.pacientes, sessoes: {} };
+  CHAVES_CFG.forEach(function (k) { o[k] = DB[k]; });
+  (sessoes || []).forEach(function (s) { o.sessoes[sessKey(s.data, s.turno)] = s; });
+  return o;
+}
 function doExport() {
-  var d = new Date(), st = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '-' + ('0' + d.getHours()).slice(-2) + ('0' + d.getMinutes()).slice(-2);
-  download('backup-hemodialise-' + st + '.json', JSON.stringify(DB, null, 1));
-  toast('Backup gerado. Guarde o arquivo em local seguro.', 'ok');
+  toast('Gerando backup…', 'inf');
+  carregarHistorico().then(function (lista) {
+    var d = new Date(), st = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '-' + ('0' + d.getHours()).slice(-2) + ('0' + d.getMinutes()).slice(-2);
+    download('backup-hemodialise-' + st + '.json', JSON.stringify(pacoteAtual(lista), null, 1));
+    toast('Backup gerado com ' + lista.length + ' turno(s). Guarde em local seguro.', 'ok');
+  });
 }
 function doImport(file) {
   var r = new FileReader();
@@ -1620,49 +2066,64 @@ function doImport(file) {
     try {
       var o = JSON.parse(r.result);
       if (!o || !o.turnos || !o.pacientes) throw new Error('formato');
-      if (!confirm('Restaurar este backup?\n\nTODOS os dados atuais deste navegador serão substituídos:\n' +
-        (o.pacientes.length) + ' pacientes · ' + Object.keys(o.sessoes || {}).length + ' turnos gravados.')) return;
-      DB = o;
-      ['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg', 'pacientes', 'sessoes'].forEach(function (k) { if (DB[k] == null) DB[k] = defaults()[k]; });
-      saveDB(); paintBrand(); onDateChange(); renderConfig(); renderPacientes(); renderHistorico();
-      toast('Backup restaurado com sucesso.', 'ok');
+      if (!confirm('Restaurar este backup?\n\nOs dados atuais NA NUVEM serão substituídos para todos os aparelhos:\n' +
+        o.pacientes.length + ' pacientes · ' + Object.keys(o.sessoes || {}).length + ' turnos gravados.')) return;
+      toast('Restaurando…', 'inf');
+      gravarTudo(o).then(function () {
+        toast('Backup restaurado com sucesso.', 'ok');
+        renderConfig(); renderPacientes();
+      }).catch(function (e) { toast('Falha ao restaurar: ' + e.message, 'err'); });
     } catch (e) { toast('Arquivo inválido — selecione um backup gerado por este sistema.', 'err'); }
   };
   r.readAsText(file);
 }
 function exportCSV() {
-  var L = [['Data', 'Dia', 'Turno', 'Medico', 'CRM', 'Paciente', 'Prontuario', 'Endereco', 'Presente', 'Tipo', 'Medicacao', 'Dose', 'Unidade', 'Via', 'Hora', 'Observacoes']];
-  Object.keys(DB.sessoes).sort().forEach(function (k) {
-    var s = DB.sessoes[k], t = turnoById(s.turno) || {}, d = docById(s.medicoId) || {};
-    s.itens.forEach(function (it) {
-      var p = pacById(it.pid) || {};
-      var base = [s.data, DIAS_C[dayOf(s.data)], t.nome || s.turno, d.nome || '', d.crm || '', p.nome || '', p.prontuario || '',
-      [p.endereco, p.bairro].filter(Boolean).join(' - '), it.presente ? 'Sim' : 'Nao'];
-      var any = false;
-      DB.medsCont.forEach(function (m) {
-        var st = it.meds[m.id];
-        if (st && st.f) { any = true; L.push(base.concat(['Continua', m.nome, fmtNum(st.d), m.un, m.via || '', '', it.obs || ''])); }
+  toast('Montando planilha…', 'inf');
+  carregarHistorico().then(function (lista) {
+    var L = [['Data', 'Dia', 'Turno', 'Medico', 'CRM', 'Paciente', 'Prontuario', 'Endereco', 'Presente', 'Tipo', 'Medicacao', 'Dose', 'Unidade', 'Via', 'Hora', 'Observacoes']];
+    lista.slice().reverse().forEach(function (s) {
+      var t = turnoById(s.turno) || {}, d = docById(s.medicoId) || {};
+      s.itens.forEach(function (it) {
+        var p = pacById(it.pid) || {};
+        var base = [s.data, DIAS_C[dayOf(s.data)], t.nome || s.turno, d.nome || '', d.crm || '', p.nome || '', p.prontuario || '',
+        [p.endereco, p.bairro].filter(Boolean).join(' - '), it.presente ? 'Sim' : 'Nao'];
+        var any = false;
+        DB.medsCont.forEach(function (m) {
+          var st = (it.meds || {})[m.id];
+          if (st && st.f) { any = true; L.push(base.concat(['Continua', m.nome, fmtNum(st.d), m.un, m.via || '', '', it.obs || ''])); }
+        });
+        (it.resg || []).forEach(function (rr) {
+          var m = medById(rr.mid) || {}; any = true;
+          L.push(base.concat(['Resgate', m.nome || '', fmtNum(rr.d), m.un || '', m.via || '', rr.h || '', it.obs || '']));
+        });
+        if (!any) L.push(base.concat(['', '', '', '', '', '', it.obs || '']));
       });
-      (it.resg || []).forEach(function (r) {
-        var m = medById(r.mid) || {}; any = true;
-        L.push(base.concat(['Resgate', m.nome || '', fmtNum(r.d), m.un || '', m.via || '', r.h || '', it.obs || '']));
-      });
-      if (!any) L.push(base.concat(['', '', '', '', '', '', it.obs || '']));
     });
+    var csv = L.map(function (r) {
+      return r.map(function (c) { return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+    download('historico-hemodialise-' + todayISO() + '.csv', csv, 'text/csv;charset=utf-8');
+    toast('Histórico exportado (' + (L.length - 1) + ' linhas).', 'ok');
   });
-  var csv = L.map(function (r) {
-    return r.map(function (c) { return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(';');
-  }).join('\r\n');
-  download('historico-hemodialise-' + todayISO() + '.csv', csv, 'text/csv;charset=utf-8');
-  toast('Histórico exportado em CSV.', 'ok');
 }
 function wipeAll() {
-  if (!confirm('APAGAR TODOS OS DADOS?\n\nPacientes, turnos gravados e configurações serão perdidos definitivamente neste navegador.')) return;
+  if (!confirm('APAGAR TODOS OS DADOS DA NUVEM?\n\nPacientes, turnos gravados e configurações serão perdidos para TODOS os aparelhos, definitivamente.')) return;
   if (!confirm('Confirme novamente.\n\nSe ainda não gerou um backup, cancele agora e clique em "Backup" antes.')) return;
-  DB = defaults();
-  try { if (STORE_OK) window.localStorage.removeItem(KEY); } catch (e) { }
-  saveDB(); paintBrand(); onDateChange(); renderConfig(); renderPacientes(); renderHistorico();
-  toast('Todos os dados foram apagados.');
+  toast('Apagando…', 'inf');
+  carregarHistorico().then(function (lista) {
+    var lote = FS.batch();
+    lista.slice(0, 400).forEach(function (s) { lote.delete(FS.collection(COL_SESS).doc(sessDocId(s.data, s.turno))); });
+    var d = defaults();
+    lote.set(FS.collection(COL_APP).doc('pacientes'), { lista: [] });
+    lote.set(FS.collection(COL_APP).doc('config'), limpa((function () {
+      var o = {}; CHAVES_CFG.forEach(function (k) { o[k] = d[k]; }); return o;
+    })()));
+    return lote.commit();
+  }).then(function () {
+    DB.sessoes = {}; SESS_READY = {};
+    renderConfig(); renderPacientes(); renderEscala();
+    toast('Todos os dados foram apagados.');
+  }).catch(function (e) { toast('Falha ao apagar: ' + e.message, 'err'); });
 }
 
 /* ================================================================== */
@@ -1671,7 +2132,8 @@ function wipeAll() {
 $$('.nav button').forEach(function (b) { b.onclick = function () { go(b.dataset.v); }; });
 $('#dtSel').onchange = onDateChange;
 $('#docSel').onchange = function () {
-  var s = curSess(); s.medicoId = this.value; saveDB();
+  var s = curSess(); if (!s) return;
+  s.medicoId = this.value; saveSessMeta('medicoId', this.value);
   var d = docById(s.medicoId);
   $('#docCrm').value = d ? (d.crm ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : '') : '';
 };
@@ -1681,12 +2143,17 @@ $('#docSel').onchange = function () {
 $('#impFile').onchange = function () { if (this.files[0]) doImport(this.files[0]); this.value = ''; };
 $('#logoFile').onchange = function () {
   var f = this.files[0]; if (!f) return;
-  if (f.size > 1600000) { toast('Imagem muito grande (máx. ~1,5 MB). Reduza o arquivo.', 'err'); this.value = ''; return; }
+  if (f.size > 900000) { toast('Imagem muito grande (máx. ~900 KB). Reduza o arquivo.', 'err'); this.value = ''; return; }
   var r = new FileReader();
-  r.onload = function () { DB.clinic.logo = r.result; saveDB(); renderConfig(); paintBrand(); toast('Logotipo atualizado.', 'ok'); };
+  r.onload = function () {
+    DB.clinic.logo = r.result; saveConfig(); renderConfig(); paintBrand(); setupIcons();
+    toast('Logotipo atualizado.', 'ok');
+  };
   r.readAsDataURL(f); this.value = '';
 };
 $('#mask').onclick = function (e) { if (e.target === this) closeModal(); };
+$('#liPw').onkeydown = function (e) { if (e.key === 'Enter') fazerLogin(); };
+$('#liMail').onkeydown = function (e) { if (e.key === 'Enter') $('#liPw').focus(); };
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') { closeModal(); closePreview(); }
   if (e.key === 'p' && (e.ctrlKey || e.metaKey) && !document.body.classList.contains('previewing')) {
@@ -1694,12 +2161,24 @@ document.addEventListener('keydown', function (e) {
   }
 });
 
+/* ================= ÍCONES (atalho na tela inicial) ================= */
+function setupIcons() {
+  var src = (DB.clinic && DB.clinic.logo) || (typeof LOGO_PADRAO === 'string' ? LOGO_PADRAO : '');
+  if (!src) return;
+  ['icon', 'apple-touch-icon'].forEach(function (rel) {
+    var old = document.querySelector('link[rel="' + rel + '"]');
+    if (old) old.remove();
+    var l = document.createElement('link'); l.rel = rel; l.href = src; document.head.appendChild(l);
+  });
+}
+
 /* ================= DADOS DE EXEMPLO ================= */
 function seedDemo() {
   if (DB.pacientes.length && !confirm('Já existem pacientes cadastrados. Adicionar mesmo assim os pacientes de exemplo?')) return;
   if (!DB.medicos.length) {
     DB.medicos.push({ id: uid('d'), nome: 'Dr. Exemplo Silva', crm: '12345', uf: 'PA', turnos: ['T1', 'T2'] });
     DB.medicos.push({ id: uid('d'), nome: 'Dra. Exemplo Costa', crm: '23456', uf: 'PA', turnos: ['T3'] });
+    saveConfig();
   }
   var base = [
     ['Antônio Carlos Ferreira da Silva', 'Tv. Padre Eutíquio, 1200, ap. 302', 'Batista Campos, Belém/PA', 'T1', 'SQS', 'FAV'],
@@ -1720,52 +2199,34 @@ function seedDemo() {
       cns: '', nasc: '', turno: b[3], linha: b[4], acesso: b[5], ativo: true, obs: '', meds: meds
     });
   });
-  saveDB(); renderPacientes(); onDateChange();
+  savePacientes(); renderPacientes(); onDateChange();
   toast('Pacientes de exemplo criados. Você pode excluí-los depois.', 'ok');
 }
 
-/* ================= ÍCONES (atalho na tela inicial) ================= */
-function setupIcons() {
-  var src = (DB.clinic && DB.clinic.logo) || (typeof LOGO_PADRAO === 'string' ? LOGO_PADRAO : '');
-  if (!src) return;
-  ['icon', 'apple-touch-icon'].forEach(function (rel) {
-    var old = document.querySelector('link[rel="' + rel + '"]');
-    if (old) old.remove();
-    var l = document.createElement('link'); l.rel = rel; l.href = src; document.head.appendChild(l);
-  });
-}
-
-/* ================= BOOT ================= */
-function boot() {
-  setupIcons();
-  if (!STORE_OK) {
-    $('#storageWarn').innerHTML = '<div class="note dgr" style="margin-bottom:14px">' +
-      '<b>Atenção: os dados não estão sendo salvos.</b> Este navegador está bloqueando o armazenamento local ' +
-      '(navegação anônima, restrição de política, ou o arquivo está sendo aberto de dentro de um visualizador). ' +
-      'Para uso real: <b>baixe o arquivo</b> <i>Controle-Hemodialise.html</i> para o computador e abra-o direto no Chrome ou Edge. ' +
-      'Enquanto isso, tudo o que for digitado se perde ao fechar a aba.</div>';
-  }
-  paintBrand();
+/* ================= UI PRONTA (chamado pela camada de nuvem) ================= */
+function iniciarUI() {
+  paintBrand(); setupIcons();
   $('#dtSel').value = todayISO();
   onDateChange();
   if (!DB.pacientes.length && !DB.medicos.length) {
     setTimeout(function () {
       openModal('Bem-vindo ao Controle de Medicações',
-        '<div class="note" style="margin-bottom:14px">Logotipo, nome, endereço e CNES do <b>Centro de Hemodiálise de Belém</b> já vêm configurados. Falta apenas:</div>' +
+        '<div class="note" style="margin-bottom:14px">Logotipo, nome, endereço e CNES do <b>Centro de Hemodiálise de Belém</b> já vêm configurados, e os dados agora ficam <b>sincronizados na nuvem</b> entre todos os aparelhos. Falta apenas:</div>' +
         '<ol style="margin:0;padding-left:20px;line-height:1.9;font-size:13.5px">' +
         '<li><b>Configurações → Médicos:</b> cadastre cada médico com CRM e <b>marque os turnos sob sua responsabilidade</b>. O médico do turno passa a ser preenchido sozinho na escala.</li>' +
         '<li><b>Configurações → Medicações:</b> já vêm Paricalcitol, Alfaepoetina, Noripurum e Taurolock, mais 10 sintomáticos. Ajuste doses padrão e acrescente o que faltar.</li>' +
         '<li><b>Pacientes:</b> cadastre com endereço, turno e linha de dias (Seg/Qua/Sex ou Ter/Qui/Sáb).</li>' +
         '<li><b>Escala do dia:</b> a lista é montada sozinha. Marque as medicações e imprima as 2 vias.</li>' +
-        '<li>Opcional em <b>Identificação da clínica</b>: telefone, CNPJ e responsável técnico.</li>' +
         '</ol>' +
-        '<div class="note warn" style="margin-top:15px"><b>Antes de rodar de verdade:</b> gere um <b>Backup</b> ao final de cada dia. Os dados ficam apenas neste navegador.</div>',
+        '<div class="note" style="margin-top:15px">Tudo o que for lançado aqui aparece nos outros computadores e tablets em segundos. Sem internet o app continua funcionando e envia as alterações assim que a conexão voltar.</div>',
         [{ t: 'Carregar pacientes de exemplo', c: 'btn sec', f: 'closeModal();seedDemo();go("pacientes")' },
         { t: 'Começar pelas configurações', c: 'btn', f: 'closeModal();go("config")' }]);
     }, 320);
   }
 }
-boot();
+
+/* ================= BOOT ================= */
+cloudInit();
 </script>
 </body>
 </html>
