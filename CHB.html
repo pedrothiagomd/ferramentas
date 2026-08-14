@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Medicações — Hemodiálise</title>
+<style>
+/* ============================ TOKENS ============================ */
+:root{
+  --bg:#eef2f5;
+  --surface:#ffffff;
+  --surface-2:#f7f9fb;
+  --ink:#0d1b2a;
+  --ink-2:#33475b;
+  --muted:#6b7c8d;
+  --line:#dbe3ea;
+  --line-2:#eaeff4;
+  /* identidade visual — Centro de Hemodiálise de Belém (laranja da marca: #d16a0d) */
+  --brand:#a85307;
+  --brand-d:#8c4405;
+  --brand-l:#fbf0e4;
+  --brand-pure:#d16a0d;
+  --accent:#2c4a63;
+  --ok:#15794f;
+  --ok-l:#e2f4ec;
+  --warn:#a4640a;
+  --warn-l:#fdf1de;
+  --danger:#b32a2f;
+  --danger-l:#fdeceb;
+  --radius:10px;
+  --radius-s:7px;
+  --shadow:0 1px 2px rgba(13,27,42,.06),0 4px 14px rgba(13,27,42,.06);
+  --shadow-l:0 10px 40px rgba(13,27,42,.18);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;font-weight:650;letter-spacing:-.01em}
+a{color:var(--accent)}
+
+/* ============================ APP SHELL ============================ */
+.topbar{
+  background:linear-gradient(180deg,#23272e 0%,#15181c 100%);
+  color:#fff;padding:0 18px;position:sticky;top:0;z-index:50;
+  border-bottom:3px solid var(--brand-pure);
+  box-shadow:0 2px 10px rgba(0,0,0,.22);
+}
+.topbar-in{display:flex;align-items:center;gap:16px;min-height:60px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-logo{
+  min-width:40px;max-width:96px;height:40px;border-radius:7px;background:#fff;padding:4px 6px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 auto;
+}
+.brand-logo img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.brand-logo span{font-size:15px;font-weight:800;color:var(--brand-pure)}
+.brand-txt{min-width:0}
+.brand-name{font-size:14.5px;font-weight:650;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.brand-sub{font-size:11px;opacity:.72;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.nav{display:flex;gap:2px;margin-left:8px}
+.nav button{
+  background:transparent;border:0;color:rgba(255,255,255,.78);padding:8px 14px;
+  border-radius:7px;cursor:pointer;font-weight:550;font-size:13.5px;
+  display:flex;align-items:center;gap:7px;transition:.15s;
+}
+.nav button:hover{background:rgba(255,255,255,.12);color:#fff}
+.nav button.on{background:rgba(255,255,255,.2);color:#fff}
+.topbar-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.ghost{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;
+  padding:7px 12px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:550;transition:.15s;
+}
+.ghost:hover{background:rgba(255,255,255,.22)}
+
+.wrap{max-width:1560px;margin:0 auto;padding:18px}
+.view{display:none}
+.view.on{display:block}
+
+/* ============================ CARDS / BARS ============================ */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card+.card{margin-top:14px}
+.card-h{padding:13px 16px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card-h h3{font-size:14.5px}
+.card-h .sub{font-size:12px;color:var(--muted)}
+.card-b{padding:16px}
+.card-b.flush{padding:0}
+
+.bar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.inp,select.inp,textarea.inp{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius-s);
+  padding:7px 10px;min-height:34px;outline:none;transition:.15s;
+}
+.inp:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-l)}
+.inp[disabled]{background:var(--surface-2);color:var(--muted)}
+textarea.inp{resize:vertical;min-height:60px;line-height:1.4}
+select.inp{cursor:pointer}
+
+.btn{
+  background:var(--brand);color:#fff;border:1px solid var(--brand);border-radius:var(--radius-s);
+  padding:8px 14px;min-height:34px;cursor:pointer;font-weight:600;font-size:13px;transition:.15s;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.btn:hover{background:var(--brand-d);border-color:var(--brand-d)}
+.btn.sec{background:#fff;color:var(--ink-2);border-color:var(--line)}
+.btn.sec:hover{background:var(--surface-2);border-color:#c6d2dd}
+.btn.dgr{background:#fff;color:var(--danger);border-color:#f0c9c8}
+.btn.dgr:hover{background:var(--danger-l)}
+.btn.acc{background:var(--accent);border-color:var(--accent)}
+.btn.acc:hover{background:#20394d;border-color:#20394d}
+.btn.sm{padding:5px 10px;min-height:28px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.icon-btn{
+  background:transparent;border:1px solid transparent;border-radius:6px;width:28px;height:28px;
+  cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;
+  font-size:14px;transition:.15s;padding:0;
+}
+.icon-btn:hover{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
+.icon-btn.dgr:hover{background:var(--danger-l);border-color:#f0c9c8;color:var(--danger)}
+
+/* ============================ SHIFT TABS ============================ */
+.shifts{display:flex;gap:8px;flex-wrap:wrap}
+.shift-tab{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius-s);
+  padding:9px 15px;cursor:pointer;text-align:left;transition:.15s;min-width:150px;
+}
+.shift-tab:hover{border-color:#b9c8d6}
+.shift-tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.shift-tab .t{font-weight:700;font-size:13px;display:block}
+.shift-tab .h{font-size:11.5px;opacity:.7;display:block}
+.shift-tab.on .h{opacity:.85}
+
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{
+  background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-s);
+  padding:8px 13px;min-width:96px;
+}
+.stat b{display:block;font-size:19px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+
+/* ============================ TABLES ============================ */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+thead th{
+  background:var(--surface-2);color:var(--ink-2);font-weight:650;text-align:left;
+  padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:11.5px;
+  text-transform:uppercase;letter-spacing:.035em;position:sticky;top:0;z-index:2;
+}
+thead th.ctr{text-align:center}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tbody tr:hover{background:#fafcfd}
+tbody tr.absent{background:#fcfbf7}
+tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
+.zebra tbody tr:nth-child(even){background:#fbfcfd}
+.zebra tbody tr:nth-child(even):hover{background:#f6f9fb}
+
+.pname{font-weight:600;line-height:1.25}
+.pmeta{font-size:11px;color:var(--muted);line-height:1.3}
+.med-cell{text-align:center;white-space:nowrap;border-left:1px solid var(--line-2)}
+.med-wrap{display:inline-flex;align-items:center;gap:5px}
+.med-wrap input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand);cursor:pointer;margin:0;flex:0 0 auto}
+.dose-in{
+  width:62px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;font-size:12px;
+  text-align:right;min-height:26px;font-variant-numeric:tabular-nums;
+}
+.dose-in:disabled{background:#f2f5f7;color:#aab6c1;border-color:var(--line-2)}
+.dose-un{font-size:10.5px;color:var(--muted);width:26px;text-align:left;flex:0 0 auto}
+
+.chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.chip{
+  background:var(--warn-l);border:1px solid #f0dcbb;color:#7d4c06;border-radius:20px;
+  padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;
+}
+.chip.x{background:var(--brand-l);border-color:#eddcc3;color:#8c4405}
+.obs-in{width:100%;min-width:130px;border:1px solid var(--line);border-radius:5px;padding:4px 7px;font-size:12px;min-height:28px}
+
+.badge{display:inline-block;padding:1.5px 7px;border-radius:5px;font-size:10.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.b-sqs{background:#e8eef4;color:#2c4a63}
+.b-tqs{background:#f3ecf9;color:#6a3f94}
+.b-all{background:#e9f4ee;color:#15794f}
+.b-off{background:#eef1f4;color:#6b7c8d}
+.b-cdl{background:var(--warn-l);color:#8a5406}
+.b-fav{background:var(--ok-l);color:var(--ok)}
+
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+.empty h4{font-size:15px;color:var(--ink-2);margin-bottom:5px}
+.empty p{margin:0 0 14px;font-size:13px}
+
+/* ============================ MODAL ============================ */
+.mask{
+  position:fixed;inset:0;background:rgba(13,27,42,.5);z-index:100;
+  display:none;align-items:flex-start;justify-content:center;padding:26px 16px;overflow-y:auto;
+}
+.mask.on{display:flex}
+.modal{
+  background:#fff;border-radius:12px;box-shadow:var(--shadow-l);width:100%;max-width:760px;
+  margin:auto;animation:pop .16s ease-out;
+}
+.modal.wide{max-width:960px}
+.modal.slim{max-width:520px}
+@keyframes pop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.modal-h{padding:15px 18px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:10px}
+.modal-h h3{font-size:15.5px;flex:1}
+.modal-b{padding:18px;max-height:calc(100vh - 220px);overflow-y:auto}
+.modal-f{padding:13px 18px;border-top:1px solid var(--line-2);display:flex;gap:9px;justify-content:flex-end;background:var(--surface-2);border-radius:0 0 12px 12px;flex-wrap:wrap}
+
+.grid{display:grid;gap:13px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:repeat(4,1fr)}
+.span2{grid-column:span 2}
+.span3{grid-column:span 3}
+@media(max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr}.span2,.span3{grid-column:auto}}
+
+.fieldset{border:1px solid var(--line);border-radius:var(--radius-s);padding:13px;margin-top:14px}
+.fieldset>legend{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 6px}
+
+.medrow{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-2);
+  border-radius:var(--radius-s);background:var(--surface-2);
+}
+.medrow+.medrow{margin-top:7px}
+.medrow input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand);cursor:pointer;flex:0 0 auto;margin:0}
+.medrow .nm{flex:1;font-weight:600;font-size:13px;min-width:0}
+.medrow .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+
+.note{
+  background:#eef2f6;border:1px solid #d7e0e9;color:#294156;padding:10px 13px;
+  border-radius:var(--radius-s);font-size:12.5px;line-height:1.5;
+}
+.note.warn{background:var(--warn-l);border-color:#f0dcbb;color:#7d4c06}
+.note.dgr{background:var(--danger-l);border-color:#f4cdcb;color:#8f2226}
+
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(90px);
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:9px;z-index:300;
+  font-size:13.5px;font-weight:550;box-shadow:var(--shadow-l);transition:.28s;opacity:0;pointer-events:none;
+  max-width:90vw;text-align:center;
+}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.err{background:var(--danger)}
+.toast.ok{background:var(--ok)}
+
+.logo-drop{
+  border:2px dashed var(--line);border-radius:var(--radius-s);padding:16px;text-align:center;
+  cursor:pointer;transition:.15s;background:var(--surface-2);
+}
+.logo-drop:hover{border-color:var(--brand);background:var(--brand-l)}
+.logo-prev{max-width:190px;max-height:90px;object-fit:contain;display:block;margin:0 auto 9px}
+
+.sw{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:13px}
+.sw input{width:17px;height:17px;accent-color:var(--brand);cursor:pointer;margin:0}
+
+.hint{font-size:11.5px;color:var(--muted);line-height:1.45}
+.sep{height:1px;background:var(--line-2);margin:15px 0}
+.rowline{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.nowrap{white-space:nowrap}
+.tar{text-align:right}
+.tac{text-align:center}
+.mono{font-variant-numeric:tabular-nums}
+
+/* ============================ PRINT AREA ============================ */
+#printRoot{display:none}
+
+@media print{
+  @page{size:A4 portrait;margin:9mm 10mm}
+  body{background:#fff;font-size:10.2pt}
+  .topbar,.wrap,.mask,.toast,#noPrint{display:none !important}
+  #printRoot{display:block !important}
+}
+
+/* preview mode on screen */
+body.previewing .topbar,body.previewing .wrap{display:none}
+body.previewing #printRoot{display:block;background:#8792a0;padding:22px 0;min-height:100vh}
+body.previewing .sheet{
+  background:#fff;width:210mm;min-height:297mm;margin:0 auto 18px;box-shadow:0 6px 24px rgba(0,0,0,.3);
+  padding:9mm 10mm;
+}
+body.previewing .pv-bar{display:flex !important}
+.pv-bar{
+  display:none;position:fixed;top:0;left:0;right:0;background:var(--ink);color:#fff;
+  padding:9px 16px;z-index:200;align-items:center;gap:10px;box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+.pv-bar b{font-size:13.5px}
+.pv-bar .sp{flex:1}
+body.previewing #printRoot{padding-top:70px}
+@media print{.pv-bar{display:none !important}}
+
+/* ============================ SHEET (print doc) ============================ */
+.sheet{page-break-after:always;position:relative}
+.sheet:last-child{page-break-after:auto}
+
+/* cada via ocupa exatamente metade da area util da folha A4 */
+.via{
+  border:1.1pt solid #111;border-radius:2mm;padding:3mm 3.6mm;display:flex;flex-direction:column;
+  height:134mm;overflow:hidden;
+}
+.via+.via{margin-top:3.2mm}
+.cutline{
+  border-top:1pt dashed #666;margin:3.2mm 0;position:relative;height:0;
+}
+.cutline::after{
+  content:"✁  destacar";position:absolute;top:-1.85mm;left:50%;transform:translateX(-50%);
+  background:#fff;padding:0 3mm;font-size:6.6pt;color:#666;letter-spacing:.06em;
+}
+
+.vh{display:flex;align-items:center;gap:3mm;border-bottom:.9pt solid #111;padding-bottom:1.7mm;margin-bottom:1.9mm;flex:0 0 auto}
+.vh-logo{width:auto;max-width:30mm;height:13mm;object-fit:contain;flex:0 0 auto}
+.vh-logo-ph{
+  width:13mm;height:13mm;border:.8pt solid #bbb;border-radius:1.5mm;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:5.6pt;color:#999;text-align:center;line-height:1.15;
+}
+.vh-txt{flex:1;min-width:0}
+.vh-txt .cn{font-size:10.6pt;font-weight:800;letter-spacing:-.2pt;line-height:1.12;text-transform:uppercase}
+.vh-txt .ca{font-size:7.1pt;color:#333;line-height:1.28;margin-top:.4mm}
+.vh-txt .cc{font-size:7.1pt;color:#111;font-weight:700;margin-top:.3mm}
+.vh-via{
+  flex:0 0 auto;text-align:center;border:1pt solid #111;border-radius:1.5mm;padding:1.3mm 2.2mm;
+  font-size:7.1pt;font-weight:800;line-height:1.2;letter-spacing:.03em;min-width:23mm;
+}
+.vh-via small{display:block;font-size:6.1pt;font-weight:600;letter-spacing:.04em}
+
+.vtitle{
+  text-align:center;font-size:9pt;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  background:#f0f0f0;border:.7pt solid #999;padding:1mm;margin-bottom:1.9mm;flex:0 0 auto;
+}
+.vinfo{display:flex;flex-wrap:wrap;gap:0;border:.7pt solid #999;margin-bottom:1.8mm;flex:0 0 auto}
+.vinfo .c{padding:1.05mm 2mm;border-right:.7pt solid #999;flex:1;min-width:0}
+.vinfo .c:last-child{border-right:0}
+.vinfo .c.w100{flex:0 0 100%;border-right:0;border-top:.7pt solid #999}
+.vinfo .k{font-size:6pt;text-transform:uppercase;letter-spacing:.06em;color:#555;font-weight:700;line-height:1.1}
+.vinfo .v{font-size:8.6pt;font-weight:700;line-height:1.22;word-break:break-word}
+.vinfo .v.sm{font-size:7.7pt;font-weight:600}
+
+table.vtab{width:100%;border-collapse:collapse;font-size:8.2pt;margin-bottom:1.8mm;flex:0 0 auto}
+table.vtab th{
+  background:#ebebeb;border:.7pt solid #999;padding:.9mm 1.8mm;text-align:left;
+  font-size:6.5pt;text-transform:uppercase;letter-spacing:.05em;font-weight:800;
+}
+table.vtab td{border:.7pt solid #999;padding:.95mm 1.8mm;vertical-align:middle;line-height:1.2}
+table.vtab td.c{text-align:center}
+table.vtab td.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+table.vtab .grp{background:#f6f6f6;font-weight:800;font-size:6.5pt;text-transform:uppercase;letter-spacing:.06em;padding:.6mm 1.8mm}
+table.vtab .mk{font-size:9.4pt;font-weight:900;line-height:1}
+table.vtab .sub{font-size:6.3pt;color:#555;line-height:1.15}
+.vnone{font-size:7.8pt;color:#555;font-style:italic;padding:1.2mm 0 2mm;flex:0 0 auto}
+
+.vobs{border:.7pt solid #999;padding:1.1mm 2mm;min-height:8mm;flex:0 0 auto}
+.vobs .k{font-size:6pt;text-transform:uppercase;letter-spacing:.06em;color:#555;font-weight:700}
+.vobs .t{font-size:8pt;line-height:1.3;white-space:pre-wrap}
+
+.vsig{display:flex;gap:4mm;margin-top:auto;padding-top:3.4mm;flex:0 0 auto}
+.vsig .s{flex:1;text-align:center;border-top:.8pt solid #111;padding-top:1mm}
+.vsig .s .n{font-size:8pt;font-weight:700;line-height:1.2}
+.vsig .s .r{font-size:6.3pt;color:#444;text-transform:uppercase;letter-spacing:.04em;line-height:1.2}
+.vfoot{font-size:6pt;color:#666;text-align:center;margin-top:1.4mm;line-height:1.2;flex:0 0 auto}
+
+/* ---- niveis de compressao automatica (aplicados por fitVias) ---- */
+.via.dense table.vtab{font-size:7.6pt}
+.via.dense table.vtab td{padding:.6mm 1.5mm}
+.via.dense table.vtab .sub{display:none}
+.via.dense .vinfo .c{padding:.75mm 1.8mm}
+.via.dense .vinfo .v{font-size:8pt}
+.via.dense .vinfo .v.sm{font-size:7.3pt}
+.via.dense .vobs{min-height:5.5mm}
+.via.dense .vsig{padding-top:2.4mm}
+.via.dense .vtitle{padding:.7mm;font-size:8.4pt;margin-bottom:1.4mm}
+
+.via.d2 table.vtab{font-size:7.1pt;margin-bottom:1.3mm}
+.via.d2 table.vtab td{padding:.42mm 1.3mm}
+.via.d2 table.vtab th,.via.d2 table.vtab .grp{padding:.42mm 1.3mm;font-size:6.1pt}
+.via.d2 table.vtab .mk{font-size:8.4pt}
+.via.d2 .vinfo{margin-bottom:1.3mm}
+.via.d2 .vinfo .c{padding:.5mm 1.6mm}
+.via.d2 .vinfo .k{font-size:5.6pt}
+.via.d2 .vinfo .v{font-size:7.5pt}
+.via.d2 .vinfo .v.sm{font-size:7pt}
+.via.d2 .vh{padding-bottom:1.2mm;margin-bottom:1.3mm}
+.via.d2 .vh-logo{max-width:26mm;height:11mm}
+.via.d2 .vh-logo-ph{width:11mm;height:11mm}
+.via.d2 .vh-txt .cn{font-size:9.6pt}
+.via.d2 .vh-txt .ca,.via.d2 .vh-txt .cc{font-size:6.5pt}
+.via.d2 .vtitle{padding:.5mm;font-size:8pt;margin-bottom:1.2mm}
+.via.d2 .vobs{min-height:4.5mm;padding:.8mm 1.6mm}
+.via.d2 .vobs .t{font-size:7.2pt}
+.via.d2 .vsig{padding-top:2mm}
+.via.d2 .vsig .s .n{font-size:7.4pt}
+.via.d2 .vfoot{margin-top:1mm;font-size:5.6pt}
+
+.via.d3 table.vtab{font-size:6.6pt}
+.via.d3 table.vtab td{padding:.28mm 1.1mm;line-height:1.12}
+.via.d3 table.vtab th,.via.d3 table.vtab .grp{padding:.3mm 1.1mm;font-size:5.7pt}
+.via.d3 table.vtab .mk{font-size:7.6pt}
+.via.d3 .vinfo .v{font-size:7pt}
+.via.d3 .vinfo .v.sm{font-size:6.5pt}
+.via.d3 .vh-logo{max-width:23mm;height:9.5mm}
+.via.d3 .vh-logo-ph{width:9.5mm;height:9.5mm}
+.via.d3 .vh-txt .cn{font-size:8.8pt}
+.via.d3 .vobs{min-height:3.5mm}
+.via.d3 .vobs .t{font-size:6.6pt}
+.via.d3 .vsig .s .r{font-size:5.7pt}
+
+/* consolidated page */
+.cons .vtitle{font-size:10.4pt}
+table.ctab{width:100%;border-collapse:collapse;font-size:8.8pt}
+table.ctab th{background:#ebebeb;border:.7pt solid #999;padding:1.6mm 2mm;text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+table.ctab td{border:.7pt solid #999;padding:1.5mm 2mm}
+table.ctab td.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+table.ctab td.c{text-align:center}
+table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
+.csub{font-size:8.6pt;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin:4mm 0 1.6mm;padding-bottom:1mm;border-bottom:.8pt solid #111}
+
+@media(max-width:900px){
+  .brand-name,.brand-sub{max-width:150px}
+  .nav button{padding:8px 10px;font-size:12.5px}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================= PREVIEW BAR ======================= -->
+<div class="pv-bar">
+  <b id="pvTitle">Pré-visualização</b>
+  <span class="sp"></span>
+  <button class="btn sm acc" onclick="window.print()">🖨 Imprimir</button>
+  <button class="btn sm sec" onclick="closePreview()">✕ Fechar</button>
+</div>
+
+<!-- ======================= TOPBAR ======================= -->
+<header class="topbar" id="noPrintTop">
+  <div class="topbar-in">
+    <div class="brand">
+      <div class="brand-logo" id="tbLogo"><span>HD</span></div>
+      <div class="brand-txt">
+        <div class="brand-name" id="tbName">Clínica de Hemodiálise</div>
+        <div class="brand-sub" id="tbSub">Configure os dados da clínica</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button data-v="escala" class="on">📋 Escala do dia</button>
+      <button data-v="pacientes">👥 Pacientes</button>
+      <button data-v="historico">🗂 Histórico</button>
+      <button data-v="config">⚙️ Configurações</button>
+    </nav>
+    <div class="topbar-r">
+      <button class="ghost" onclick="doExport()">⬇ Backup</button>
+      <button class="ghost" onclick="document.getElementById('impFile').click()">⬆ Restaurar</button>
+      <input type="file" id="impFile" accept=".json" style="display:none">
+    </div>
+  </div>
+</header>
+
+<div class="wrap" id="noPrint">
+
+  <div id="storageWarn"></div>
+
+  <!-- ======================= VIEW: ESCALA ======================= -->
+  <section class="view on" id="v-escala">
+    <div class="card">
+      <div class="card-b">
+        <div class="bar">
+          <div class="fld">
+            <label>Data</label>
+            <input type="date" class="inp" id="dtSel" style="min-width:160px">
+          </div>
+          <div class="fld">
+            <label>&nbsp;</label>
+            <button class="btn sec" onclick="setToday()">Hoje</button>
+          </div>
+          <div class="fld" style="flex:1;min-width:170px">
+            <label>Dia</label>
+            <div class="inp" id="dayLbl" style="background:var(--surface-2);font-weight:600;display:flex;align-items:center"></div>
+          </div>
+          <div class="fld">
+            <label>Médico do turno</label>
+            <select class="inp" id="docSel" style="min-width:230px"></select>
+          </div>
+          <div class="fld">
+            <label>CRM</label>
+            <input class="inp" id="docCrm" disabled style="width:120px">
+          </div>
+          <div class="spacer"></div>
+          <div class="fld">
+            <label>&nbsp;</label>
+            <div class="rowline">
+              <button class="btn acc" onclick="printTurno()">🖨 Imprimir turno</button>
+              <button class="btn sec" onclick="printDia()">🖨 Dia inteiro</button>
+            </div>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="rowline">
+          <div class="shifts" id="shiftTabs"></div>
+          <div class="spacer"></div>
+          <div class="stats" id="stats"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <h3 id="turnoTitle">Turno</h3>
+        <span class="sub" id="turnoSub"></span>
+        <div class="spacer"></div>
+        <button class="btn sm sec" onclick="openAddToShift()">＋ Incluir paciente</button>
+        <button class="btn sm sec" onclick="resyncShift()" title="Recarrega a lista a partir do cadastro, preservando o que já foi marcado">🔄 Ressincronizar</button>
+        <button class="btn sm sec" onclick="markAllRoutine()" title="Marca as medicações de rotina de todos os pacientes presentes">✓ Marcar rotina</button>
+      </div>
+      <div class="card-b flush">
+        <div class="tw"><table class="zebra" id="shiftTable"></table></div>
+        <div id="shiftEmpty"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= VIEW: PACIENTES ======================= -->
+  <section class="view" id="v-pacientes">
+    <div class="card">
+      <div class="card-h">
+        <h3>Cadastro de pacientes</h3>
+        <span class="sub" id="patCount"></span>
+        <div class="spacer"></div>
+        <button class="btn" onclick="openPat()">＋ Novo paciente</button>
+      </div>
+      <div class="card-b">
+        <div class="bar">
+          <div class="fld" style="flex:1;min-width:220px">
+            <label>Buscar</label>
+            <input class="inp" id="patSearch" placeholder="Nome, prontuário ou endereço...">
+          </div>
+          <div class="fld"><label>Turno</label><select class="inp" id="fTurno"><option value="">Todos</option></select></div>
+          <div class="fld"><label>Linha</label>
+            <select class="inp" id="fLinha">
+              <option value="">Todas</option>
+              <option value="SQS">Seg / Qua / Sex</option>
+              <option value="TQS">Ter / Qui / Sáb</option>
+              <option value="TODOS">Diário</option>
+            </select>
+          </div>
+          <div class="fld"><label>Situação</label>
+            <select class="inp" id="fAtivo"><option value="1">Ativos</option><option value="0">Inativos</option><option value="">Todos</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="card-b flush">
+        <div class="tw"><table class="zebra" id="patTable"></table></div>
+        <div id="patEmpty"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= VIEW: HISTORICO ======================= -->
+  <section class="view" id="v-historico">
+    <div class="card">
+      <div class="card-h">
+        <h3>Histórico de turnos registrados</h3>
+        <div class="spacer"></div>
+        <button class="btn sm sec" onclick="exportCSV()">⬇ Exportar CSV</button>
+      </div>
+      <div class="card-b flush">
+        <div class="tw"><table class="zebra" id="histTable"></table></div>
+        <div id="histEmpty"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= VIEW: CONFIG ======================= -->
+  <section class="view" id="v-config">
+    <div class="card">
+      <div class="card-h"><h3>Identificação da clínica</h3><span class="sub">Aparece no cabeçalho de todas as impressões</span></div>
+      <div class="card-b">
+        <div class="grid g3">
+          <div class="fld span2"><label>Nome da clínica</label><input class="inp" id="cNome"></div>
+          <div class="fld"><label>CNES</label><input class="inp" id="cCnes" placeholder="0000000"></div>
+          <div class="fld span2"><label>Endereço completo</label><input class="inp" id="cEnd" placeholder="Av. ..., nº, Bairro"></div>
+          <div class="fld"><label>Cidade / UF</label><input class="inp" id="cCidade" value="Belém / PA"></div>
+          <div class="fld"><label>CEP</label><input class="inp" id="cCep"></div>
+          <div class="fld"><label>Telefone</label><input class="inp" id="cTel"></div>
+          <div class="fld"><label>CNPJ</label><input class="inp" id="cCnpj"></div>
+          <div class="fld span3"><label>Responsável técnico (opcional)</label><input class="inp" id="cRt" placeholder="Dr(a). Nome — CRM/PA 00000"></div>
+        </div>
+        <div class="sep"></div>
+        <div class="grid g2">
+          <div>
+            <label style="font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Logotipo</label>
+            <div class="logo-drop" onclick="document.getElementById('logoFile').click()" id="logoDrop" style="margin-top:5px">
+              <div id="logoPrev"></div>
+              <div style="font-size:12.5px;font-weight:600">Clique para enviar o logotipo</div>
+              <div class="hint">PNG ou JPG, fundo branco ou transparente. Ideal ~400×400 px.</div>
+            </div>
+            <input type="file" id="logoFile" accept="image/*" style="display:none">
+            <div style="margin-top:7px"><button class="btn sm dgr" onclick="removeLogo()">Remover logotipo</button></div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Texto de rodapé da impressão</label>
+            <textarea class="inp" id="cFoot" style="margin-top:5px;min-height:74px"></textarea>
+            <div class="hint" style="margin-top:5px">Ex.: aviso de conferência dupla, validade do documento, etc.</div>
+          </div>
+        </div>
+        <div class="rowline" style="margin-top:15px"><button class="btn" onclick="saveClinic()">Salvar identificação</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Turnos</h3><span class="sub">Dias úteis: 3 turnos · Sábado e domingo: 2 turnos</span></div>
+      <div class="card-b flush"><div class="tw"><table id="turnoTable"></table></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Médicos</h3><div class="spacer"></div><button class="btn sm" onclick="openDoc()">＋ Novo médico</button></div>
+      <div class="card-b flush"><div class="tw"><table class="zebra" id="docTable"></table></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Medicações de uso contínuo</h3><span class="sub">Aparecem como colunas fixas na escala</span><div class="spacer"></div><button class="btn sm" onclick="openMed('cont')">＋ Nova medicação</button></div>
+      <div class="card-b flush"><div class="tw"><table class="zebra" id="medContTable"></table></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Medicações de resgate / sintomáticas</h3><span class="sub">Selecionadas sob demanda em cada paciente</span><div class="spacer"></div><button class="btn sm" onclick="openMed('resg')">＋ Nova medicação</button></div>
+      <div class="card-b flush"><div class="tw"><table class="zebra" id="medResgTable"></table></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Dados e privacidade</h3></div>
+      <div class="card-b">
+        <div class="note">
+          <b>Onde ficam os dados.</b> Tudo é gravado apenas neste navegador, neste computador. Nenhuma informação sai daqui — não há servidor, nuvem ou envio pela internet.
+          Isso favorece a adequação à LGPD, mas significa que <b>o backup é responsabilidade da clínica</b>: use o botão <b>Backup</b> ao final de cada dia e guarde o arquivo em local seguro e restrito.
+          Limpar os dados de navegação do navegador apaga tudo.
+        </div>
+        <div class="rowline" style="margin-top:14px">
+          <button class="btn acc" onclick="doExport()">⬇ Exportar backup (.json)</button>
+          <button class="btn sec" onclick="document.getElementById('impFile').click()">⬆ Restaurar backup</button>
+          <button class="btn sec" onclick="exportCSV()">⬇ Exportar histórico (.csv)</button>
+          <div class="spacer"></div>
+          <button class="btn dgr" onclick="wipeAll()">🗑 Apagar todos os dados</button>
+        </div>
+        <div class="hint" style="margin-top:10px" id="storeInfo"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ======================= MODAIS ======================= -->
+<div class="mask" id="mask"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- ======================= PRINT ROOT ======================= -->
+<div id="printRoot"></div>
+
+<script>
+/* ==================================================================
+   CONTROLE DE MEDICAÇÕES — HEMODIÁLISE
+   Aplicativo local, arquivo único. Dados em localStorage.
+   ================================================================== */
+"use strict";
+/* Logotipo padrao — Centro de Hemodialise de Belem (marca CHB) */
+var LOGO_PADRAO = "data:image/png;base64,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";
+
+/* ================================================================== */
+
+/* ================= UTIL ================= */
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+function uid(p) { return (p || 'x') + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+  });
+}
+function num(v, d) { var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? (d === undefined ? 0 : d) : n; }
+function fmtNum(n) {
+  if (n == null || n === '') return '';
+  var v = Math.round(num(n) * 1000) / 1000;
+  return String(v).replace('.', ',');
+}
+var DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+var DIAS_C = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+function todayISO() {
+  var d = new Date(); var m = d.getMonth() + 1, dd = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (dd < 10 ? '0' : '') + dd;
+}
+function isoToDate(iso) { var p = String(iso).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function fmtBR(iso) { if (!iso) return ''; var p = String(iso).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function dayOf(iso) { return isoToDate(iso).getDay(); }
+function isWeekend(iso) { var d = dayOf(iso); return d === 0 || d === 6; }
+function nowHM() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function nowStamp() {
+  var d = new Date();
+  return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() +
+    ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+}
+function toast(msg, kind) {
+  var t = $('#toast'); t.textContent = msg; t.className = 'toast on ' + (kind || '');
+  clearTimeout(t._t); t._t = setTimeout(function () { t.className = 'toast ' + (kind || ''); }, 2600);
+}
+
+/* ================= STORAGE ================= */
+var KEY = 'hd_controle_v1';
+var STORE_OK = true;
+try {
+  window.localStorage.setItem('__t', '1'); window.localStorage.removeItem('__t');
+} catch (e) { STORE_OK = false; }
+var MEM = null;
+
+function loadRaw() {
+  if (!STORE_OK) return MEM;
+  try { return JSON.parse(window.localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
+}
+function saveDB() {
+  DB.atualizadoEm = new Date().toISOString();
+  if (!STORE_OK) { MEM = DB; return; }
+  try { window.localStorage.setItem(KEY, JSON.stringify(DB)); }
+  catch (e) { toast('Não foi possível gravar (armazenamento cheio ou bloqueado). Faça um backup agora.', 'err'); }
+}
+
+/* ================= DEFAULTS ================= */
+function defaults() {
+  return {
+    v: 1,
+    criadoEm: new Date().toISOString(),
+    clinic: {
+      nome: 'Centro de Hemodiálise de Belém', cnes: '6436897',
+      endereco: 'Travessa 14 de Abril, 841', cidade: 'Belém / PA',
+      cep: '', tel: '', cnpj: '', rt: '',
+      logo: (typeof LOGO_PADRAO === 'string' ? LOGO_PADRAO : ''),
+      foot: 'Documento de controle interno de dispensação. Conferir 1ª via (clínica) e 2ª via (farmácia) ao final do turno.'
+    },
+    turnos: [
+      { id: 'T1', nome: '1º turno', ini: '06:00', fim: '10:00', fds: true },
+      { id: 'T2', nome: '2º turno', ini: '11:00', fim: '15:00', fds: true },
+      { id: 'T3', nome: '3º turno', ini: '16:00', fim: '20:00', fds: false }
+    ],
+    medicos: [],
+    medsCont: [
+      { id: 'mc1', nome: 'Paricalcitol', desc: 'Ativador seletivo do receptor de vitamina D', un: 'mcg', dose: 5, via: 'EV' },
+      { id: 'mc2', nome: 'Alfaepoetina', desc: 'Eritropoetina humana recombinante', un: 'UI', dose: 4000, via: 'EV' },
+      { id: 'mc3', nome: 'Noripurum EV', desc: 'Sacarato de hidróxido férrico III', un: 'mg', dose: 100, via: 'EV' },
+      { id: 'mc4', nome: 'Taurolock', desc: 'Selo de cateter — por lúmen', un: 'mL', dose: 2, via: 'Lock CVC' }
+    ],
+    medsResg: [
+      { id: 'mr1', nome: 'Glicose 50%', desc: 'Hipoglicemia', un: 'mL', dose: 40, via: 'EV' },
+      { id: 'mr2', nome: 'Dipirona', desc: 'Analgésico / antitérmico', un: 'mg', dose: 1000, via: 'EV' },
+      { id: 'mr3', nome: 'Hioscina (Buscopan)', desc: 'Antiespasmódico', un: 'mg', dose: 20, via: 'EV' },
+      { id: 'mr4', nome: 'Hidrocortisona', desc: 'Corticoide — reação / broncoespasmo', un: 'mg', dose: 100, via: 'EV' },
+      { id: 'mr5', nome: 'Ondansetrona', desc: 'Antiemético', un: 'mg', dose: 8, via: 'EV' },
+      { id: 'mr6', nome: 'Metoclopramida', desc: 'Antiemético / procinético', un: 'mg', dose: 10, via: 'EV' },
+      { id: 'mr7', nome: 'Prometazina', desc: 'Anti-histamínico', un: 'mg', dose: 25, via: 'IM' },
+      { id: 'mr8', nome: 'Cloreto de sódio 0,9%', desc: 'Expansão / hipotensão intradialítica', un: 'mL', dose: 250, via: 'EV' },
+      { id: 'mr9', nome: 'Gluconato de cálcio 10%', desc: 'Hipocalcemia sintomática / cãibras', un: 'mL', dose: 10, via: 'EV' },
+      { id: 'mr10', nome: 'Captopril', desc: 'Crise hipertensiva intradialítica', un: 'mg', dose: 25, via: 'VO/SL' }
+    ],
+    pacientes: [],
+    sessoes: {}
+  };
+}
+
+var DB = loadRaw();
+if (!DB) { DB = defaults(); MEM = DB; saveDB(); }
+['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg', 'pacientes', 'sessoes'].forEach(function (k) {
+  if (DB[k] == null) DB[k] = defaults()[k];
+});
+
+/* ================= HELPERS DE DOMÍNIO ================= */
+function turnosDoDia(iso) {
+  var fds = isWeekend(iso);
+  return DB.turnos.filter(function (t) { return fds ? t.fds : true; });
+}
+function turnoById(id) { for (var i = 0; i < DB.turnos.length; i++) if (DB.turnos[i].id === id) return DB.turnos[i]; return null; }
+function turnoLabel(t) { return t ? (t.nome + ' · ' + t.ini + '–' + t.fim) : '—'; }
+function pacById(id) { for (var i = 0; i < DB.pacientes.length; i++) if (DB.pacientes[i].id === id) return DB.pacientes[i]; return null; }
+function docById(id) { for (var i = 0; i < DB.medicos.length; i++) if (DB.medicos[i].id === id) return DB.medicos[i]; return null; }
+function medById(id) {
+  var i;
+  for (i = 0; i < DB.medsCont.length; i++) if (DB.medsCont[i].id === id) return DB.medsCont[i];
+  for (i = 0; i < DB.medsResg.length; i++) if (DB.medsResg[i].id === id) return DB.medsResg[i];
+  return null;
+}
+var LINHA_LBL = { SQS: 'Seg / Qua / Sex', TQS: 'Ter / Qui / Sáb', TODOS: 'Diário' };
+var LINHA_CLS = { SQS: 'b-sqs', TQS: 'b-tqs', TODOS: 'b-all' };
+function linhaAtendeDia(linha, dow) {
+  if (linha === 'TODOS') return dow >= 1 && dow <= 6;
+  if (linha === 'SQS') return dow === 1 || dow === 3 || dow === 5;
+  if (linha === 'TQS') return dow === 2 || dow === 4 || dow === 6;
+  return false;
+}
+function sessKey(iso, turnoId) { return iso + '|' + turnoId; }
+
+/* Médicos vinculados a um turno (cadastro em Configurações → Médicos) */
+function medicosDoTurno(turnoId) {
+  return DB.medicos.filter(function (m) { return (m.turnos || []).indexOf(turnoId) >= 0; });
+}
+function medicoPadrao(turnoId) {
+  var l = medicosDoTurno(turnoId);
+  return l.length ? l[0].id : '';
+}
+
+/* Cria (se necessário) e devolve a sessão daquele dia+turno */
+function getSess(iso, turnoId, create) {
+  var k = sessKey(iso, turnoId);
+  var s = DB.sessoes[k];
+  if (!s && create) {
+    s = { data: iso, turno: turnoId, medicoId: medicoPadrao(turnoId), itens: [], criadoEm: new Date().toISOString() };
+    var dow = dayOf(iso);
+    DB.pacientes.forEach(function (p) {
+      if (p.ativo === false) return;
+      if (p.turno !== turnoId) return;
+      if (!linhaAtendeDia(p.linha, dow)) return;
+      s.itens.push(novoItem(p));
+    });
+    ordenaItens(s);
+    DB.sessoes[k] = s;
+    saveDB();
+  }
+  return s;
+}
+function novoItem(p) {
+  var it = { pid: p.id, presente: true, meds: {}, resg: [], obs: '' };
+  DB.medsCont.forEach(function (m) {
+    var pm = (p.meds || {})[m.id];
+    it.meds[m.id] = { f: false, d: pm && pm.dose != null ? pm.dose : m.dose, rot: !!(pm && pm.on) };
+  });
+  return it;
+}
+function ordenaItens(s) {
+  s.itens.sort(function (a, b) {
+    var pa = pacById(a.pid), pb = pacById(b.pid);
+    return String(pa ? pa.nome : '').localeCompare(String(pb ? pb.nome : ''), 'pt-BR');
+  });
+}
+
+/* ================================================================== */
+
+/* ================= NAVEGAÇÃO ================= */
+var VIEW = 'escala';
+function go(v) {
+  VIEW = v;
+  $$('.view').forEach(function (s) { s.classList.toggle('on', s.id === 'v-' + v); });
+  $$('.nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
+  if (v === 'pacientes') renderPacientes();
+  if (v === 'config') renderConfig();
+  if (v === 'historico') renderHistorico();
+  window.scrollTo(0, 0);
+}
+
+/* ================= ESTADO DA TELA ================= */
+var CUR = { iso: todayISO(), turno: null };
+
+function setToday() { $('#dtSel').value = todayISO(); onDateChange(); }
+function onDateChange() {
+  CUR.iso = $('#dtSel').value || todayISO();
+  var ts = turnosDoDia(CUR.iso);
+  if (!ts.length) { CUR.turno = null; } else {
+    var ok = ts.some(function (t) { return t.id === CUR.turno; });
+    if (!ok) CUR.turno = ts[0].id;
+  }
+  renderEscala();
+}
+
+function renderEscala() {
+  var iso = CUR.iso, dow = dayOf(iso), fds = isWeekend(iso);
+  $('#dayLbl').textContent = DIAS[dow] + (fds ? ' · fim de semana (2 turnos)' : ' · dia útil (3 turnos)');
+
+  /* abas de turno */
+  var ts = turnosDoDia(iso);
+  $('#shiftTabs').innerHTML = ts.map(function (t) {
+    var s = DB.sessoes[sessKey(iso, t.id)];
+    var n = s ? s.itens.filter(function (i) { return i.presente; }).length : contaPrevisto(iso, t.id);
+    return '<button class="shift-tab ' + (t.id === CUR.turno ? 'on' : '') + '" onclick="selTurno(\'' + t.id + '\')">' +
+      '<span class="t">' + esc(t.nome) + '</span>' +
+      '<span class="h">' + esc(t.ini) + '–' + esc(t.fim) + ' · ' + n + ' paciente' + (n === 1 ? '' : 's') + '</span></button>';
+  }).join('');
+
+  if (!CUR.turno) { $('#shiftTable').innerHTML = ''; $('#shiftEmpty').innerHTML = '<div class="empty"><h4>Sem turnos configurados</h4></div>'; return; }
+
+  var t = turnoById(CUR.turno);
+  var sess = getSess(iso, CUR.turno, true);
+
+  $('#turnoTitle').textContent = t.nome + ' — ' + fmtBR(iso);
+  $('#turnoSub').textContent = t.ini + ' às ' + t.fim + ' · ' + DIAS[dow];
+
+  /* médico — vinculado ao turno, com possibilidade de substituição pontual */
+  if (!sess.medicoId) { var pad = medicoPadrao(CUR.turno); if (pad) { sess.medicoId = pad; saveDB(); } }
+  function opt(m) { return '<option value="' + m.id + '"' + (m.id === sess.medicoId ? ' selected' : '') + '>' + esc(m.nome) + '</option>'; }
+  var doTurno = medicosDoTurno(CUR.turno);
+  var outros = DB.medicos.filter(function (m) { return (m.turnos || []).indexOf(CUR.turno) < 0; });
+  $('#docSel').innerHTML = '<option value="">— selecione —</option>' +
+    (doTurno.length ? '<optgroup label="Vinculado(s) a este turno">' + doTurno.map(opt).join('') + '</optgroup>' : '') +
+    (outros.length ? '<optgroup label="Outros médicos (substituição)">' + outros.map(opt).join('') + '</optgroup>' : '');
+  var d = docById(sess.medicoId);
+  $('#docCrm').value = d ? (d.crm ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : '') : '';
+
+  renderShiftTable(sess);
+  renderStats(sess);
+}
+function contaPrevisto(iso, turnoId) {
+  var dow = dayOf(iso), n = 0;
+  DB.pacientes.forEach(function (p) {
+    if (p.ativo === false || p.turno !== turnoId) return;
+    if (linhaAtendeDia(p.linha, dow)) n++;
+  });
+  return n;
+}
+function selTurno(id) { CUR.turno = id; renderEscala(); }
+
+function renderStats(sess) {
+  var pres = sess.itens.filter(function (i) { return i.presente; }).length;
+  var falt = sess.itens.length - pres;
+  var mc = 0, mr = 0;
+  sess.itens.forEach(function (i) {
+    if (!i.presente) return;
+    Object.keys(i.meds).forEach(function (k) { if (i.meds[k].f) mc++; });
+    mr += (i.resg || []).length;
+  });
+  $('#stats').innerHTML =
+    stat(sess.itens.length, 'Na escala') + stat(pres, 'Presentes') + stat(falt, 'Faltas') +
+    stat(mc, 'Med. contínuas') + stat(mr, 'Resgates');
+}
+function stat(v, l) { return '<div class="stat"><b>' + v + '</b><span>' + l + '</span></div>'; }
+
+function renderShiftTable(sess) {
+  var tb = $('#shiftTable');
+  if (!sess.itens.length) {
+    tb.innerHTML = '';
+    $('#shiftEmpty').innerHTML = '<div class="empty"><h4>Nenhum paciente neste turno</h4>' +
+      '<p>Cadastre pacientes com este turno e a linha do dia, ou inclua alguém pontualmente.</p>' +
+      '<button class="btn" onclick="openAddToShift()">＋ Incluir paciente</button></div>';
+    return;
+  }
+  $('#shiftEmpty').innerHTML = '';
+
+  var head = '<thead><tr><th style="width:34px">#</th><th style="min-width:220px">Paciente</th><th class="ctr" style="width:88px">Sessão</th>' +
+    DB.medsCont.map(function (m) {
+      return '<th class="ctr" title="' + esc(m.desc || '') + '">' + esc(m.nome) + '<br><span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted)">' + esc(m.un) + '</span></th>';
+    }).join('') +
+    '<th style="min-width:170px">Resgate / sintomáticos</th><th style="min-width:150px">Observações</th><th style="width:44px"></th></tr></thead>';
+
+  var rows = sess.itens.map(function (it, ix) {
+    var p = pacById(it.pid);
+    if (!p) return '';
+    var meds = DB.medsCont.map(function (m) {
+      var st = it.meds[m.id] || (it.meds[m.id] = { f: false, d: m.dose, rot: false });
+      return '<td class="med-cell"><div class="med-wrap">' +
+        '<input type="checkbox" ' + (st.f ? 'checked' : '') + ' onchange="tglMed(' + ix + ',\'' + m.id + '\',this.checked)" title="' + (st.rot ? 'Medicação de rotina deste paciente' : 'Marcar como realizada') + '">' +
+        '<input class="dose-in" value="' + esc(fmtNum(st.d)) + '" ' + (st.f ? '' : 'disabled') + ' onchange="setDose(' + ix + ',\'' + m.id + '\',this.value)">' +
+        '<span class="dose-un">' + esc(m.un) + '</span></div></td>';
+    }).join('');
+
+    var chips = (it.resg || []).map(function (r, ri) {
+      var m = medById(r.mid);
+      return '<span class="chip" title="' + esc((m ? m.via : '') + ' · ' + (r.h || '')) + '">' + esc(m ? m.nome : '?') + ' ' + esc(fmtNum(r.d)) + (m ? ' ' + esc(m.un) : '') +
+        ' <a href="#" onclick="delResg(' + ix + ',' + ri + ');return false" style="text-decoration:none;color:inherit;opacity:.6">✕</a></span>';
+    }).join('');
+
+    var alerta = p.acesso === 'CDL' ? ' <span class="badge b-cdl" title="Cateter — atenção ao selo de cateter">CDL</span>' : '';
+
+    return '<tr class="' + (it.presente ? '' : 'absent') + '">' +
+      '<td class="mono" style="color:var(--muted)">' + (ix + 1) + '</td>' +
+      '<td><div class="pname">' + esc(p.nome) + alerta + '</div>' +
+      '<div class="pmeta">' + (p.prontuario ? 'Pront. ' + esc(p.prontuario) + ' · ' : '') +
+      '<span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(LINHA_LBL[p.linha] || '—') + '</span></div></td>' +
+      '<td class="tac"><label class="sw" style="justify-content:center"><input type="checkbox" ' + (it.presente ? 'checked' : '') +
+      ' onchange="tglPres(' + ix + ',this.checked)"><span style="font-size:11.5px">' + (it.presente ? 'Sim' : 'Falta') + '</span></label></td>' +
+      meds +
+      '<td><div class="chips">' + chips + '<button class="icon-btn" onclick="openResg(' + ix + ')" title="Adicionar medicação de resgate">＋</button></div></td>' +
+      '<td><input class="obs-in" value="' + esc(it.obs || '') + '" placeholder="Intercorrências..." onchange="setObs(' + ix + ',this.value)"></td>' +
+      '<td><button class="icon-btn dgr" onclick="rmFromShift(' + ix + ')" title="Remover deste turno">✕</button></td></tr>';
+  }).join('');
+
+  tb.innerHTML = head + '<tbody>' + rows + '</tbody>';
+}
+
+/* ============ AÇÕES NA ESCALA ============ */
+function curSess() { return getSess(CUR.iso, CUR.turno, true); }
+function tglMed(ix, mid, v) {
+  var s = curSess(); var it = s.itens[ix]; if (!it) return;
+  if (!it.meds[mid]) it.meds[mid] = { f: false, d: (medById(mid) || {}).dose, rot: false };
+  it.meds[mid].f = v;
+  if (v && (it.meds[mid].d == null || it.meds[mid].d === '')) it.meds[mid].d = (medById(mid) || {}).dose;
+  saveDB(); renderShiftTable(s); renderStats(s);
+}
+function setDose(ix, mid, v) {
+  var s = curSess(); var it = s.itens[ix]; if (!it || !it.meds[mid]) return;
+  it.meds[mid].d = num(v, 0); saveDB();
+}
+function tglPres(ix, v) {
+  var s = curSess(); var it = s.itens[ix]; if (!it) return;
+  it.presente = v;
+  if (!v) { Object.keys(it.meds).forEach(function (k) { it.meds[k].f = false; }); it.resg = []; }
+  saveDB(); renderShiftTable(s); renderStats(s); renderEscala();
+}
+function setObs(ix, v) { var s = curSess(); if (s.itens[ix]) { s.itens[ix].obs = v; saveDB(); } }
+function delResg(ix, ri) {
+  var s = curSess(); s.itens[ix].resg.splice(ri, 1); saveDB(); renderShiftTable(s); renderStats(s);
+}
+function rmFromShift(ix) {
+  var s = curSess(); var p = pacById(s.itens[ix].pid);
+  if (!confirm('Remover ' + (p ? p.nome : 'este paciente') + ' deste turno?\n\nO cadastro do paciente não é apagado.')) return;
+  s.itens.splice(ix, 1); saveDB(); renderEscala(); toast('Paciente removido do turno.');
+}
+function markAllRoutine() {
+  var s = curSess(), n = 0;
+  s.itens.forEach(function (it) {
+    if (!it.presente) return;
+    Object.keys(it.meds).forEach(function (k) {
+      if (it.meds[k].rot && !it.meds[k].f) { it.meds[k].f = true; n++; }
+    });
+  });
+  saveDB(); renderEscala();
+  toast(n ? n + ' medicação(ões) de rotina marcada(s).' : 'Nenhuma medicação de rotina pendente. Defina a rotina no cadastro do paciente.', n ? 'ok' : '');
+}
+function resyncShift() {
+  var s = curSess(), iso = CUR.iso, dow = dayOf(iso), add = 0;
+  var have = {}; s.itens.forEach(function (i) { have[i.pid] = 1; });
+  DB.pacientes.forEach(function (p) {
+    if (p.ativo === false || p.turno !== CUR.turno || have[p.id]) return;
+    if (!linhaAtendeDia(p.linha, dow)) return;
+    s.itens.push(novoItem(p)); add++;
+  });
+  ordenaItens(s); saveDB(); renderEscala();
+  toast(add ? add + ' paciente(s) incluído(s) a partir do cadastro.' : 'Escala já está sincronizada com o cadastro.', add ? 'ok' : '');
+}
+function openAddToShift() {
+  var s = curSess();
+  var have = {}; s.itens.forEach(function (i) { have[i.pid] = 1; });
+  var livres = DB.pacientes.filter(function (p) { return p.ativo !== false && !have[p.id]; })
+    .sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+  if (!livres.length) { toast('Todos os pacientes ativos já estão neste turno.'); return; }
+  openModal('Incluir paciente no turno', '<div class="fld"><label>Paciente</label><select class="inp" id="addSel" size="12" style="min-height:260px">' +
+    livres.map(function (p) {
+      return '<option value="' + p.id + '">' + esc(p.nome) + ' — ' + esc(LINHA_LBL[p.linha] || '') + ' · ' + esc((turnoById(p.turno) || {}).nome || '') + '</option>';
+    }).join('') + '</select></div><div class="hint" style="margin-top:8px">A inclusão vale apenas para este dia e turno; o cadastro do paciente não é alterado.</div>',
+    [{ t: 'Incluir', c: 'btn', f: 'addToShift()' }], 'slim');
+}
+function addToShift() {
+  var id = $('#addSel').value; var p = pacById(id); if (!p) return;
+  var s = curSess(); s.itens.push(novoItem(p)); ordenaItens(s); saveDB(); closeModal(); renderEscala();
+  toast(p.nome + ' incluído no turno.', 'ok');
+}
+
+/* ============ MODAL DE RESGATE ============ */
+var RESG_IX = -1;
+function openResg(ix) {
+  RESG_IX = ix;
+  var s = curSess(), it = s.itens[ix], p = pacById(it.pid);
+  var body = '<div class="hint" style="margin-bottom:12px">Paciente: <b style="color:var(--ink)">' + esc(p ? p.nome : '') + '</b></div>' +
+    DB.medsResg.map(function (m) {
+      return '<div class="medrow">' +
+        '<input type="checkbox" id="rg_' + m.id + '" onchange="document.getElementById(\'rgd_' + m.id + '\').disabled=!this.checked">' +
+        '<div class="nm">' + esc(m.nome) + '<small>' + esc(m.desc || '') + ' · ' + esc(m.via || '') + '</small></div>' +
+        '<input class="dose-in" id="rgd_' + m.id + '" value="' + esc(fmtNum(m.dose)) + '" disabled style="width:78px">' +
+        '<span class="dose-un" style="width:34px">' + esc(m.un) + '</span></div>';
+    }).join('') +
+    '<div class="fld" style="margin-top:14px"><label>Horário</label><input class="inp" id="rgHora" value="' + nowHM() + '" style="width:120px"></div>';
+  openModal('Medicações de resgate', body, [{ t: 'Registrar', c: 'btn', f: 'saveResg()' }]);
+}
+function saveResg() {
+  var s = curSess(), it = s.itens[RESG_IX], h = $('#rgHora').value || nowHM(), n = 0;
+  DB.medsResg.forEach(function (m) {
+    var c = $('#rg_' + m.id);
+    if (c && c.checked) { it.resg.push({ mid: m.id, d: num($('#rgd_' + m.id).value, m.dose), h: h }); n++; }
+  });
+  if (!n) { toast('Selecione ao menos uma medicação.', 'err'); return; }
+  saveDB(); closeModal(); renderEscala(); toast(n + ' medicação(ões) de resgate registrada(s).', 'ok');
+}
+
+/* ================================================================== */
+
+/* ================= MODAL GENÉRICO ================= */
+function openModal(title, body, btns, cls) {
+  var m = $('#modal');
+  m.className = 'modal ' + (cls || '');
+  m.innerHTML = '<div class="modal-h"><h3>' + esc(title) + '</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>' +
+    '<div class="modal-b">' + body + '</div>' +
+    '<div class="modal-f"><button class="btn sec" onclick="closeModal()">Cancelar</button>' +
+    (btns || []).map(function (b) { return '<button class="' + (b.c || 'btn') + '" onclick="' + b.f + '">' + esc(b.t) + '</button>'; }).join('') + '</div>';
+  $('#mask').classList.add('on');
+}
+function closeModal() { $('#mask').classList.remove('on'); }
+
+/* ================= PACIENTES ================= */
+function pacFiltrados() {
+  var q = ($('#patSearch').value || '').toLowerCase().trim();
+  var ft = $('#fTurno').value, fl = $('#fLinha').value, fa = $('#fAtivo').value;
+  return DB.pacientes.filter(function (p) {
+    if (fa === '1' && p.ativo === false) return false;
+    if (fa === '0' && p.ativo !== false) return false;
+    if (ft && p.turno !== ft) return false;
+    if (fl && p.linha !== fl) return false;
+    if (q) {
+      var hay = (p.nome + ' ' + (p.prontuario || '') + ' ' + (p.endereco || '') + ' ' + (p.bairro || '')).toLowerCase();
+      if (hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  }).sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+}
+function renderPacientes() {
+  $('#fTurno').innerHTML = '<option value="">Todos</option>' + DB.turnos.map(function (t) {
+    return '<option value="' + t.id + '">' + esc(t.nome) + ' (' + t.ini + '–' + t.fim + ')</option>';
+  }).join('');
+  var list = pacFiltrados();
+  var ativos = DB.pacientes.filter(function (p) { return p.ativo !== false; }).length;
+  $('#patCount').textContent = ativos + ' ativo(s) de ' + DB.pacientes.length + ' cadastrado(s)';
+
+  if (!DB.pacientes.length) {
+    $('#patTable').innerHTML = '';
+    $('#patEmpty').innerHTML = '<div class="empty"><h4>Nenhum paciente cadastrado</h4>' +
+      '<p>Comece cadastrando os pacientes com turno, linha de dias e as medicações de rotina.</p>' +
+      '<button class="btn" onclick="openPat()">＋ Cadastrar primeiro paciente</button> ' +
+      '<button class="btn sec" onclick="seedDemo()">Carregar exemplos</button></div>';
+    return;
+  }
+  if (!list.length) {
+    $('#patTable').innerHTML = '';
+    $('#patEmpty').innerHTML = '<div class="empty"><h4>Nenhum resultado</h4><p>Ajuste a busca ou os filtros.</p></div>';
+    return;
+  }
+  $('#patEmpty').innerHTML = '';
+  $('#patTable').innerHTML = '<thead><tr><th style="min-width:230px">Paciente</th><th>Endereço</th><th>Turno</th><th>Linha</th><th>Acesso</th><th>Rotina</th><th class="ctr">Situação</th><th style="width:86px"></th></tr></thead><tbody>' +
+    list.map(function (p) {
+      var rot = Object.keys(p.meds || {}).filter(function (k) { return p.meds[k].on; })
+        .map(function (k) { var m = medById(k); return m ? '<span class="chip x">' + esc(m.nome) + ' ' + esc(fmtNum(p.meds[k].dose)) + ' ' + esc(m.un) + '</span>' : ''; }).join('');
+      return '<tr><td><div class="pname">' + esc(p.nome) + '</div><div class="pmeta">' +
+        (p.prontuario ? 'Pront. ' + esc(p.prontuario) : '') + (p.nasc ? ' · ' + fmtBR(p.nasc) : '') + '</div></td>' +
+        '<td style="font-size:12.5px;max-width:300px">' + esc(p.endereco || '—') + (p.bairro ? '<div class="pmeta">' + esc(p.bairro) + '</div>' : '') + '</td>' +
+        '<td class="nowrap">' + esc((turnoById(p.turno) || {}).nome || '—') + '</td>' +
+        '<td><span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(LINHA_LBL[p.linha] || '—') + '</span></td>' +
+        '<td><span class="badge ' + (p.acesso === 'CDL' ? 'b-cdl' : 'b-fav') + '">' + esc(p.acesso || '—') + '</span></td>' +
+        '<td><div class="chips">' + (rot || '<span class="pmeta">—</span>') + '</div></td>' +
+        '<td class="tac">' + (p.ativo === false ? '<span class="badge b-off">Inativo</span>' : '<span class="badge b-all">Ativo</span>') + '</td>' +
+        '<td class="nowrap"><button class="icon-btn" onclick="openPat(\'' + p.id + '\')" title="Editar">✎</button>' +
+        '<button class="icon-btn dgr" onclick="delPat(\'' + p.id + '\')" title="Excluir">🗑</button></td></tr>';
+    }).join('') + '</tbody>';
+}
+function openPat(id) {
+  var p = id ? pacById(id) : { id: '', nome: '', endereco: '', bairro: '', prontuario: '', cns: '', nasc: '', turno: (DB.turnos[0] || {}).id, linha: 'SQS', acesso: 'FAV', ativo: true, obs: '', meds: {} };
+  var body =
+    '<div class="grid g3">' +
+    '<div class="fld span2"><label>Nome completo *</label><input class="inp" id="pNome" value="' + esc(p.nome) + '"></div>' +
+    '<div class="fld"><label>Prontuário</label><input class="inp" id="pPront" value="' + esc(p.prontuario || '') + '"></div>' +
+    '<div class="fld span2"><label>Endereço (rua, nº, complemento) *</label><input class="inp" id="pEnd" value="' + esc(p.endereco || '') + '"></div>' +
+    '<div class="fld"><label>Bairro / Cidade</label><input class="inp" id="pBairro" value="' + esc(p.bairro || '') + '"></div>' +
+    '<div class="fld"><label>Data de nascimento</label><input type="date" class="inp" id="pNasc" value="' + esc(p.nasc || '') + '"></div>' +
+    '<div class="fld"><label>Cartão SUS (CNS)</label><input class="inp" id="pCns" value="' + esc(p.cns || '') + '"></div>' +
+    '<div class="fld"><label>Acesso vascular</label><select class="inp" id="pAcesso">' +
+    ['FAV', 'CDL', 'PTFE', 'Outro'].map(function (a) { return '<option' + (p.acesso === a ? ' selected' : '') + '>' + a + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fld"><label>Turno *</label><select class="inp" id="pTurno">' +
+    DB.turnos.map(function (t) { return '<option value="' + t.id + '"' + (p.turno === t.id ? ' selected' : '') + '>' + esc(t.nome) + ' (' + t.ini + '–' + t.fim + ')</option>'; }).join('') + '</select></div>' +
+    '<div class="fld"><label>Linha de dias *</label><select class="inp" id="pLinha">' +
+    ['SQS', 'TQS', 'TODOS'].map(function (l) { return '<option value="' + l + '"' + (p.linha === l ? ' selected' : '') + '>' + LINHA_LBL[l] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fld"><label>Situação</label><select class="inp" id="pAtivo"><option value="1"' + (p.ativo !== false ? ' selected' : '') + '>Ativo</option><option value="0"' + (p.ativo === false ? ' selected' : '') + '>Inativo</option></select></div>' +
+    '</div>' +
+    '<fieldset class="fieldset"><legend>Medicações de rotina e doses padrão</legend>' +
+    '<div class="hint" style="margin-bottom:10px">Marque as medicações de uso contínuo deste paciente e a dose habitual. Elas já vêm pré-preenchidas na escala e são aplicadas pelo botão “Marcar rotina”.</div>' +
+    DB.medsCont.map(function (m) {
+      var pm = (p.meds || {})[m.id] || {};
+      return '<div class="medrow"><input type="checkbox" id="pm_' + m.id + '"' + (pm.on ? ' checked' : '') + '>' +
+        '<div class="nm">' + esc(m.nome) + '<small>' + esc(m.desc || '') + ' · ' + esc(m.via || '') + '</small></div>' +
+        '<input class="dose-in" id="pmd_' + m.id + '" value="' + esc(fmtNum(pm.dose != null ? pm.dose : m.dose)) + '" style="width:82px">' +
+        '<span class="dose-un" style="width:34px">' + esc(m.un) + '</span></div>';
+    }).join('') + '</fieldset>' +
+    '<div class="fld" style="margin-top:14px"><label>Observações clínicas</label><textarea class="inp" id="pObs">' + esc(p.obs || '') + '</textarea></div>';
+  openModal(id ? 'Editar paciente' : 'Novo paciente', body, [{ t: 'Salvar', c: 'btn', f: "savePat('" + (id || '') + "')" }], 'wide');
+}
+function savePat(id) {
+  var nome = $('#pNome').value.trim();
+  if (!nome) { toast('Informe o nome completo do paciente.', 'err'); return; }
+  var end = $('#pEnd').value.trim();
+  if (!end) { toast('Informe o endereço — ele é obrigatório na impressão da farmácia.', 'err'); return; }
+  var p = id ? pacById(id) : null;
+  if (!p) { p = { id: uid('p') }; DB.pacientes.push(p); }
+  p.nome = nome; p.endereco = end;
+  p.prontuario = $('#pPront').value.trim(); p.bairro = $('#pBairro').value.trim();
+  p.nasc = $('#pNasc').value; p.cns = $('#pCns').value.trim();
+  p.acesso = $('#pAcesso').value; p.turno = $('#pTurno').value; p.linha = $('#pLinha').value;
+  p.ativo = $('#pAtivo').value === '1'; p.obs = $('#pObs').value.trim();
+  p.meds = {};
+  DB.medsCont.forEach(function (m) {
+    p.meds[m.id] = { on: $('#pm_' + m.id).checked, dose: num($('#pmd_' + m.id).value, m.dose) };
+  });
+  saveDB(); closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
+}
+function delPat(id) {
+  var p = pacById(id); if (!p) return;
+  if (!confirm('Excluir ' + p.nome + ' do cadastro?\n\nOs turnos já registrados no histórico são mantidos.\nSe o paciente apenas saiu do programa, prefira marcá-lo como Inativo.')) return;
+  DB.pacientes = DB.pacientes.filter(function (x) { return x.id !== id; });
+  saveDB(); renderPacientes(); toast('Paciente excluído.');
+}
+
+/* ================= CONFIG ================= */
+function renderConfig() {
+  var c = DB.clinic;
+  $('#cNome').value = c.nome || ''; $('#cCnes').value = c.cnes || ''; $('#cEnd').value = c.endereco || '';
+  $('#cCidade').value = c.cidade || ''; $('#cCep').value = c.cep || ''; $('#cTel').value = c.tel || '';
+  $('#cCnpj').value = c.cnpj || ''; $('#cRt').value = c.rt || ''; $('#cFoot').value = c.foot || '';
+  $('#logoPrev').innerHTML = c.logo ? '<img src="' + c.logo + '" class="logo-prev">' : '';
+
+  $('#turnoTable').innerHTML = '<thead><tr><th>Turno</th><th>Início</th><th>Fim</th><th class="ctr">Fim de semana</th><th>Médico(s) vinculado(s)</th></tr></thead><tbody>' +
+    DB.turnos.map(function (t, i) {
+      var md = medicosDoTurno(t.id).map(function (m) {
+        return '<span class="chip x">' + esc(m.nome) + ' · CRM ' + esc((m.uf ? m.uf + ' ' : '') + m.crm) + '</span>';
+      }).join('');
+      return '<tr><td><input class="inp" value="' + esc(t.nome) + '" onchange="setTurno(' + i + ',\'nome\',this.value)" style="min-width:150px"></td>' +
+        '<td><input type="time" class="inp" value="' + esc(t.ini) + '" onchange="setTurno(' + i + ',\'ini\',this.value)"></td>' +
+        '<td><input type="time" class="inp" value="' + esc(t.fim) + '" onchange="setTurno(' + i + ',\'fim\',this.value)"></td>' +
+        '<td class="tac"><input type="checkbox" ' + (t.fds ? 'checked' : '') + ' onchange="setTurno(' + i + ',\'fds\',this.checked)" style="width:17px;height:17px;accent-color:var(--brand)"></td>' +
+        '<td><div class="chips">' + (md || '<span class="pmeta">defina em “Médicos”, abaixo</span>') + '</div></td></tr>';
+    }).join('') + '</tbody>';
+
+  $('#docTable').innerHTML = DB.medicos.length
+    ? '<thead><tr><th>Nome</th><th>CRM</th><th>UF</th><th>Turnos vinculados</th><th style="width:86px"></th></tr></thead><tbody>' +
+    DB.medicos.map(function (m) {
+      var tg = (m.turnos || []).map(function (t) {
+        var x = turnoById(t); return x ? '<span class="chip x">' + esc(x.nome) + ' · ' + x.ini + '–' + x.fim + '</span>' : '';
+      }).join('');
+      return '<tr><td class="pname">' + esc(m.nome) + '</td><td class="mono">' + esc(m.crm || '—') + '</td><td>' + esc(m.uf || '—') + '</td>' +
+        '<td><div class="chips">' + (tg || '<span class="pmeta">nenhum</span>') + '</div></td>' +
+        '<td class="nowrap"><button class="icon-btn" onclick="openDoc(\'' + m.id + '\')">✎</button>' +
+        '<button class="icon-btn dgr" onclick="delDoc(\'' + m.id + '\')">🗑</button></td></tr>';
+    }).join('') + '</tbody>'
+    : '<tbody><tr><td class="empty">Nenhum médico cadastrado. O nome e o CRM saem impressos na ficha da farmácia.</td></tr></tbody>';
+
+  renderMedTable('cont'); renderMedTable('resg');
+  $('#storeInfo').innerHTML = 'Registros: <b>' + DB.pacientes.length + '</b> pacientes · <b>' + Object.keys(DB.sessoes).length + '</b> turnos gravados · ' +
+    'armazenamento: <b>' + (STORE_OK ? 'navegador (localStorage)' : 'memória temporária') + '</b>' +
+    (DB.atualizadoEm ? ' · última gravação: <b>' + new Date(DB.atualizadoEm).toLocaleString('pt-BR') + '</b>' : '');
+}
+function setTurno(i, k, v) { DB.turnos[i][k] = v; saveDB(); renderEscala(); }
+function saveClinic() {
+  var c = DB.clinic;
+  c.nome = $('#cNome').value.trim() || 'Clínica de Hemodiálise';
+  c.cnes = $('#cCnes').value.trim(); c.endereco = $('#cEnd').value.trim();
+  c.cidade = $('#cCidade').value.trim(); c.cep = $('#cCep').value.trim();
+  c.tel = $('#cTel').value.trim(); c.cnpj = $('#cCnpj').value.trim();
+  c.rt = $('#cRt').value.trim(); c.foot = $('#cFoot').value.trim();
+  saveDB(); paintBrand(); toast('Identificação da clínica salva.', 'ok');
+}
+function paintBrand() {
+  var c = DB.clinic;
+  $('#tbName').textContent = c.nome || 'Clínica de Hemodiálise';
+  var sub = [c.cnes ? 'CNES ' + c.cnes : '', c.cidade || ''].filter(Boolean).join(' · ');
+  $('#tbSub').textContent = sub || 'Configure os dados da clínica';
+  $('#tbLogo').innerHTML = c.logo ? '<img src="' + c.logo + '">' : '<span>HD</span>';
+}
+function removeLogo() { DB.clinic.logo = ''; saveDB(); renderConfig(); paintBrand(); toast('Logotipo removido.'); }
+
+/* médicos */
+function openDoc(id) {
+  var m = id ? docById(id) : { nome: '', crm: '', uf: 'PA', turnos: [] };
+  openModal(id ? 'Editar médico' : 'Novo médico',
+    '<div class="grid g3"><div class="fld span2"><label>Nome completo *</label><input class="inp" id="dNome" value="' + esc(m.nome) + '"></div>' +
+    '<div class="fld"><label>CRM *</label><input class="inp" id="dCrm" value="' + esc(m.crm || '') + '"></div>' +
+    '<div class="fld"><label>UF do CRM</label><input class="inp" id="dUf" value="' + esc(m.uf || 'PA') + '" maxlength="2" style="width:80px"></div></div>' +
+    '<fieldset class="fieldset"><legend>Turnos sob responsabilidade</legend>' +
+    '<div class="hint" style="margin-bottom:10px">O médico marcado aqui é preenchido automaticamente na escala do turno e sai impresso com o CRM nas duas vias. No dia, ainda é possível trocar por outro médico em caso de substituição.</div>' +
+    DB.turnos.map(function (t) {
+      return '<div class="medrow"><input type="checkbox" id="dt_' + t.id + '"' + ((m.turnos || []).indexOf(t.id) >= 0 ? ' checked' : '') + '>' +
+        '<div class="nm">' + esc(t.nome) + '<small>' + t.ini + ' às ' + t.fim + (t.fds ? ' · também aos fins de semana' : ' · somente dias úteis') + '</small></div></div>';
+    }).join('') + '</fieldset>',
+    [{ t: 'Salvar', c: 'btn', f: "saveDoc('" + (id || '') + "')" }], 'slim');
+}
+function saveDoc(id) {
+  var n = $('#dNome').value.trim(), c = $('#dCrm').value.trim();
+  if (!n || !c) { toast('Nome e CRM são obrigatórios.', 'err'); return; }
+  var m = id ? docById(id) : null;
+  if (!m) { m = { id: uid('d') }; DB.medicos.push(m); }
+  m.nome = n; m.crm = c; m.uf = $('#dUf').value.trim().toUpperCase();
+  m.turnos = DB.turnos.filter(function (t) { return $('#dt_' + t.id).checked; }).map(function (t) { return t.id; });
+  DB.medicos.sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+  saveDB(); closeModal(); renderConfig(); renderEscala(); toast('Médico salvo.', 'ok');
+}
+function delDoc(id) {
+  if (!confirm('Excluir este médico do cadastro?')) return;
+  DB.medicos = DB.medicos.filter(function (x) { return x.id !== id; });
+  saveDB(); renderConfig(); renderEscala();
+}
+
+/* medicações */
+function renderMedTable(kind) {
+  var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
+  var el = kind === 'cont' ? $('#medContTable') : $('#medResgTable');
+  el.innerHTML = arr.length
+    ? '<thead><tr><th>Medicação</th><th>Descrição</th><th>Dose padrão</th><th>Unidade</th><th>Via</th><th style="width:86px"></th></tr></thead><tbody>' +
+    arr.map(function (m) {
+      return '<tr><td class="pname">' + esc(m.nome) + '</td><td style="font-size:12.5px;color:var(--muted)">' + esc(m.desc || '—') + '</td>' +
+        '<td class="mono">' + esc(fmtNum(m.dose)) + '</td><td>' + esc(m.un) + '</td><td>' + esc(m.via || '—') + '</td>' +
+        '<td class="nowrap"><button class="icon-btn" onclick="openMed(\'' + kind + '\',\'' + m.id + '\')">✎</button>' +
+        '<button class="icon-btn dgr" onclick="delMed(\'' + kind + '\',\'' + m.id + '\')">🗑</button></td></tr>';
+    }).join('') + '</tbody>'
+    : '<tbody><tr><td class="empty">Nenhuma medicação cadastrada.</td></tr></tbody>';
+}
+function openMed(kind, id) {
+  var m = id ? medById(id) : { nome: '', desc: '', un: 'mg', dose: 1, via: 'EV' };
+  openModal(id ? 'Editar medicação' : 'Nova medicação',
+    '<div class="grid g2"><div class="fld"><label>Nome *</label><input class="inp" id="mNome" value="' + esc(m.nome) + '"></div>' +
+    '<div class="fld"><label>Descrição / indicação</label><input class="inp" id="mDesc" value="' + esc(m.desc || '') + '"></div>' +
+    '<div class="fld"><label>Dose padrão</label><input class="inp" id="mDose" value="' + esc(fmtNum(m.dose)) + '"></div>' +
+    '<div class="fld"><label>Unidade *</label><input class="inp" id="mUn" value="' + esc(m.un) + '" placeholder="mg, mL, mcg, UI"></div>' +
+    '<div class="fld"><label>Via</label><input class="inp" id="mVia" value="' + esc(m.via || '') + '" placeholder="EV, SC, VO, IM, Lock CVC"></div></div>' +
+    (kind === 'cont' ? '<div class="note" style="margin-top:14px">Medicações contínuas viram <b>colunas fixas</b> na tela da escala. Muitas colunas deixam a grade larga — mantenha apenas as de uso rotineiro.</div>' : ''),
+    [{ t: 'Salvar', c: 'btn', f: "saveMed('" + kind + "','" + (id || '') + "')" }], 'slim');
+}
+function saveMed(kind, id) {
+  var n = $('#mNome').value.trim(), u = $('#mUn').value.trim();
+  if (!n || !u) { toast('Nome e unidade são obrigatórios.', 'err'); return; }
+  var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
+  var m = id ? medById(id) : null;
+  if (!m) { m = { id: uid('m') }; arr.push(m); }
+  m.nome = n; m.un = u; m.desc = $('#mDesc').value.trim(); m.dose = num($('#mDose').value, 1); m.via = $('#mVia').value.trim();
+  saveDB(); closeModal(); renderConfig(); renderEscala(); toast('Medicação salva.', 'ok');
+}
+function delMed(kind, id) {
+  var m = medById(id);
+  if (!confirm('Excluir "' + (m ? m.nome : '') + '"?\n\nOs registros já gravados no histórico são preservados.')) return;
+  if (kind === 'cont') DB.medsCont = DB.medsCont.filter(function (x) { return x.id !== id; });
+  else DB.medsResg = DB.medsResg.filter(function (x) { return x.id !== id; });
+  saveDB(); renderConfig(); renderEscala();
+}
+
+/* ================= HISTÓRICO ================= */
+function renderHistorico() {
+  var keys = Object.keys(DB.sessoes).sort().reverse();
+  if (!keys.length) {
+    $('#histTable').innerHTML = '';
+    $('#histEmpty').innerHTML = '<div class="empty"><h4>Nenhum turno registrado ainda</h4><p>Os turnos aparecem aqui automaticamente conforme forem abertos na escala.</p></div>';
+    return;
+  }
+  $('#histEmpty').innerHTML = '';
+  $('#histTable').innerHTML = '<thead><tr><th>Data</th><th>Dia</th><th>Turno</th><th>Médico</th><th class="ctr">Presentes</th><th class="ctr">Faltas</th><th class="ctr">Med. contínuas</th><th class="ctr">Resgates</th><th style="width:130px"></th></tr></thead><tbody>' +
+    keys.map(function (k) {
+      var s = DB.sessoes[k], t = turnoById(s.turno) || {}, d = docById(s.medicoId);
+      var pres = s.itens.filter(function (i) { return i.presente; }).length;
+      var mc = 0, mr = 0;
+      s.itens.forEach(function (i) {
+        if (!i.presente) return;
+        Object.keys(i.meds).forEach(function (x) { if (i.meds[x].f) mc++; });
+        mr += (i.resg || []).length;
+      });
+      return '<tr><td class="mono nowrap">' + fmtBR(s.data) + '</td><td>' + DIAS_C[dayOf(s.data)] + '</td>' +
+        '<td class="nowrap">' + esc(t.nome || s.turno) + '</td><td>' + esc(d ? d.nome : '—') + '</td>' +
+        '<td class="tac mono">' + pres + '</td><td class="tac mono">' + (s.itens.length - pres) + '</td>' +
+        '<td class="tac mono">' + mc + '</td><td class="tac mono">' + mr + '</td>' +
+        '<td class="nowrap"><button class="btn sm sec" onclick="abrirHist(\'' + s.data + '\',\'' + s.turno + '\')">Abrir</button> ' +
+        '<button class="icon-btn dgr" onclick="delSess(\'' + k + '\')" title="Apagar registro">🗑</button></td></tr>';
+    }).join('') + '</tbody>';
+}
+function abrirHist(iso, turno) { $('#dtSel').value = iso; CUR.iso = iso; CUR.turno = turno; go('escala'); renderEscala(); }
+function delSess(k) {
+  if (!confirm('Apagar definitivamente o registro deste turno?')) return;
+  delete DB.sessoes[k]; saveDB(); renderHistorico(); renderEscala(); toast('Registro apagado.');
+}
+
+/* ================================================================== */
+
+/* ================= IMPRESSÃO ================= */
+var PRINT_SCOPE = null;
+
+function printTurno() { openPrintOpts('turno'); }
+function printDia() { openPrintOpts('dia'); }
+
+function openPrintOpts(scope) {
+  PRINT_SCOPE = scope;
+  var sess = getSess(CUR.iso, CUR.turno, true);
+  var alerta = '';
+  if (scope === 'turno' && !sess.medicoId) alerta = '<div class="note warn" style="margin-bottom:13px">Nenhum <b>médico do turno</b> selecionado. A ficha sairá com o campo em branco.</div>';
+  if (!DB.clinic.cnes) alerta += '<div class="note warn" style="margin-bottom:13px">O <b>CNES</b> ainda não foi preenchido em Configurações. Ele é exigido na ficha da farmácia.</div>';
+  if (!DB.clinic.endereco) alerta += '<div class="note warn" style="margin-bottom:13px">O <b>endereço da clínica</b> ainda não foi preenchido em Configurações.</div>';
+
+  openModal(scope === 'dia' ? 'Imprimir o dia inteiro' : 'Imprimir turno', alerta +
+    '<div class="medrow"><input type="checkbox" id="opFicha" checked><div class="nm">Ficha individual por paciente — 2 vias<small>Uma folha A4 por paciente: 1ª via clínica, 2ª via farmácia</small></div></div>' +
+    '<div class="medrow"><input type="checkbox" id="opCons" checked><div class="nm">Resumo consolidado do turno<small>Totais por medicação + relação nominal, para conferência na farmácia</small></div></div>' +
+    '<div class="medrow"><input type="checkbox" id="opOnlyMed" checked><div class="nm">Somente pacientes com medicação registrada<small>Desmarque para imprimir ficha de todos os presentes</small></div></div>' +
+    '<div class="medrow"><input type="checkbox" id="opRot"><div class="nm">Listar também as medicações de rotina não realizadas<small>Aparecem na ficha marcadas como “não realizada”</small></div></div>',
+    [{ t: '👁 Pré-visualizar', c: 'btn sec', f: 'runPrint(false)' }, { t: '🖨 Imprimir', c: 'btn acc', f: 'runPrint(true)' }]);
+}
+
+function runPrint(direct) {
+  var op = {
+    ficha: $('#opFicha').checked, cons: $('#opCons').checked,
+    onlyMed: $('#opOnlyMed').checked, rot: $('#opRot').checked
+  };
+  if (!op.ficha && !op.cons) { toast('Selecione ao menos um documento para imprimir.', 'err'); return; }
+  var turnos = PRINT_SCOPE === 'dia' ? turnosDoDia(CUR.iso).map(function (t) { return t.id; }) : [CUR.turno];
+  var html = '', total = 0;
+  turnos.forEach(function (tid) {
+    var sess = DB.sessoes[sessKey(CUR.iso, tid)];
+    if (!sess) return;
+    var r = buildTurnoDocs(sess, op);
+    html += r.html; total += r.n;
+  });
+  if (!html) { toast('Nada a imprimir neste período.', 'err'); return; }
+  $('#printRoot').innerHTML = html;
+  fitVias();
+  closeModal();
+  $('#pvTitle').textContent = 'Pré-visualização — ' + fmtBR(CUR.iso) + ' · ' + total + ' documento(s)';
+  if (direct) { window.print(); }
+  else { document.body.classList.add('previewing'); window.scrollTo(0, 0); }
+}
+function closePreview() { document.body.classList.remove('previewing'); }
+
+/* Garante que as 2 vias caibam na mesma folha A4, comprimindo em niveis
+   sucessivos qualquer ficha cujo conteudo ultrapasse a metade da pagina. */
+function fitVias() {
+  var root = $('#printRoot');
+  var oculto = !document.body.classList.contains('previewing');
+  if (oculto) root.style.cssText = 'display:block;position:fixed;left:-9999px;top:0;width:190mm;';
+  var niveis = ['dense', 'd2', 'd3'];
+  $$('.via', root).forEach(function (v) {
+    for (var i = 0; i < niveis.length && transborda(v); i++) v.classList.add(niveis[i]);
+  });
+  if (oculto) root.style.cssText = '';
+}
+function transborda(v) {
+  var last = v.lastElementChild; if (!last) return false;
+  return last.getBoundingClientRect().bottom > v.getBoundingClientRect().bottom - 1;
+}
+
+function itemTemMed(it) {
+  if (!it.presente) return false;
+  var has = false;
+  Object.keys(it.meds).forEach(function (k) { if (it.meds[k].f) has = true; });
+  if ((it.resg || []).length) has = true;
+  return has;
+}
+
+function buildTurnoDocs(sess, op) {
+  var out = '', n = 0;
+  var alvo = sess.itens.filter(function (it) {
+    if (!it.presente) return false;
+    return op.onlyMed ? itemTemMed(it) : true;
+  });
+  if (op.ficha) {
+    alvo.forEach(function (it) {
+      out += '<div class="sheet">' +
+        viaHTML(sess, it, '1ª VIA', 'CLÍNICA', op) +
+        '<div class="cutline"></div>' +
+        viaHTML(sess, it, '2ª VIA', 'FARMÁCIA', op) +
+        '</div>';
+      n++;
+    });
+  }
+  if (op.cons) { out += consHTML(sess, alvo); n++; }
+  return { html: out, n: n };
+}
+
+function cabecalho(viaN, viaQ) {
+  var c = DB.clinic;
+  var end = [c.endereco, c.cidade, c.cep ? 'CEP ' + c.cep : ''].filter(Boolean).join(' — ');
+  var ids = [c.cnes ? 'CNES: ' + c.cnes : 'CNES: ____________', c.cnpj ? 'CNPJ: ' + c.cnpj : '', c.tel ? 'Tel.: ' + c.tel : ''].filter(Boolean).join('   |   ');
+  return '<div class="vh">' +
+    (c.logo ? '<img class="vh-logo" src="' + c.logo + '">' : '<div class="vh-logo-ph">LOGO</div>') +
+    '<div class="vh-txt"><div class="cn">' + esc(c.nome || 'Clínica de Hemodiálise') + '</div>' +
+    '<div class="ca">' + esc(end || 'Endereço não preenchido') + '</div>' +
+    '<div class="cc">' + esc(ids) + '</div></div>' +
+    (viaN ? '<div class="vh-via">' + esc(viaN) + '<small>' + esc(viaQ) + '</small></div>' : '') +
+    '</div>';
+}
+
+function viaHTML(sess, it, viaN, viaQ, op) {
+  var p = pacById(it.pid) || { nome: '(paciente removido)', endereco: '' };
+  var t = turnoById(sess.turno) || {};
+  var d = docById(sess.medicoId);
+  var c = DB.clinic;
+
+  /* linhas de medicação */
+  var rows = '', anyC = false, nLinhas = 0;
+  DB.medsCont.forEach(function (m) {
+    var st = it.meds[m.id]; if (!st) return;
+    if (!st.f && !(op.rot && st.rot)) return;
+    anyC = true; nLinhas++;
+    rows += '<tr><td class="c mk">' + (st.f ? '☑' : '☐') + '</td><td>' + esc(m.nome) +
+      (m.desc ? '<div class="sub">' + esc(m.desc) + '</div>' : '') + '</td>' +
+      '<td class="r">' + (st.f ? esc(fmtNum(st.d)) + ' ' + esc(m.un) : '—') + '</td>' +
+      '<td class="c">' + esc(m.via || '') + '</td><td class="c">' + (st.f ? '' : 'não realizada') + '</td></tr>';
+  });
+  var rowsR = '';
+  (it.resg || []).forEach(function (r) {
+    var m = medById(r.mid) || { nome: '?', un: '', via: '' };
+    nLinhas++;
+    rowsR += '<tr><td class="c mk">☑</td><td>' + esc(m.nome) +
+      (m.desc ? '<div class="sub">' + esc(m.desc) + '</div>' : '') + '</td>' +
+      '<td class="r">' + esc(fmtNum(r.d)) + ' ' + esc(m.un) + '</td>' +
+      '<td class="c">' + esc(m.via || '') + '</td><td class="c">' + esc(r.h || '') + '</td></tr>';
+  });
+
+  var tabela = (anyC || rowsR)
+    ? '<table class="vtab"><thead><tr><th style="width:7mm"></th><th>Medicação</th><th style="width:24mm">Dose</th><th style="width:17mm">Via</th><th style="width:20mm">Hora / obs.</th></tr></thead><tbody>' +
+    (anyC ? '<tr><td class="grp" colspan="5">Uso contínuo</td></tr>' + rows : '') +
+    (rowsR ? '<tr><td class="grp" colspan="5">Resgate / sintomáticos</td></tr>' + rowsR : '') +
+    '</tbody></table>'
+    : '<div class="vnone">Nenhuma medicação registrada nesta sessão.</div>';
+
+  var pend = [p.endereco, p.bairro].filter(Boolean).join(' — ');
+
+  return '<div class="via">' + cabecalho(viaN, viaQ) +
+    '<div class="vtitle">Controle de medicações — sessão de hemodiálise</div>' +
+    '<div class="vinfo">' +
+    '<div class="c"><div class="k">Data</div><div class="v">' + fmtBR(sess.data) + '</div></div>' +
+    '<div class="c"><div class="k">Dia</div><div class="v">' + DIAS_C[dayOf(sess.data)] + '</div></div>' +
+    '<div class="c"><div class="k">Turno</div><div class="v">' + esc(t.nome || '') + '</div></div>' +
+    '<div class="c"><div class="k">Horário</div><div class="v">' + esc((t.ini || '') + ' – ' + (t.fim || '')) + '</div></div>' +
+    '<div class="c w100"><div class="k">Paciente (nome completo)</div><div class="v">' + esc(p.nome) + '</div></div>' +
+    '<div class="c w100"><div class="k">Endereço do paciente</div><div class="v sm">' + esc(pend || '—') + '</div></div>' +
+    '<div class="c w100" style="display:flex;padding:0">' +
+    '<div class="c"><div class="k">Prontuário</div><div class="v sm">' + esc(p.prontuario || '—') + '</div></div>' +
+    '<div class="c"><div class="k">Nascimento</div><div class="v sm">' + (p.nasc ? fmtBR(p.nasc) : '—') + '</div></div>' +
+    '<div class="c"><div class="k">CNS</div><div class="v sm">' + esc(p.cns || '—') + '</div></div>' +
+    '<div class="c"><div class="k">Acesso</div><div class="v sm">' + esc(p.acesso || '—') + '</div></div>' +
+    '</div></div>' +
+    tabela +
+    '<div class="vobs"><div class="k">Observações / intercorrências</div><div class="t">' + esc(it.obs || '') + '</div></div>' +
+    '<div class="vsig">' +
+    '<div class="s"><div class="n">' + esc(d ? d.nome : '________________________') + '</div>' +
+    '<div class="r">Médico(a) do turno — ' + esc(d ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : 'CRM ______________') + '</div></div>' +
+    '<div class="s"><div class="n">&nbsp;</div><div class="r">Enfermeiro(a) / Téc. responsável — COREN</div></div>' +
+    '<div class="s"><div class="n">&nbsp;</div><div class="r">Farmácia — conferência e baixa</div></div>' +
+    '</div>' +
+    '<div class="vfoot">' + esc(c.foot || '') + (c.rt ? ' · RT: ' + esc(c.rt) : '') + ' · Emitido em ' + nowStamp() + '</div>' +
+    '</div>';
+}
+
+function consHTML(sess, alvo) {
+  var t = turnoById(sess.turno) || {}, d = docById(sess.medicoId), c = DB.clinic;
+  var totC = {}, totR = {}, cntC = {}, cntR = {};
+  alvo.forEach(function (it) {
+    DB.medsCont.forEach(function (m) {
+      var st = it.meds[m.id];
+      if (st && st.f) { totC[m.id] = (totC[m.id] || 0) + num(st.d); cntC[m.id] = (cntC[m.id] || 0) + 1; }
+    });
+    (it.resg || []).forEach(function (r) {
+      totR[r.mid] = (totR[r.mid] || 0) + num(r.d); cntR[r.mid] = (cntR[r.mid] || 0) + 1;
+    });
+  });
+
+  function bloco(titulo, arr, tot, cnt) {
+    var ks = arr.filter(function (m) { return cnt[m.id]; });
+    if (!ks.length) return '<div class="csub">' + titulo + '</div><div class="vnone">Nenhuma administração registrada.</div>';
+    return '<div class="csub">' + titulo + '</div><table class="ctab"><thead><tr><th>Medicação</th><th style="width:20mm">Via</th>' +
+      '<th style="width:26mm" class="c">Aplicações</th><th style="width:34mm" class="c">Quantidade total</th></tr></thead><tbody>' +
+      ks.map(function (m) {
+        return '<tr><td><b>' + esc(m.nome) + '</b>' + (m.desc ? '<div style="font-size:7pt;color:#555">' + esc(m.desc) + '</div>' : '') + '</td>' +
+          '<td class="c">' + esc(m.via || '—') + '</td><td class="c">' + cnt[m.id] + '</td>' +
+          '<td class="r">' + fmtNum(tot[m.id]) + ' ' + esc(m.un) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  var nominal = '<div class="csub">Relação nominal de pacientes</div><table class="ctab"><thead><tr><th style="width:8mm">#</th>' +
+    '<th>Paciente</th><th style="width:48mm">Endereço</th><th>Medicações administradas</th></tr></thead><tbody>' +
+    (alvo.length ? alvo.map(function (it, i) {
+      var p = pacById(it.pid) || { nome: '—', endereco: '' };
+      var ms = [];
+      DB.medsCont.forEach(function (m) { var st = it.meds[m.id]; if (st && st.f) ms.push(m.nome + ' ' + fmtNum(st.d) + ' ' + m.un); });
+      (it.resg || []).forEach(function (r) { var m = medById(r.mid); if (m) ms.push(m.nome + ' ' + fmtNum(r.d) + ' ' + m.un + (r.h ? ' (' + r.h + ')' : '')); });
+      return '<tr><td class="c">' + (i + 1) + '</td><td><b>' + esc(p.nome) + '</b>' + (p.prontuario ? '<div style="font-size:7pt;color:#555">Pront. ' + esc(p.prontuario) + '</div>' : '') + '</td>' +
+        '<td style="font-size:7.4pt">' + esc([p.endereco, p.bairro].filter(Boolean).join(' — ') || '—') + '</td>' +
+        '<td style="font-size:7.6pt">' + esc(ms.join(' · ') || '—') + '</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="c">Nenhum paciente com medicação registrada.</td></tr>') +
+    '</tbody></table>';
+
+  var faltas = sess.itens.filter(function (i) { return !i.presente; });
+
+  return '<div class="sheet cons">' + cabecalho('RESUMO', 'FARMÁCIA') +
+    '<div class="vtitle">Resumo consolidado do turno — controle da farmácia</div>' +
+    '<div class="vinfo">' +
+    '<div class="c"><div class="k">Data</div><div class="v">' + fmtBR(sess.data) + ' (' + DIAS_C[dayOf(sess.data)] + ')</div></div>' +
+    '<div class="c"><div class="k">Turno</div><div class="v">' + esc(t.nome || '') + ' · ' + esc((t.ini || '') + '–' + (t.fim || '')) + '</div></div>' +
+    '<div class="c"><div class="k">Pacientes atendidos</div><div class="v">' + alvo.length + '</div></div>' +
+    '<div class="c"><div class="k">Faltas</div><div class="v">' + faltas.length + '</div></div>' +
+    '<div class="c w100"><div class="k">Médico(a) do turno</div><div class="v">' +
+    esc(d ? d.nome + ' — CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : '________________________________  CRM ______________') + '</div></div>' +
+    '</div>' +
+    bloco('Medicações de uso contínuo', DB.medsCont, totC, cntC) +
+    bloco('Medicações de resgate / sintomáticas', DB.medsResg, totR, cntR) +
+    nominal +
+    (faltas.length ? '<div class="csub">Faltas do turno</div><div style="font-size:8.4pt">' +
+      esc(faltas.map(function (i) { var p = pacById(i.pid); return p ? p.nome : '—'; }).join(' · ')) + '</div>' : '') +
+    '<div class="vsig" style="margin-top:8mm">' +
+    '<div class="s"><div class="n">&nbsp;</div><div class="r">Enfermeiro(a) responsável — COREN</div></div>' +
+    '<div class="s"><div class="n">&nbsp;</div><div class="r">Farmacêutico(a) — CRF</div></div>' +
+    '<div class="s"><div class="n">' + esc(d ? d.nome : '&nbsp;') + '</div><div class="r">Médico(a) do turno — ' + esc(d ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : 'CRM') + '</div></div>' +
+    '</div>' +
+    '<div class="vfoot">' + esc(c.foot || '') + ' · Emitido em ' + nowStamp() + '</div>' +
+    '</div>';
+}
+
+/* ================= BACKUP / EXPORT ================= */
+function download(nome, conteudo, tipo) {
+  var b = new Blob(['﻿' + conteudo], { type: tipo || 'application/json;charset=utf-8' });
+  var u = URL.createObjectURL(b), a = document.createElement('a');
+  a.href = u; a.download = nome; document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 400);
+}
+function doExport() {
+  var d = new Date(), st = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '-' + ('0' + d.getHours()).slice(-2) + ('0' + d.getMinutes()).slice(-2);
+  download('backup-hemodialise-' + st + '.json', JSON.stringify(DB, null, 1));
+  toast('Backup gerado. Guarde o arquivo em local seguro.', 'ok');
+}
+function doImport(file) {
+  var r = new FileReader();
+  r.onload = function () {
+    try {
+      var o = JSON.parse(r.result);
+      if (!o || !o.turnos || !o.pacientes) throw new Error('formato');
+      if (!confirm('Restaurar este backup?\n\nTODOS os dados atuais deste navegador serão substituídos:\n' +
+        (o.pacientes.length) + ' pacientes · ' + Object.keys(o.sessoes || {}).length + ' turnos gravados.')) return;
+      DB = o;
+      ['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg', 'pacientes', 'sessoes'].forEach(function (k) { if (DB[k] == null) DB[k] = defaults()[k]; });
+      saveDB(); paintBrand(); onDateChange(); renderConfig(); renderPacientes(); renderHistorico();
+      toast('Backup restaurado com sucesso.', 'ok');
+    } catch (e) { toast('Arquivo inválido — selecione um backup gerado por este sistema.', 'err'); }
+  };
+  r.readAsText(file);
+}
+function exportCSV() {
+  var L = [['Data', 'Dia', 'Turno', 'Medico', 'CRM', 'Paciente', 'Prontuario', 'Endereco', 'Presente', 'Tipo', 'Medicacao', 'Dose', 'Unidade', 'Via', 'Hora', 'Observacoes']];
+  Object.keys(DB.sessoes).sort().forEach(function (k) {
+    var s = DB.sessoes[k], t = turnoById(s.turno) || {}, d = docById(s.medicoId) || {};
+    s.itens.forEach(function (it) {
+      var p = pacById(it.pid) || {};
+      var base = [s.data, DIAS_C[dayOf(s.data)], t.nome || s.turno, d.nome || '', d.crm || '', p.nome || '', p.prontuario || '',
+      [p.endereco, p.bairro].filter(Boolean).join(' - '), it.presente ? 'Sim' : 'Nao'];
+      var any = false;
+      DB.medsCont.forEach(function (m) {
+        var st = it.meds[m.id];
+        if (st && st.f) { any = true; L.push(base.concat(['Continua', m.nome, fmtNum(st.d), m.un, m.via || '', '', it.obs || ''])); }
+      });
+      (it.resg || []).forEach(function (r) {
+        var m = medById(r.mid) || {}; any = true;
+        L.push(base.concat(['Resgate', m.nome || '', fmtNum(r.d), m.un || '', m.via || '', r.h || '', it.obs || '']));
+      });
+      if (!any) L.push(base.concat(['', '', '', '', '', '', it.obs || '']));
+    });
+  });
+  var csv = L.map(function (r) {
+    return r.map(function (c) { return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(';');
+  }).join('\r\n');
+  download('historico-hemodialise-' + todayISO() + '.csv', csv, 'text/csv;charset=utf-8');
+  toast('Histórico exportado em CSV.', 'ok');
+}
+function wipeAll() {
+  if (!confirm('APAGAR TODOS OS DADOS?\n\nPacientes, turnos gravados e configurações serão perdidos definitivamente neste navegador.')) return;
+  if (!confirm('Confirme novamente.\n\nSe ainda não gerou um backup, cancele agora e clique em "Backup" antes.')) return;
+  DB = defaults();
+  try { if (STORE_OK) window.localStorage.removeItem(KEY); } catch (e) { }
+  saveDB(); paintBrand(); onDateChange(); renderConfig(); renderPacientes(); renderHistorico();
+  toast('Todos os dados foram apagados.');
+}
+
+/* ================================================================== */
+
+/* ================= EVENTOS ================= */
+$$('.nav button').forEach(function (b) { b.onclick = function () { go(b.dataset.v); }; });
+$('#dtSel').onchange = onDateChange;
+$('#docSel').onchange = function () {
+  var s = curSess(); s.medicoId = this.value; saveDB();
+  var d = docById(s.medicoId);
+  $('#docCrm').value = d ? (d.crm ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : '') : '';
+};
+['patSearch', 'fTurno', 'fLinha', 'fAtivo'].forEach(function (id) {
+  var e = $('#' + id); e.oninput = renderPacientes; e.onchange = renderPacientes;
+});
+$('#impFile').onchange = function () { if (this.files[0]) doImport(this.files[0]); this.value = ''; };
+$('#logoFile').onchange = function () {
+  var f = this.files[0]; if (!f) return;
+  if (f.size > 1600000) { toast('Imagem muito grande (máx. ~1,5 MB). Reduza o arquivo.', 'err'); this.value = ''; return; }
+  var r = new FileReader();
+  r.onload = function () { DB.clinic.logo = r.result; saveDB(); renderConfig(); paintBrand(); toast('Logotipo atualizado.', 'ok'); };
+  r.readAsDataURL(f); this.value = '';
+};
+$('#mask').onclick = function (e) { if (e.target === this) closeModal(); };
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { closeModal(); closePreview(); }
+  if (e.key === 'p' && (e.ctrlKey || e.metaKey) && !document.body.classList.contains('previewing')) {
+    e.preventDefault(); if (VIEW === 'escala') printTurno();
+  }
+});
+
+/* ================= DADOS DE EXEMPLO ================= */
+function seedDemo() {
+  if (DB.pacientes.length && !confirm('Já existem pacientes cadastrados. Adicionar mesmo assim os pacientes de exemplo?')) return;
+  if (!DB.medicos.length) {
+    DB.medicos.push({ id: uid('d'), nome: 'Dr. Exemplo Silva', crm: '12345', uf: 'PA', turnos: ['T1', 'T2'] });
+    DB.medicos.push({ id: uid('d'), nome: 'Dra. Exemplo Costa', crm: '23456', uf: 'PA', turnos: ['T3'] });
+  }
+  var base = [
+    ['Antônio Carlos Ferreira da Silva', 'Tv. Padre Eutíquio, 1200, ap. 302', 'Batista Campos, Belém/PA', 'T1', 'SQS', 'FAV'],
+    ['Maria de Nazaré Lima Souza', 'Av. Almirante Barroso, 3450, casa 2', 'Marambaia, Belém/PA', 'T1', 'SQS', 'CDL'],
+    ['José Raimundo Cardoso', 'Rod. Augusto Montenegro, km 8, cond. B, bl. 3', 'Parque Verde, Belém/PA', 'T1', 'TQS', 'FAV'],
+    ['Francisca das Chagas Moreira', 'Tv. Mauriti, 780', 'Pedreira, Belém/PA', 'T2', 'SQS', 'FAV'],
+    ['Raimundo Nonato Barbosa', 'Av. Pedro Álvares Cabral, 155', 'Telégrafo, Belém/PA', 'T2', 'TQS', 'CDL'],
+    ['Benedita Correa dos Santos', 'Tv. Djalma Dutra, 402', 'Telégrafo, Belém/PA', 'T2', 'SQS', 'FAV'],
+    ['Manoel Rodrigues Pinheiro', 'Av. Cipriano Santos, 91', 'Guamá, Belém/PA', 'T3', 'SQS', 'FAV'],
+    ['Rosa Maria Alves da Conceição', 'Tv. Barão do Triunfo, 3300', 'Marco, Belém/PA', 'T3', 'TQS', 'CDL']
+  ];
+  base.forEach(function (b, i) {
+    var meds = {};
+    DB.medsCont.forEach(function (m, k) { meds[m.id] = { on: (i + k) % 3 !== 0, dose: m.dose }; });
+    if (b[5] !== 'CDL') { var tl = DB.medsCont.filter(function (m) { return /taurolock/i.test(m.nome); })[0]; if (tl) meds[tl.id] = { on: false, dose: tl.dose }; }
+    DB.pacientes.push({
+      id: uid('p'), nome: b[0], endereco: b[1], bairro: b[2], prontuario: String(1000 + i),
+      cns: '', nasc: '', turno: b[3], linha: b[4], acesso: b[5], ativo: true, obs: '', meds: meds
+    });
+  });
+  saveDB(); renderPacientes(); onDateChange();
+  toast('Pacientes de exemplo criados. Você pode excluí-los depois.', 'ok');
+}
+
+/* ================= BOOT ================= */
+function boot() {
+  if (!STORE_OK) {
+    $('#storageWarn').innerHTML = '<div class="note dgr" style="margin-bottom:14px">' +
+      '<b>Atenção: os dados não estão sendo salvos.</b> Este navegador está bloqueando o armazenamento local ' +
+      '(navegação anônima, restrição de política, ou o arquivo está sendo aberto de dentro de um visualizador). ' +
+      'Para uso real: <b>baixe o arquivo</b> <i>Controle-Hemodialise.html</i> para o computador e abra-o direto no Chrome ou Edge. ' +
+      'Enquanto isso, tudo o que for digitado se perde ao fechar a aba.</div>';
+  }
+  paintBrand();
+  $('#dtSel').value = todayISO();
+  onDateChange();
+  if (!DB.pacientes.length && !DB.medicos.length) {
+    setTimeout(function () {
+      openModal('Bem-vindo ao Controle de Medicações',
+        '<div class="note" style="margin-bottom:14px">Logotipo, nome, endereço e CNES do <b>Centro de Hemodiálise de Belém</b> já vêm configurados. Falta apenas:</div>' +
+        '<ol style="margin:0;padding-left:20px;line-height:1.9;font-size:13.5px">' +
+        '<li><b>Configurações → Médicos:</b> cadastre cada médico com CRM e <b>marque os turnos sob sua responsabilidade</b>. O médico do turno passa a ser preenchido sozinho na escala.</li>' +
+        '<li><b>Configurações → Medicações:</b> já vêm Paricalcitol, Alfaepoetina, Noripurum e Taurolock, mais 10 sintomáticos. Ajuste doses padrão e acrescente o que faltar.</li>' +
+        '<li><b>Pacientes:</b> cadastre com endereço, turno e linha de dias (Seg/Qua/Sex ou Ter/Qui/Sáb).</li>' +
+        '<li><b>Escala do dia:</b> a lista é montada sozinha. Marque as medicações e imprima as 2 vias.</li>' +
+        '<li>Opcional em <b>Identificação da clínica</b>: telefone, CNPJ e responsável técnico.</li>' +
+        '</ol>' +
+        '<div class="note warn" style="margin-top:15px"><b>Antes de rodar de verdade:</b> gere um <b>Backup</b> ao final de cada dia. Os dados ficam apenas neste navegador.</div>',
+        [{ t: 'Carregar pacientes de exemplo', c: 'btn sec', f: 'closeModal();seedDemo();go("pacientes")' },
+        { t: 'Começar pelas configurações', c: 'btn', f: 'closeModal();go("config")' }]);
+    }, 320);
+  }
+}
+boot();
+</script>
+</body>
+</html>
