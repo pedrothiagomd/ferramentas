@@ -2,8 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Controle de Medicações — Hemodiálise</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Controle de Medicações — Centro de Hemodiálise de Belém</title>
+<meta name="description" content="Controle diário de medicações por turno e emissão de comprovante em duas vias para a farmácia.">
+<meta name="theme-color" content="#15181c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CHB Medicações">
+<meta name="robots" content="noindex, nofollow">
 <style>
 /* ============================ TOKENS ============================ */
 :root{
@@ -636,7 +642,9 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
       <div class="card-b">
         <div class="note">
           <b>Onde ficam os dados.</b> Tudo é gravado apenas neste navegador, neste computador. Nenhuma informação sai daqui — não há servidor, nuvem ou envio pela internet.
-          Isso favorece a adequação à LGPD, mas significa que <b>o backup é responsabilidade da clínica</b>: use o botão <b>Backup</b> ao final de cada dia e guarde o arquivo em local seguro e restrito.
+          Isso favorece a adequação à LGPD, mas traz duas consequências práticas:
+          <b>cada computador ou tablet mantém a sua própria base</b> (o que é lançado em um aparelho não aparece no outro — use Backup/Restaurar para transferir), e
+          <b>o backup é responsabilidade da clínica</b>: use o botão <b>Backup</b> ao final de cada dia e guarde o arquivo em local seguro e restrito.
           Limpar os dados de navegação do navegador apaga tudo.
         </div>
         <div class="rowline" style="margin-top:14px">
@@ -1716,8 +1724,20 @@ function seedDemo() {
   toast('Pacientes de exemplo criados. Você pode excluí-los depois.', 'ok');
 }
 
+/* ================= ÍCONES (atalho na tela inicial) ================= */
+function setupIcons() {
+  var src = (DB.clinic && DB.clinic.logo) || (typeof LOGO_PADRAO === 'string' ? LOGO_PADRAO : '');
+  if (!src) return;
+  ['icon', 'apple-touch-icon'].forEach(function (rel) {
+    var old = document.querySelector('link[rel="' + rel + '"]');
+    if (old) old.remove();
+    var l = document.createElement('link'); l.rel = rel; l.href = src; document.head.appendChild(l);
+  });
+}
+
 /* ================= BOOT ================= */
 function boot() {
+  setupIcons();
   if (!STORE_OK) {
     $('#storageWarn').innerHTML = '<div class="note dgr" style="margin-bottom:14px">' +
       '<b>Atenção: os dados não estão sendo salvos.</b> Este navegador está bloqueando o armazenamento local ' +
