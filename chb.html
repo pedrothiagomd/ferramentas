@@ -211,8 +211,29 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
   display:block;font-size:9.5px;font-weight:700;color:#8c4405;background:var(--brand-l);
   border:1px solid #eddcc3;border-radius:4px;padding:0 4px;margin-bottom:3px;letter-spacing:.02em;
 }
-/* verde = frequência de rotina (toda sessão); laranja = exceção, exige atenção */
-.freq-tag.rot{color:var(--ok);background:var(--ok-l);border-color:#c7e6d6}
+/* verde = rotina em dia · laranja = pendente · vermelho = última sessão do período */
+.freq-tag.rot,.freq-tag.feita{color:var(--ok);background:var(--ok-l);border-color:#c7e6d6}
+.freq-tag.ultima{color:#fff;background:var(--danger);border-color:var(--danger)}
+.nav-badge{
+  display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;
+  border-radius:99px;background:var(--brand-pure);color:#fff;font-size:10.5px;font-weight:800;margin-left:2px;
+}
+.nav-badge.crit{background:#e5484d}
+.nav-badge.off{display:none}
+.papel{
+  display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;
+  background:rgba(255,255,255,.14);color:rgba(255,255,255,.92);white-space:nowrap;letter-spacing:.02em;
+}
+.papel.leitura{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
+.papel.enfermagem{background:rgba(209,106,13,.35)}
+/* bloqueio visual conforme o papel — a proteção real está nas regras do Firestore */
+.sem-lancar .med-cell input,.sem-lancar .dose-in,.sem-lancar .obs-in,
+.sem-lancar .sw input,.sem-lancar .chips .icon-btn,.sem-lancar .li-r .badge{
+  pointer-events:none;opacity:.55;
+}
+.sem-lancar #btnIncluir,.sem-lancar #btnResync,.sem-lancar #btnRotina,
+.sem-admin .so-admin{display:none !important}
+@media(max-width:1100px){.papel{display:none}}
 
 .chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .chip{
@@ -570,11 +591,13 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
     <nav class="nav">
       <button data-v="escala" class="on">📋 Escala do dia</button>
       <button data-v="pacientes">👥 Pacientes</button>
+      <button data-v="pendencias">⏳ Pendências<span class="nav-badge off" id="pendBadge"></span></button>
       <button data-v="historico">🗂 Histórico</button>
       <button data-v="config">⚙️ Configurações</button>
     </nav>
     <div class="topbar-r">
       <span class="sync on" id="syncPill"><span class="sdot"></span>Sincronizado</span>
+      <span class="papel admin" id="papelPill"></span>
       <span class="user-chip" id="userMail"></span>
       <button class="ghost" onclick="doExport()">⬇ Backup</button>
       <input type="file" id="impFile" accept=".json" style="display:none">
@@ -634,9 +657,9 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
         <h3 id="turnoTitle">Turno</h3>
         <span class="sub" id="turnoSub"></span>
         <div class="spacer"></div>
-        <button class="btn sm sec" onclick="openAddToShift()">＋ Incluir paciente</button>
-        <button class="btn sm sec" onclick="resyncShift()" title="Recarrega a lista a partir do cadastro, preservando o que já foi marcado">🔄 Ressincronizar</button>
-        <button class="btn sm sec" onclick="markAllRoutine()" title="Marca as medicações de rotina de todos os pacientes presentes">✓ Marcar rotina</button>
+        <button class="btn sm sec" id="btnIncluir" onclick="openAddToShift()">＋ Incluir paciente</button>
+        <button class="btn sm sec" id="btnResync" onclick="resyncShift()" title="Recarrega a lista a partir do cadastro e desfaz as remoções manuais do turno">🔄 Ressincronizar</button>
+        <button class="btn sm sec" id="btnRotina" onclick="markAllRoutine()" title="Marca as medicações de toda sessão dos pacientes presentes">✓ Marcar rotina</button>
       </div>
       <div class="card-b flush">
         <div class="tw"><table class="zebra" id="shiftTable"></table></div>
@@ -652,7 +675,7 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
         <h3>Cadastro de pacientes</h3>
         <span class="sub" id="patCount"></span>
         <div class="spacer"></div>
-        <button class="btn" onclick="openPat()">＋ Novo paciente</button>
+        <button class="btn so-admin" onclick="openPat()">＋ Novo paciente</button>
       </div>
       <div class="card-b">
         <div class="bar">
@@ -678,6 +701,23 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
       <div class="card-b flush">
         <div class="tw"><table class="zebra" id="patTable"></table></div>
         <div id="patEmpty"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= VIEW: PENDENCIAS ======================= -->
+  <section class="view" id="v-pendencias">
+    <div class="card">
+      <div class="card-h"><h3>Doses pendentes da semana</h3><span class="sub" id="pendPeriodo"></span></div>
+      <div class="card-b">
+        <div class="note" style="margin-bottom:14px">Somente medicações de <b>frequência reduzida</b> — 1x, 2x por semana, quinzenal e mensal.
+        As de toda sessão não entram aqui porque são conferidas na própria escala do dia.
+        A contagem considera todas as sessões do paciente no período, inclusive em outros turnos.</div>
+        <div class="stats" id="pendCards"></div>
+      </div>
+      <div class="card-b flush">
+        <div class="tw"><table class="zebra" id="pendTable"></table></div>
+        <div id="pendEmpty"></div>
       </div>
     </div>
   </section>
@@ -741,18 +781,25 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
 
     <div class="card">
       <div class="card-h"><h3>Equipe</h3><span class="sub">Médicos, enfermagem e farmácia — nome e conselho saem impressos nas duas vias</span>
-        <div class="spacer"></div><button class="btn sm" onclick="openDoc()">＋ Novo profissional</button></div>
+        <div class="spacer"></div><button class="btn sm so-admin" onclick="openDoc()">＋ Novo profissional</button></div>
       <div class="card-b flush"><div class="tw"><table class="zebra" id="docTable"></table></div></div>
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Medicações de uso contínuo</h3><span class="sub">Aparecem como colunas fixas na escala</span><div class="spacer"></div><button class="btn sm" onclick="openMed('cont')">＋ Nova medicação</button></div>
+      <div class="card-h"><h3>Medicações de uso contínuo</h3><span class="sub">Aparecem como colunas fixas na escala</span><div class="spacer"></div><button class="btn sm so-admin" onclick="openMed('cont')">＋ Nova medicação</button></div>
       <div class="card-b flush"><div class="tw"><table class="zebra" id="medContTable"></table></div></div>
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Medicações de resgate / sintomáticas</h3><span class="sub">Selecionadas sob demanda em cada paciente</span><div class="spacer"></div><button class="btn sm" onclick="openMed('resg')">＋ Nova medicação</button></div>
+      <div class="card-h"><h3>Medicações de resgate / sintomáticas</h3><span class="sub">Selecionadas sob demanda em cada paciente</span><div class="spacer"></div><button class="btn sm so-admin" onclick="openMed('resg')">＋ Nova medicação</button></div>
       <div class="card-b flush"><div class="tw"><table class="zebra" id="medResgTable"></table></div></div>
+    </div>
+
+    <div class="card so-admin">
+      <div class="card-h"><h3>Usuários e permissões</h3><span class="sub">Quem pode lançar e quem apenas consulta</span>
+        <div class="spacer"></div><button class="btn sm" onclick="openUsuario()">＋ Adicionar usuário</button></div>
+      <div class="card-b" id="usrAviso"></div>
+      <div class="card-b flush"><div class="tw"><table class="zebra" id="usrTable"></table></div></div>
     </div>
 
     <div class="card">
@@ -777,10 +824,10 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
         </div>
         <div class="rowline" style="margin-top:14px">
           <button class="btn acc" onclick="doExport()">⬇ Exportar backup (.json)</button>
-          <button class="btn sec" onclick="document.getElementById('impFile').click()">⬆ Restaurar backup</button>
+          <button class="btn sec so-admin" onclick="document.getElementById('impFile').click()">⬆ Restaurar backup</button>
           <button class="btn sec" onclick="exportCSV()">⬇ Exportar histórico (.csv)</button>
           <div class="spacer"></div>
-          <button class="btn dgr" onclick="wipeAll()">🗑 Apagar todos os dados</button>
+          <button class="btn dgr so-admin" onclick="wipeAll()">🗑 Apagar todos os dados</button>
         </div>
         <div class="hint" style="margin-top:10px" id="storeInfo"></div>
       </div>
@@ -1031,6 +1078,104 @@ function linhaAtendeDia(linha, dow) {
 }
 function sessKey(iso, turnoId) { return iso + '|' + turnoId; }
 
+/* ================= PERMISSÕES =================
+   admin      → tudo, inclusive cadastros e configurações
+   enfermagem → lança na escala do dia; não altera cadastros
+   leitura    → apenas consulta e impressão (farmácia, auditoria)
+   A lista fica em chb/usuarios e é espelhada pelas regras do Firestore. */
+var PAPEIS = ['admin', 'enfermagem', 'leitura'];
+var PAPEL_LBL = {
+  admin: 'Administrador — acesso total',
+  enfermagem: 'Enfermagem — lança na escala do dia',
+  leitura: 'Somente leitura — consulta e impressão'
+};
+var USUARIOS = {};          // email -> papel
+var PAPEL_ABERTO = true;    // nenhuma lista definida ainda: todos como admin
+function meuPapel() {
+  if (PAPEL_ABERTO) return 'admin';
+  return USUARIOS[String(usuarioAtual()).toLowerCase()] || 'leitura';
+}
+function podeAdmin() { return meuPapel() === 'admin'; }
+function podeLancar() { var p = meuPapel(); return p === 'admin' || p === 'enfermagem'; }
+/* usado no início de toda função que grava */
+function exigeAdmin() {
+  if (podeAdmin()) return true;
+  toast('Seu acesso não permite alterar cadastros e configurações.', 'err'); return false;
+}
+function exigeLancar() {
+  if (podeLancar()) return true;
+  toast('Seu acesso é somente leitura.', 'err'); return false;
+}
+function aplicaPapel() {
+  document.body.classList.toggle('sem-lancar', !podeLancar());
+  document.body.classList.toggle('sem-admin', !podeAdmin());
+  var el = $('#papelPill');
+  if (el) {
+    var p = meuPapel();
+    el.className = 'papel ' + p;
+    el.textContent = p === 'admin' ? 'Administrador' : (p === 'enfermagem' ? 'Enfermagem' : 'Somente leitura');
+    el.title = PAPEL_LBL[p];
+  }
+}
+
+/* ---------- semanas e janelas ---------- */
+function isoAddDias(iso, n) {
+  var d = isoToDate(iso); d.setDate(d.getDate() + n);
+  var m = d.getMonth() + 1, dd = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (dd < 10 ? '0' : '') + dd;
+}
+/* semana clínica: segunda a domingo */
+function inicioSemana(iso) { var dow = dayOf(iso); return isoAddDias(iso, dow === 0 ? -6 : 1 - dow); }
+function fimSemana(iso) { return isoAddDias(inicioSemana(iso), 6); }
+
+/* ---------- controle de doses que não são de toda sessão ---------- */
+/* meta por período e tamanho da janela em dias (0 = semana corrente) */
+var FREQ_META = { X1: 1, X2: 2, Q15: 1, MES: 1 };
+var FREQ_JANELA = { X1: 0, X2: 0, Q15: 14, MES: 30 };
+function freqControlada(fq) { return FREQ_META[fq] !== undefined; }
+
+/* sessões que ainda restam ao paciente nesta semana, contando hoje */
+function sessoesRestantes(p, iso) {
+  var fim = fimSemana(iso), n = 0, d = iso;
+  while (d <= fim) { if (linhaAtendeDia(p.linha, dayOf(d))) n++; d = isoAddDias(d, 1); }
+  return n;
+}
+
+/* Situação da dose: null quando é de toda sessão ou conforme prescrição.
+   PENDENTE = ainda falta · COMPLETO = meta atingida · ULTIMA = agora ou perde */
+function statusDose(p, m, iso, fq) {
+  fq = fq || freqDe((p.meds || {})[m.id]);
+  if (!freqControlada(fq)) return null;
+  var meta = FREQ_META[fq], janela = FREQ_JANELA[fq];
+  var ini = janela ? isoAddDias(iso, -(janela - 1)) : inicioSemana(iso);
+  var fim = janela ? iso : fimSemana(iso);
+  var adm = admNoPeriodo(p.id, m.id, ini, fim);
+  var feitas = adm.length, faltam = meta - feitas;
+  if (faltam <= 0) {
+    return { estado: 'COMPLETO', feitas: feitas, meta: meta, ultima: adm[adm.length - 1], restantes: 0 };
+  }
+  var restantes = janela ? 99 : sessoesRestantes(p, iso);
+  return {
+    estado: restantes <= faltam ? 'ULTIMA' : 'PENDENTE',
+    feitas: feitas, meta: meta, faltam: faltam,
+    ultima: adm[adm.length - 1], restantes: restantes
+  };
+}
+function textoDose(st, fq, linha) {
+  if (!st) return freqCurta(fq, linha);
+  var base = freqCurta(fq, linha);
+  if (st.estado === 'COMPLETO') return '✓ ' + (st.ultima ? fmtBR(st.ultima).slice(0, 5) : 'feita');
+  if (st.estado === 'ULTIMA') return base + ' · hoje!';
+  return base + ' · pendente';
+}
+function tipDose(st, fq, linha) {
+  if (!st) return 'Frequência prescrita: ' + freqDetalhe(fq, linha);
+  var q = st.feitas + ' de ' + st.meta + (FREQ_JANELA[fq] ? ' nos últimos ' + FREQ_JANELA[fq] + ' dias' : ' nesta semana');
+  if (st.estado === 'COMPLETO') return FREQ_LBL[fq] + ' — já administrada' + (st.ultima ? ' em ' + fmtBR(st.ultima) : '') + ' (' + q + ')';
+  if (st.estado === 'ULTIMA') return FREQ_LBL[fq] + ' — ÚLTIMA sessão do período para esta dose (' + q + ')';
+  return FREQ_LBL[fq] + ' — pendente (' + q + '), ' + st.restantes + ' sessão(ões) restante(s) na semana';
+}
+
 /* Escala do médico: por turno E por linha de dias.
    Formato: { T1:'SQS', T2:'TODOS' } — turno ausente = não atende.
    Compatível com o formato antigo { turnos:['T1','T2'] }. */
@@ -1151,7 +1296,7 @@ function ordenaItens(s) {
    Fonte de verdade: Firestore. DB (memória) é espelho dos listeners.
    ================================================================== */
 var FB = null, FS = null, AU = null, CUR_USER = null;
-var UNSUB = { cfg: null, pac: null, sess: {} };
+var UNSUB = { cfg: null, pac: null, usr: null, sess: {} };
 var CFG_OK = false, PAC_OK = false;
 
 var CFG_KEY = 'chb_fbcfg';
@@ -1291,8 +1436,9 @@ function alertaPermissao(acao) {
 function sairApp() {
   Object.keys(UNSUB.sess).forEach(function (k) { UNSUB.sess[k](); });
   UNSUB.sess = {};
-  if (UNSUB.cfg) UNSUB.cfg(); if (UNSUB.pac) UNSUB.pac();
-  UNSUB.cfg = UNSUB.pac = null; CFG_OK = PAC_OK = false;
+  if (UNSUB.cfg) UNSUB.cfg(); if (UNSUB.pac) UNSUB.pac(); if (UNSUB.usr) UNSUB.usr();
+  UNSUB.cfg = UNSUB.pac = UNSUB.usr = null; CFG_OK = PAC_OK = false;
+  USUARIOS = {}; PAPEL_ABERTO = true;
   DB = defaults(); DB.sessoes = {}; SESS_READY = {};
   $('#loginScreen').style.display = 'flex';
   $('#appShell').style.display = 'none';
@@ -1302,7 +1448,7 @@ function entrarApp() {
   $('#appShell').style.display = 'block';
   $('#userMail').textContent = (CUR_USER.email || '').split('@')[0];
   setSync(navigator.onLine ? 'ok' : 'offline');
-  subConfig(); subPacientes();
+  subConfig(); subPacientes(); subUsuarios();
 }
 
 /* ---------- login ---------- */
@@ -1412,6 +1558,22 @@ function subConfig() {
     if (migrou && snap.exists) saveConfig();
   }, erroSnap);
 }
+function subUsuarios() {
+  UNSUB.usr = FS.collection(COL_APP).doc('usuarios').onSnapshot(function (snap) {
+    var lista = (snap.exists && snap.data().lista) || null;
+    USUARIOS = {};
+    if (lista) Object.keys(lista).forEach(function (e) { USUARIOS[String(e).toLowerCase()] = lista[e]; });
+    PAPEL_ABERTO = !lista || !Object.keys(USUARIOS).length;
+    aplicaPapel();
+    if (VIEW === 'config') renderConfig();
+  }, function () { PAPEL_ABERTO = true; aplicaPapel(); });
+}
+function salvarUsuarios() {
+  if (!FS) return;
+  var lista = {};
+  Object.keys(USUARIOS).forEach(function (e) { lista[e] = USUARIOS[e]; });
+  enfileira(FS.collection(COL_APP).doc('usuarios'), { lista: lista });
+}
 function subPacientes() {
   UNSUB.pac = FS.collection(COL_APP).doc('pacientes').onSnapshot(function (snap) {
     DB.pacientes = (snap.exists && snap.data().lista) || [];
@@ -1442,6 +1604,7 @@ function aposCarga() {
 
 /* assina os documentos de todos os turnos do dia visível */
 function subDia(iso) {
+  carregarJanela(iso).then(function () { if (VIEW === 'escala') renderEscala(); if (VIEW === 'pendencias') renderPendencias(); });
   var alvo = {};
   turnosDoDia(iso).forEach(function (t) { alvo[sessDocId(iso, t.id)] = t.id; });
   Object.keys(UNSUB.sess).forEach(function (id) {
@@ -1525,6 +1688,47 @@ function saveSessEm(turnoId, pid) {
   var d = { itens: {}, data: s.data, turno: s.turno };
   d.itens[pid] = itemToDoc(it);
   enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, turnoId)), d);
+}
+
+/* ---------- janela de sessões para o controle de doses ----------
+   Carrega 5 semanas terminando no fim da semana visível: cobre semanal,
+   quinzenal e mensal em uma única consulta por faixa de identificador. */
+var JANELA = { ini: '', fim: '', docs: {} };
+function carregarJanela(iso, forcar) {
+  if (!FS) return Promise.resolve(JANELA);
+  var fim = fimSemana(iso), ini = isoAddDias(inicioSemana(iso), -28);
+  if (!forcar && JANELA.ini === ini && JANELA.fim === fim) return Promise.resolve(JANELA);
+  return FS.collection(COL_SESS)
+    .orderBy(firebase.firestore.FieldPath.documentId())
+    .startAt(ini).endAt(fim + '_\uf8ff').get()
+    .then(function (q) {
+      var docs = {};
+      q.forEach(function (d) { docs[d.id] = d.data(); });
+      JANELA = { ini: ini, fim: fim, docs: docs };
+      return JANELA;
+    })
+    .catch(function () { return JANELA; });
+}
+/* datas em que a medicação foi administrada ao paciente no período.
+   O dia visível vem de DB.sessoes (ao vivo); o restante, da janela. */
+function admNoPeriodo(pid, medId, ini, fim) {
+  var out = [], vistos = {};
+  Object.keys(DB.sessoes).forEach(function (k) {
+    var s = DB.sessoes[k];
+    if (!s || !s.data || s.data < ini || s.data > fim) return;
+    vistos[sessDocId(s.data, s.turno)] = 1;
+    var it = s.itens.filter(function (x) { return x.pid === pid; })[0];
+    if (it && it.meds && it.meds[medId] && it.meds[medId].f) out.push(s.data);
+  });
+  Object.keys(JANELA.docs).forEach(function (id) {
+    if (vistos[id]) return;
+    var data = id.split('_')[0];
+    if (data < ini || data > fim) return;
+    var d = JANELA.docs[id], it = (d.itens || {})[pid];
+    if (it && it.meds && it.meds[medId] && it.meds[medId].f) out.push(data);
+  });
+  out.sort();
+  return out;
 }
 
 /* ---------- histórico (consulta pontual) ---------- */
@@ -1648,6 +1852,7 @@ function go(v) {
   $$('.view').forEach(function (s) { s.classList.toggle('on', s.id === 'v-' + v); });
   $$('.nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
   if (v === 'pacientes') renderPacientes();
+  if (v === 'pendencias') renderPendencias();
   if (v === 'config') renderConfig();
   if (v === 'historico') renderHistorico();
   window.scrollTo(0, 0);
@@ -1710,6 +1915,7 @@ function renderEscala() {
 
   renderShiftTable(sess);
   renderStats(sess);
+  pintaBadgePend();
 }
 function contaPrevisto(iso, turnoId) {
   var dow = dayOf(iso), n = 0;
@@ -1737,7 +1943,7 @@ function renderStats(sess) {
 function stat(v, l) { return '<div class="stat"><b>' + v + '</b><span>' + l + '</span></div>'; }
 
 function renderShiftTable(sess) {
-  var tb = $('#shiftTable');
+  var tb = $('#shiftTable'), iso = sess.data || CUR.iso;
   if (!sess.itens.length) {
     tb.innerHTML = '';
     $('#shiftEmpty').innerHTML = '<div class="empty"><h4>Nenhum paciente neste turno</h4>' +
@@ -1763,9 +1969,14 @@ function renderShiftTable(sess) {
       var st = it.meds[m.id] || (it.meds[m.id] = { f: false, d: m.dose, rot: false });
       var pm = (p.meds || {})[m.id];
       var fq = st.fq || freqDe(pm);
+      var sd = st.rot ? statusDose(p, m, iso, fq) : null;
+      var cls = 'freq-tag';
+      if (!sd) cls += ' rot';
+      else if (sd.estado === 'COMPLETO') cls += ' feita';
+      else if (sd.estado === 'ULTIMA') cls += ' ultima';
       var tagFq = st.rot
-        ? '<span class="freq-tag' + (fq === 'TODA' ? ' rot' : '') + '" title="Frequência prescrita: ' +
-          esc(freqDetalhe(fq, p.linha)) + '">' + esc(freqCurta(fq, p.linha)) + '</span>'
+        ? '<span class="' + cls + '" title="' + esc(tipDose(sd, fq, p.linha)) + '">' +
+          esc(textoDose(sd, fq, p.linha)) + '</span>'
         : '';
       return '<td class="med-cell">' + tagFq + '<div class="med-wrap">' +
         '<input type="checkbox" ' + (st.f ? 'checked' : '') + ' onchange="tglMed(' + ix + ',\'' + m.id + '\',this.checked)" title="' +
@@ -1846,6 +2057,7 @@ function openEquipe() {
   openModal('Equipe do turno', body, [{ t: 'Concluir', c: 'btn', f: 'closeModal()' }], 'slim');
 }
 function setEquipe(cat, id) {
+  if (!exigeLancar()) return;
   var sess = curSess(); if (!sess) return;
   var campo = CAT_CAMPO[cat];
   sess[campo] = id; saveSessMeta(campo, id);
@@ -1857,8 +2069,22 @@ function setEquipe(cat, id) {
 /* ============ AÇÕES NA ESCALA ============ */
 function curSess() { return getSess(CUR.iso, CUR.turno, true); }
 function tglMed(ix, mid, v) {
+  if (!exigeLancar()) return;
   var s = curSess(); var it = s.itens[ix]; if (!it) return;
   if (!it.meds[mid]) it.meds[mid] = { f: false, d: (medById(mid) || {}).dose, rot: false };
+  /* dose de frequência reduzida já cumprida no período: avisa antes de duplicar */
+  if (v && !it.meds[mid].f) {
+    var p = pacById(it.pid), m = medById(mid);
+    var sd = p && m ? statusDose(p, m, CUR.iso, it.meds[mid].fq) : null;
+    if (sd && sd.estado === 'COMPLETO') {
+      var quando = sd.ultima ? ' em ' + fmtBR(sd.ultima) : '';
+      if (!confirm('ATENÇÃO — possível dose duplicada\n\n' + m.nome + ' de ' + p.nome +
+        ' já foi administrada' + quando + '.\n' + sd.feitas + ' de ' + sd.meta +
+        ' previstas para o período (' + FREQ_LBL[it.meds[mid].fq || freqDe((p.meds || {})[mid])] + ').\n\nRegistrar assim mesmo?')) {
+        renderShiftTable(s); return;
+      }
+    }
+  }
   it.meds[mid].f = v;
   if (v) {
     if (it.meds[mid].d == null || it.meds[mid].d === '') it.meds[mid].d = (medById(mid) || {}).dose;
@@ -1867,20 +2093,24 @@ function tglMed(ix, mid, v) {
   saveSess(it.pid); renderShiftTable(s); renderStats(s);
 }
 function setDose(ix, mid, v) {
+  if (!exigeLancar()) return;
   var s = curSess(); var it = s.itens[ix]; if (!it || !it.meds[mid]) return;
   it.meds[mid].d = num(v, 0); if (it.meds[mid].f) carimbar(it.meds[mid]); saveSess(it.pid);
 }
 function tglPres(ix, v) {
+  if (!exigeLancar()) return;
   var s = curSess(); var it = s.itens[ix]; if (!it) return;
   it.presente = v; carimbar(it);
   if (!v) { Object.keys(it.meds).forEach(function (k) { it.meds[k].f = false; descarimbar(it.meds[k]); }); it.resg = []; }
   saveSess(it.pid); renderShiftTable(s); renderStats(s); renderEscala();
 }
-function setObs(ix, v) { var s = curSess(); if (s.itens[ix]) { s.itens[ix].obs = v; carimbar(s.itens[ix]); saveSess(s.itens[ix].pid); } }
+function setObs(ix, v) { if (!exigeLancar()) return; var s = curSess(); if (s.itens[ix]) { s.itens[ix].obs = v; carimbar(s.itens[ix]); saveSess(s.itens[ix].pid); } }
 function delResg(ix, ri) {
+  if (!exigeLancar()) return;
   var s = curSess(); s.itens[ix].resg.splice(ri, 1); saveSess(s.itens[ix].pid); renderShiftTable(s); renderStats(s);
 }
 function rmFromShift(ix) {
+  if (!exigeLancar()) return;
   var s = curSess(); var p = pacById(s.itens[ix].pid);
   if (!confirm('Remover ' + (p ? p.nome : 'este paciente') + ' deste turno?\n\nO cadastro do paciente não é apagado.')) return;
   var pid = s.itens[ix].pid; s.itens.splice(ix, 1);
@@ -1891,6 +2121,7 @@ function rmFromShift(ix) {
    por semana, quinzenal, mensal) ficam para marcação manual no dia certo —
    marcá-las automaticamente todo dia seria erro de administração. */
 function markAllRoutine() {
+  if (!exigeLancar()) return;
   var s = curSess(), n = 0, pulou = 0;
   s.itens.forEach(function (it) {
     if (!it.presente) return;
@@ -1912,6 +2143,7 @@ function markAllRoutine() {
 /* Botão manual: além de incluir quem falta, desfaz as remoções feitas à mão
    (a sincronização automática respeita essas remoções; esta não). */
 function resyncShift() {
+  if (!exigeLancar()) return;
   var s = curSess(), iso = CUR.iso, dow = dayOf(iso), add = 0;
   var tinhaExcl = Object.keys(s.excl || {}).length;
   s.excl = {}; limparExclusoes(CUR.turno);
@@ -1939,6 +2171,7 @@ function origemHoje(pid) {
   return achado;
 }
 function openAddToShift() {
+  if (!exigeLancar()) return;
   var s = curSess();
   var have = {}; s.itens.forEach(function (i) { have[i.pid] = 1; });
   var livres = DB.pacientes.filter(function (p) { return p.ativo !== false && !have[p.id]; })
@@ -1994,6 +2227,7 @@ function addToShift() {
 /* ============ MODAL DE RESGATE ============ */
 var RESG_IX = -1;
 function openResg(ix) {
+  if (!exigeLancar()) return;
   RESG_IX = ix;
   var s = curSess(), it = s.itens[ix], p = pacById(it.pid);
   var body = '<div class="hint" style="margin-bottom:12px">Paciente: <b style="color:var(--ink)">' + esc(p ? p.nome : '') + '</b></div>' +
@@ -2008,6 +2242,7 @@ function openResg(ix) {
   openModal('Medicações de resgate', body, [{ t: 'Registrar', c: 'btn', f: 'saveResg()' }]);
 }
 function saveResg() {
+  if (!exigeLancar()) return;
   var s = curSess(), it = s.itens[RESG_IX], h = $('#rgHora').value || nowHM(), n = 0;
   DB.medsResg.forEach(function (m) {
     var c = $('#rg_' + m.id);
@@ -2135,6 +2370,7 @@ function filtraMedsPorAcesso() {
   });
 }
 function savePat(id) {
+  if (!exigeAdmin()) return;
   var nome = $('#pNome').value.trim();
   if (!nome) { toast('Informe o nome completo do paciente.', 'err'); return; }
   var p = id ? pacById(id) : null;
@@ -2153,6 +2389,7 @@ function savePat(id) {
   savePacientes(); closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
 }
 function delPat(id) {
+  if (!exigeAdmin()) return;
   var p = pacById(id); if (!p) return;
   if (!confirm('Excluir ' + p.nome + ' do cadastro?\n\nOs turnos já registrados no histórico são mantidos.\nSe o paciente apenas saiu do programa, prefira marcá-lo como Inativo.')) return;
   DB.pacientes = DB.pacientes.filter(function (x) { return x.id !== id; });
@@ -2205,13 +2442,15 @@ function renderConfig() {
     : '<tbody><tr><td class="empty">Nenhum profissional cadastrado. Nome e conselho saem impressos nas duas vias.</td></tr></tbody>';
 
   renderMedTable('cont'); renderMedTable('resg');
-  $('#cfgUser').textContent = (CUR_USER && CUR_USER.email) || '—';
+  renderUsuarios();
+  $('#cfgUser').textContent = ((CUR_USER && CUR_USER.email) || '—') + ' · ' + PAPEL_LBL[meuPapel()];
   $('#storeInfo').innerHTML = 'Cadastro: <b>' + DB.pacientes.length + '</b> pacientes · <b>' + DB.medicos.length + '</b> médicos · ' +
     'banco: <b>' + esc(FIREBASE_CONFIG.projectId || '—') + '</b> (Firestore) · ' +
     'conexão: <b>' + (navigator.onLine ? 'online' : 'offline — alterações em fila') + '</b>';
 }
-function setTurno(i, k, v) { DB.turnos[i][k] = v; saveConfig(); subDia(CUR.iso); renderEscala(); }
+function setTurno(i, k, v) { if (!exigeAdmin()) return; DB.turnos[i][k] = v; saveConfig(); subDia(CUR.iso); renderEscala(); }
 function saveClinic() {
+  if (!exigeAdmin()) return;
   var c = DB.clinic;
   c.nome = $('#cNome').value.trim() || 'Clínica de Hemodiálise';
   c.cnes = $('#cCnes').value.trim(); c.endereco = $('#cEnd').value.trim();
@@ -2227,7 +2466,8 @@ function paintBrand() {
   $('#tbSub').textContent = sub || 'Configure os dados da clínica';
   $('#tbLogo').innerHTML = c.logo ? '<img src="' + c.logo + '">' : '<span>HD</span>';
 }
-function removeLogo() { DB.clinic.logo = ''; saveConfig(); renderConfig(); paintBrand(); toast('Logotipo removido.'); }
+function removeLogo() {
+  if (!exigeAdmin()) return; DB.clinic.logo = ''; saveConfig(); renderConfig(); paintBrand(); toast('Logotipo removido.'); }
 
 /* médicos */
 function openDoc(id) {
@@ -2259,6 +2499,7 @@ function rotuloConselho() {
   if ($('#dRegLbl')) $('#dRegLbl').textContent = CAT_CONSELHO[c] + ' *';
 }
 function saveDoc(id) {
+  if (!exigeAdmin()) return;
   var n = $('#dNome').value.trim(), c = $('#dCrm').value.trim();
   var cat = $('#dCat') ? $('#dCat').value : 'MED';
   if (!n || !c) { toast('Nome e ' + CAT_CONSELHO[cat] + ' são obrigatórios.', 'err'); return; }
@@ -2273,6 +2514,7 @@ function saveDoc(id) {
   saveConfig(); closeModal(); renderConfig(); renderEscala(); toast(CAT_LBL[cat] + ' salvo(a).', 'ok');
 }
 function delDoc(id) {
+  if (!exigeAdmin()) return;
   var m = docById(id);
   if (!confirm('Excluir ' + (m ? m.nome : 'este profissional') + ' do cadastro da equipe?')) return;
   DB.medicos = DB.medicos.filter(function (x) { return x.id !== id; });
@@ -2300,6 +2542,7 @@ function renderMedTable(kind) {
 }
 /* reordena a lista — a ordem vale para as colunas da escala e para a impressão */
 function moveMed(kind, i, dir) {
+  if (!exigeAdmin()) return;
   var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
   var j = i + dir; if (j < 0 || j >= arr.length) return;
   var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
@@ -2322,6 +2565,7 @@ function openMed(kind, id) {
     [{ t: 'Salvar', c: 'btn', f: "saveMed('" + kind + "','" + (id || '') + "')" }], 'slim');
 }
 function saveMed(kind, id) {
+  if (!exigeAdmin()) return;
   var n = $('#mNome').value.trim(), u = $('#mUn').value.trim();
   if (!n || !u) { toast('Nome e unidade são obrigatórios.', 'err'); return; }
   var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
@@ -2332,6 +2576,7 @@ function saveMed(kind, id) {
   saveConfig(); closeModal(); renderConfig(); renderEscala(); toast('Medicação salva.', 'ok');
 }
 function delMed(kind, id) {
+  if (!exigeAdmin()) return;
   var m = medById(id);
   if (!confirm('Excluir "' + (m ? m.nome : '') + '"?\n\nOs registros já gravados no histórico são preservados.')) return;
   if (kind === 'cont') DB.medsCont = DB.medsCont.filter(function (x) { return x.id !== id; });
@@ -2376,12 +2621,177 @@ function abrirHist(iso, turno) {
   subDia(iso); go('escala'); renderEscala();
 }
 function delSess(i) {
+  if (!exigeAdmin()) return;
   var s = HIST[i]; if (!s) return;
   if (!confirm('Apagar definitivamente o registro de ' + fmtBR(s.data) + ' — ' + ((turnoById(s.turno) || {}).nome || s.turno) + '?')) return;
   apagarSess(s.data, s.turno).then(function () {
     delete DB.sessoes[sessKey(s.data, s.turno)];
     renderHistorico(); renderEscala(); toast('Registro apagado.');
   }).catch(function (e) { toast('Não foi possível apagar: ' + e.message, 'err'); });
+}
+
+/* ================================================================== */
+
+/* ==================================================================
+   PENDÊNCIAS DA SEMANA
+   Doses de frequência reduzida (1x, 2x, quinzenal, mensal) que ainda
+   não foram administradas no período. É o que evita a dose perdida em
+   quem faltou, trocou de turno ou simplesmente não foi conferido.
+   ================================================================== */
+function levantarPendencias(iso) {
+  var linhas = [];
+  DB.pacientes.forEach(function (p) {
+    if (p.ativo === false) return;
+    medsDoPaciente(p).forEach(function (m) {
+      var pm = (p.meds || {})[m.id];
+      if (!pm || !pm.on) return;
+      var fq = freqDe(pm);
+      if (!freqControlada(fq)) return;
+      var sd = statusDose(p, m, iso, fq);
+      if (!sd || sd.estado === 'COMPLETO') return;
+      linhas.push({ p: p, m: m, fq: fq, sd: sd });
+    });
+  });
+  /* mais urgente primeiro: última sessão do período, depois menos sessões restantes */
+  linhas.sort(function (a, b) {
+    var ua = a.sd.estado === 'ULTIMA' ? 0 : 1, ub = b.sd.estado === 'ULTIMA' ? 0 : 1;
+    return ua - ub || a.sd.restantes - b.sd.restantes || a.p.nome.localeCompare(b.p.nome, 'pt-BR');
+  });
+  return linhas;
+}
+
+/* próxima data em que o paciente tem sessão, a partir de iso (inclusive) */
+function proximaSessao(p, iso) {
+  var d = iso, fim = fimSemana(iso);
+  while (d <= fim) { if (linhaAtendeDia(p.linha, dayOf(d))) return d; d = isoAddDias(d, 1); }
+  return '';
+}
+
+function renderPendencias() {
+  var iso = CUR.iso;
+  $('#pendPeriodo').textContent = 'Semana de ' + fmtBR(inicioSemana(iso)) + ' a ' + fmtBR(fimSemana(iso)) +
+    ' · referência: ' + fmtBR(iso);
+  var linhas = levantarPendencias(iso);
+  var urgentes = linhas.filter(function (x) { return x.sd.estado === 'ULTIMA'; }).length;
+
+  $('#pendCards').innerHTML =
+    '<div class="stat"><b>' + linhas.length + '</b><span>Doses pendentes</span></div>' +
+    '<div class="stat" style="' + (urgentes ? 'background:var(--danger-l);border-color:#f0c9c8' : '') + '">' +
+    '<b style="' + (urgentes ? 'color:var(--danger)' : '') + '">' + urgentes + '</b><span>Última sessão do período</span></div>' +
+    '<div class="stat"><b>' + new Set(linhas.map(function (x) { return x.p.id; })).size + '</b><span>Pacientes envolvidos</span></div>';
+
+  if (!linhas.length) {
+    $('#pendTable').innerHTML = '';
+    $('#pendEmpty').innerHTML = '<div class="empty"><h4>Nenhuma dose pendente</h4>' +
+      '<p>Todas as medicações de frequência reduzida já foram administradas no período.</p></div>';
+    return;
+  }
+  $('#pendEmpty').innerHTML = '';
+  $('#pendTable').innerHTML =
+    '<thead><tr><th style="min-width:210px">Paciente</th><th>Turno</th><th>Linha</th><th>Medicação</th>' +
+    '<th class="ctr">Feitas</th><th class="ctr">Sessões restantes</th><th>Próxima sessão</th><th class="ctr">Situação</th></tr></thead><tbody>' +
+    linhas.map(function (x) {
+      var prox = proximaSessao(x.p, iso);
+      var urg = x.sd.estado === 'ULTIMA';
+      return '<tr' + (urg ? ' style="background:var(--danger-l)"' : '') + '>' +
+        '<td><div class="pname">' + esc(x.p.nome) + (x.p.acesso === 'CDL' ? ' <span class="badge b-cdl">CDL</span>' : '') + '</div>' +
+        '<div class="pmeta">' + (x.p.prontuario ? 'Pront. ' + esc(x.p.prontuario) : '') + '</div></td>' +
+        '<td class="nowrap">' + esc((turnoById(x.p.turno) || {}).nome || '—') + '</td>' +
+        '<td><span class="badge ' + (LINHA_CLS[x.p.linha] || 'b-off') + '">' + esc(LINHA_LBL[x.p.linha] || '—') + '</span></td>' +
+        '<td><b>' + esc(x.m.nome) + '</b><div class="pmeta">' + esc(FREQ_LBL[x.fq]) + ' · ' + esc(fmtNum(((x.p.meds || {})[x.m.id] || {}).dose)) + ' ' + esc(x.m.un) + '</div></td>' +
+        '<td class="tac mono">' + x.sd.feitas + ' / ' + x.sd.meta + '</td>' +
+        '<td class="tac mono">' + (x.sd.restantes > 90 ? '—' : x.sd.restantes) + '</td>' +
+        '<td class="nowrap">' + (prox ? DIAS_C[dayOf(prox)] + ' ' + fmtBR(prox).slice(0, 5) : '—') + '</td>' +
+        '<td class="tac">' + (urg
+          ? '<span class="badge" style="background:var(--danger);color:#fff">Última sessão</span>'
+          : '<span class="badge b-cdl">Pendente</span>') + '</td></tr>';
+    }).join('') + '</tbody>';
+}
+
+/* contador no menu, para a pendência aparecer sem precisar abrir a aba */
+function pintaBadgePend() {
+  var el = $('#pendBadge'); if (!el) return;
+  var linhas = levantarPendencias(CUR.iso);
+  var urg = linhas.filter(function (x) { return x.sd.estado === 'ULTIMA'; }).length;
+  if (!linhas.length) { el.className = 'nav-badge off'; el.textContent = ''; return; }
+  el.className = 'nav-badge' + (urg ? ' crit' : '');
+  el.textContent = urg ? urg + '!' : String(linhas.length);
+  el.title = linhas.length + ' dose(s) pendente(s) nesta semana' + (urg ? ', ' + urg + ' na última sessão do período' : '');
+}
+
+/* ==================================================================
+   USUÁRIOS E PERMISSÕES
+   A lista aqui é a mesma que as regras do Firestore consultam, então
+   a restrição vale no banco e não apenas na tela.
+   ================================================================== */
+function renderUsuarios() {
+  var emails = Object.keys(USUARIOS).sort();
+  var aviso = $('#usrAviso');
+  if (PAPEL_ABERTO) {
+    aviso.innerHTML = '<div class="note warn"><b>Nenhuma permissão definida — todos os usuários têm acesso total.</b><br>' +
+      'Adicione abaixo cada pessoa que entra no sistema, com o papel dela. ' +
+      'Comece por você mesmo(a) como <b>Administrador</b>, senão ninguém poderá alterar cadastros depois. ' +
+      'Em seguida publique as regras atualizadas no console do Firebase (arquivo <i>regras-firestore.txt</i>) — ' +
+      'é isso que faz a restrição valer no banco, e não só na tela.</div>';
+  } else {
+    var admins = emails.filter(function (e) { return USUARIOS[e] === 'admin'; }).length;
+    aviso.innerHTML = '<div class="note">' + emails.length + ' usuário(s) com permissão definida, ' + admins + ' administrador(es). ' +
+      'Quem não estiver nesta lista entra apenas como <b>somente leitura</b>.' +
+      (admins === 0 ? '<br><b style="color:var(--danger)">Nenhum administrador definido — ninguém poderá alterar cadastros.</b>' : '') +
+      '</div>';
+  }
+  $('#usrTable').innerHTML = emails.length
+    ? '<thead><tr><th>Usuário</th><th>Permissão</th><th>Pode lançar na escala</th><th>Pode alterar cadastros</th><th style="width:52px"></th></tr></thead><tbody>' +
+    emails.map(function (e) {
+      var pp = USUARIOS[e];
+      var lanc = pp === 'admin' || pp === 'enfermagem', adm = pp === 'admin';
+      return '<tr><td class="pname">' + esc(e) + (e === String(usuarioAtual()).toLowerCase() ? ' <span class="badge b-all">você</span>' : '') + '</td>' +
+        '<td><select class="inp" style="min-width:180px" onchange="setPapel(\'' + esc(e) + '\',this.value)">' +
+        PAPEIS.map(function (x) { return '<option value="' + x + '"' + (pp === x ? ' selected' : '') + '>' + PAPEL_LBL[x].split(' — ')[0] + '</option>'; }).join('') +
+        '</select></td>' +
+        '<td><span class="badge ' + (lanc ? 'b-all' : 'b-off') + '">' + (lanc ? 'sim' : 'não') + '</span></td>' +
+        '<td><span class="badge ' + (adm ? 'b-all' : 'b-off') + '">' + (adm ? 'sim' : 'não') + '</span></td>' +
+        '<td><button class="icon-btn dgr" onclick="delUsuario(\'' + esc(e) + '\')" title="Remover">🗑</button></td></tr>';
+    }).join('') + '</tbody>'
+    : '<tbody><tr><td class="empty">Nenhum usuário na lista.</td></tr></tbody>';
+}
+function openUsuario() {
+  if (!exigeAdmin()) return;
+  openModal('Adicionar usuário',
+    '<div class="hint" style="margin-bottom:12px">Use o mesmo e-mail cadastrado em Authentication, no console do Firebase. ' +
+    'Adicionar aqui não cria a conta — apenas define o que ela pode fazer.</div>' +
+    '<div class="fld"><label>E-mail do usuário</label><input class="inp" id="uEmail" placeholder="enfermagem@chb.local" autocapitalize="off" spellcheck="false"></div>' +
+    '<div class="fld" style="margin-top:12px"><label>Permissão</label><select class="inp" id="uPapel">' +
+    PAPEIS.map(function (x) { return '<option value="' + x + '"' + (x === 'enfermagem' ? ' selected' : '') + '>' + PAPEL_LBL[x] + '</option>'; }).join('') +
+    '</select></div>',
+    [{ t: 'Adicionar', c: 'btn', f: 'saveUsuario()' }], 'slim');
+}
+function saveUsuario() {
+  if (!exigeAdmin()) return;
+  var e = $('#uEmail').value.trim().toLowerCase();
+  if (!e) { toast('Informe o e-mail.', 'err'); return; }
+  if (e.indexOf('@') < 0) e += '@chb.local';
+  USUARIOS[e] = $('#uPapel').value;
+  PAPEL_ABERTO = false;
+  salvarUsuarios(); closeModal(); aplicaPapel(); renderUsuarios();
+  toast('Permissão definida para ' + e + '.', 'ok');
+}
+function setPapel(email, papel) {
+  if (!exigeAdmin()) return;
+  var meu = String(usuarioAtual()).toLowerCase();
+  if (email === meu && papel !== 'admin' &&
+    !confirm('Você está retirando o seu próprio acesso de administrador.\n\nDepois disso não poderá mais alterar cadastros nem esta lista. Continuar?')) {
+    renderUsuarios(); return;
+  }
+  USUARIOS[email] = papel;
+  salvarUsuarios(); aplicaPapel(); renderUsuarios();
+}
+function delUsuario(email) {
+  if (!exigeAdmin()) return;
+  if (!confirm('Remover ' + email + ' da lista?\n\nA conta continua existindo, mas passa a entrar como somente leitura.')) return;
+  delete USUARIOS[email];
+  PAPEL_ABERTO = !Object.keys(USUARIOS).length;
+  salvarUsuarios(); aplicaPapel(); renderUsuarios();
 }
 
 /* ================================================================== */
@@ -2651,6 +3061,7 @@ function doExport() {
   });
 }
 function doImport(file) {
+  if (!exigeAdmin()) return;
   var r = new FileReader();
   r.onload = function () {
     try {
@@ -2697,6 +3108,7 @@ function exportCSV() {
   });
 }
 function wipeAll() {
+  if (!exigeAdmin()) return;
   if (!confirm('APAGAR TODOS OS DADOS DA NUVEM?\n\nPacientes, turnos gravados e configurações serão perdidos para TODOS os aparelhos, definitivamente.')) return;
   if (!confirm('Confirme novamente.\n\nSe ainda não gerou um backup, cancele agora e clique em "Backup" antes.')) return;
   toast('Apagando…', 'inf');
@@ -2759,6 +3171,7 @@ function setupIcons() {
 
 /* ================= DADOS DE EXEMPLO ================= */
 function seedDemo() {
+  if (!exigeAdmin()) return;
   if (DB.pacientes.length && !confirm('Já existem pacientes cadastrados. Adicionar mesmo assim os pacientes de exemplo?')) return;
   if (!DB.medicos.length) {
     DB.medicos.push({ id: uid('d'), nome: 'Dr. Exemplo Silva', cat: 'MED', reg: '12345', uf: 'PA', escala: { T1: 'SQS', T2: 'TODOS' } });
