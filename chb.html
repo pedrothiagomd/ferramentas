@@ -235,7 +235,12 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 }
 .sem-lancar #btnIncluir,.sem-lancar #btnResync,.sem-lancar #btnRotina,
 .sem-pac .so-pac,
+.sem-clin .so-clin,
 .sem-config .so-admin{display:none !important}
+/* cartões exclusivos do administrador: visíveis, porém sem edição */
+.so-adm-tag{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:none}
+.sem-config .so-adm-tag{display:inline}
+.sem-config .adm-only{opacity:.55;pointer-events:none;user-select:none}
 @media(max-width:1100px){.papel{display:none}}
 
 .chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
@@ -743,8 +748,8 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
   <!-- ======================= VIEW: CONFIG ======================= -->
   <section class="view" id="v-config">
     <div class="card">
-      <div class="card-h"><h3>Identificação da clínica</h3><span class="sub">Aparece no cabeçalho de todas as impressões</span></div>
-      <div class="card-b">
+      <div class="card-h"><h3>Identificação da clínica</h3><span class="sub">Aparece no cabeçalho de todas as impressões</span><div class="spacer"></div><span class="so-adm-tag">somente administrador</span></div>
+      <div class="card-b adm-only">
         <div class="grid g3">
           <div class="fld span2"><label>Nome da clínica</label><input class="inp" id="cNome"></div>
           <div class="fld"><label>CNES</label><input class="inp" id="cCnes" placeholder="0000000"></div>
@@ -778,23 +783,23 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Turnos</h3><span class="sub">Dias úteis: 3 turnos · Sábado e domingo: 2 turnos</span></div>
-      <div class="card-b flush"><div class="tw"><table id="turnoTable"></table></div></div>
+      <div class="card-h"><h3>Turnos</h3><span class="sub">Dias úteis: 3 turnos · Sábado e domingo: 2 turnos</span><div class="spacer"></div><span class="so-adm-tag">somente administrador</span></div>
+      <div class="card-b flush adm-only"><div class="tw"><table id="turnoTable"></table></div></div>
     </div>
 
     <div class="card">
       <div class="card-h"><h3>Equipe</h3><span class="sub">Médicos, enfermagem e farmácia — nome e conselho saem impressos nas duas vias</span>
-        <div class="spacer"></div><button class="btn sm so-admin" onclick="openDoc()">＋ Novo profissional</button></div>
+        <div class="spacer"></div><button class="btn sm so-clin" onclick="openDoc()">＋ Novo profissional</button></div>
       <div class="card-b flush"><div class="tw"><table class="zebra" id="docTable"></table></div></div>
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Medicações de uso contínuo</h3><span class="sub">Aparecem como colunas fixas na escala</span><div class="spacer"></div><button class="btn sm so-admin" onclick="openMed('cont')">＋ Nova medicação</button></div>
+      <div class="card-h"><h3>Medicações de uso contínuo</h3><span class="sub">Aparecem como colunas fixas na escala</span><div class="spacer"></div><button class="btn sm so-clin" onclick="openMed('cont')">＋ Nova medicação</button></div>
       <div class="card-b flush"><div class="tw"><table class="zebra" id="medContTable"></table></div></div>
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Medicações de resgate / sintomáticas</h3><span class="sub">Selecionadas sob demanda em cada paciente</span><div class="spacer"></div><button class="btn sm so-admin" onclick="openMed('resg')">＋ Nova medicação</button></div>
+      <div class="card-h"><h3>Medicações de resgate / sintomáticas</h3><span class="sub">Selecionadas sob demanda em cada paciente</span><div class="spacer"></div><button class="btn sm so-clin" onclick="openMed('resg')">＋ Nova medicação</button></div>
       <div class="card-b flush"><div class="tw"><table class="zebra" id="medResgTable"></table></div></div>
     </div>
 
@@ -1086,13 +1091,17 @@ function sessKey(iso, turnoId) { return iso + '|' + turnoId; }
    enfermagem → lança na escala do dia; não altera cadastros
    leitura    → apenas consulta e impressão (farmácia, auditoria)
    A lista fica em chb/usuarios e é espelhada pelas regras do Firestore. */
-var PAPEIS = ['admin', 'enfermagem', 'lancamento'];
+var PAPEIS = ['admin', 'medico', 'enfermagem', 'lancamento'];
 var PAPEL_LBL = {
-  admin: 'Administrador — configurações, cadastros e escala',
+  admin: 'Administrador — tudo, inclusive clínica, turnos e permissões',
+  medico: 'Médico(a) — medicações, equipe, pacientes e escala',
   enfermagem: 'Enfermagem — cadastro de pacientes e escala do dia',
   lancamento: 'Lançamento — apenas a escala do dia'
 };
-var PAPEL_CURTO = { admin: 'Administrador', enfermagem: 'Enfermagem', lancamento: 'Lançamento', nenhum: 'Sem permissão' };
+var PAPEL_CURTO = {
+  admin: 'Administrador', medico: 'Médico(a)', enfermagem: 'Enfermagem',
+  lancamento: 'Lançamento', nenhum: 'Sem permissão'
+};
 var USUARIOS = {};          // email -> papel
 var PAPEL_ABERTO = true;    // nenhuma lista definida ainda: todos como admin
 
@@ -1102,14 +1111,22 @@ function meuPapel() {
   if (PAPEL_ABERTO) return 'admin';
   return USUARIOS[String(usuarioAtual()).toLowerCase()] || 'nenhum';
 }
+/* podeConfig  → identificação da clínica, turnos, usuários, backup e exclusões
+   podeClinico → catálogos de medicação e cadastro da equipe
+   podePacientes, podeLancar → cadastro do programa e escala do dia */
 function podeConfig() { return meuPapel() === 'admin'; }
-function podePacientes() { var p = meuPapel(); return p === 'admin' || p === 'enfermagem'; }
-function podeLancar() { var p = meuPapel(); return p === 'admin' || p === 'enfermagem' || p === 'lancamento'; }
+function podeClinico() { var p = meuPapel(); return p === 'admin' || p === 'medico'; }
+function podePacientes() { var p = meuPapel(); return p === 'admin' || p === 'medico' || p === 'enfermagem'; }
+function podeLancar() { return PAPEIS.indexOf(meuPapel()) >= 0; }
 
 /* usadas no início de cada função que grava */
 function exigeConfig() {
   if (podeConfig()) return true;
-  toast('Seu acesso não permite alterar configurações.', 'err'); return false;
+  toast('Somente o administrador altera clínica, turnos e permissões.', 'err'); return false;
+}
+function exigeClinico() {
+  if (podeClinico()) return true;
+  toast('Seu acesso não permite alterar medicações e equipe.', 'err'); return false;
 }
 function exigePacientes() {
   if (podePacientes()) return true;
@@ -1122,6 +1139,7 @@ function exigeLancar() {
 function aplicaPapel() {
   document.body.classList.toggle('sem-lancar', !podeLancar());
   document.body.classList.toggle('sem-pac', !podePacientes());
+  document.body.classList.toggle('sem-clin', !podeClinico());
   document.body.classList.toggle('sem-config', !podeConfig());
   var el = $('#papelPill');
   if (el) {
@@ -2450,7 +2468,7 @@ function renderConfig() {
         '<td><span class="badge ' + CAT_BADGE[cat] + '">' + esc(CAT_LBL[cat]) + '</span></td>' +
         '<td class="mono nowrap">' + esc(registroDe(m) || '—') + '</td>' +
         '<td><div class="chips">' + (tg || '<span class="pmeta">nenhum</span>') + '</div></td>' +
-        '<td class="nowrap"><button class="icon-btn" onclick="openDoc(\'' + m.id + '\')">✎</button>' +
+        '<td class="nowrap so-clin"><button class="icon-btn" onclick="openDoc(\'' + m.id + '\')">✎</button>' +
         '<button class="icon-btn dgr" onclick="delDoc(\'' + m.id + '\')">🗑</button></td></tr>';
     }).join('') + '</tbody>'
     : '<tbody><tr><td class="empty">Nenhum profissional cadastrado. Nome e conselho saem impressos nas duas vias.</td></tr></tbody>';
@@ -2513,7 +2531,7 @@ function rotuloConselho() {
   if ($('#dRegLbl')) $('#dRegLbl').textContent = CAT_CONSELHO[c] + ' *';
 }
 function saveDoc(id) {
-  if (!exigeConfig()) return;
+  if (!exigeClinico()) return;
   var n = $('#dNome').value.trim(), c = $('#dCrm').value.trim();
   var cat = $('#dCat') ? $('#dCat').value : 'MED';
   if (!n || !c) { toast('Nome e ' + CAT_CONSELHO[cat] + ' são obrigatórios.', 'err'); return; }
@@ -2528,7 +2546,7 @@ function saveDoc(id) {
   saveConfig(); closeModal(); renderConfig(); renderEscala(); toast(CAT_LBL[cat] + ' salvo(a).', 'ok');
 }
 function delDoc(id) {
-  if (!exigeConfig()) return;
+  if (!exigeClinico()) return;
   var m = docById(id);
   if (!confirm('Excluir ' + (m ? m.nome : 'este profissional') + ' do cadastro da equipe?')) return;
   DB.medicos = DB.medicos.filter(function (x) { return x.id !== id; });
@@ -2543,20 +2561,20 @@ function renderMedTable(kind) {
     ? '<thead><tr><th style="width:70px">Ordem</th><th>Medicação</th><th>Descrição</th><th>Dose padrão</th><th>Unidade</th><th>Via</th>' +
     (kind === 'cont' ? '<th>Acesso</th>' : '') + '<th style="width:86px"></th></tr></thead><tbody>' +
     arr.map(function (m, i) {
-      return '<tr><td class="nowrap">' +
+      return '<tr><td class="nowrap so-clin">' +
         '<button class="icon-btn" onclick="moveMed(\'' + kind + '\',' + i + ',-1)" title="Subir"' + (i === 0 ? ' disabled' : '') + '>▲</button>' +
         '<button class="icon-btn" onclick="moveMed(\'' + kind + '\',' + i + ',1)" title="Descer"' + (i === arr.length - 1 ? ' disabled' : '') + '>▼</button></td>' +
         '<td class="pname">' + esc(m.nome) + '</td><td style="font-size:12.5px;color:var(--muted)">' + esc(m.desc || '—') + '</td>' +
         '<td class="mono">' + esc(fmtNum(m.dose)) + '</td><td>' + esc(m.un) + '</td><td>' + esc(m.via || '—') + '</td>' +
         (kind === 'cont' ? '<td>' + (m.acesso ? '<span class="badge ' + (m.acesso === 'CDL' ? 'b-cdl' : 'b-fav') + '">' + esc(ACESSO_RESTR[m.acesso]) + '</span>' : '<span class="pmeta">todos</span>') + '</td>' : '') +
-        '<td class="nowrap"><button class="icon-btn" onclick="openMed(\'' + kind + '\',\'' + m.id + '\')">✎</button>' +
+        '<td class="nowrap so-clin"><button class="icon-btn" onclick="openMed(\'' + kind + '\',\'' + m.id + '\')">✎</button>' +
         '<button class="icon-btn dgr" onclick="delMed(\'' + kind + '\',\'' + m.id + '\')">🗑</button></td></tr>';
     }).join('') + '</tbody>'
     : '<tbody><tr><td class="empty">Nenhuma medicação cadastrada.</td></tr></tbody>';
 }
 /* reordena a lista — a ordem vale para as colunas da escala e para a impressão */
 function moveMed(kind, i, dir) {
-  if (!exigeConfig()) return;
+  if (!exigeClinico()) return;
   var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
   var j = i + dir; if (j < 0 || j >= arr.length) return;
   var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
@@ -2579,7 +2597,7 @@ function openMed(kind, id) {
     [{ t: 'Salvar', c: 'btn', f: "saveMed('" + kind + "','" + (id || '') + "')" }], 'slim');
 }
 function saveMed(kind, id) {
-  if (!exigeConfig()) return;
+  if (!exigeClinico()) return;
   var n = $('#mNome').value.trim(), u = $('#mUn').value.trim();
   if (!n || !u) { toast('Nome e unidade são obrigatórios.', 'err'); return; }
   var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
@@ -2590,7 +2608,7 @@ function saveMed(kind, id) {
   saveConfig(); closeModal(); renderConfig(); renderEscala(); toast('Medicação salva.', 'ok');
 }
 function delMed(kind, id) {
-  if (!exigeConfig()) return;
+  if (!exigeClinico()) return;
   var m = medById(id);
   if (!confirm('Excluir "' + (m ? m.nome : '') + '"?\n\nOs registros já gravados no histórico são preservados.')) return;
   if (kind === 'cont') DB.medsCont = DB.medsCont.filter(function (x) { return x.id !== id; });
@@ -2755,16 +2773,21 @@ function renderUsuarios() {
       '</div>';
   }
   $('#usrTable').innerHTML = emails.length
-    ? '<thead><tr><th>Usuário</th><th>Permissão</th><th class="ctr">Escala do dia</th><th class="ctr">Cadastro de pacientes</th><th class="ctr">Configurações</th><th style="width:52px"></th></tr></thead><tbody>' +
+    ? '<thead><tr><th>Usuário</th><th>Permissão</th><th class="ctr">Escala</th><th class="ctr">Pacientes</th>' +
+    '<th class="ctr">Medicações e equipe</th><th class="ctr">Clínica, turnos e permissões</th><th style="width:52px"></th></tr></thead><tbody>' +
     emails.map(function (e) {
       var pp = USUARIOS[e];
-      var lanc = PAPEIS.indexOf(pp) >= 0, pac = pp === 'admin' || pp === 'enfermagem', adm = pp === 'admin';
+      var lanc = PAPEIS.indexOf(pp) >= 0;
+      var pac = pp === 'admin' || pp === 'medico' || pp === 'enfermagem';
+      var clin = pp === 'admin' || pp === 'medico';
+      var adm = pp === 'admin';
       return '<tr><td class="pname">' + esc(e) + (e === String(usuarioAtual()).toLowerCase() ? ' <span class="badge b-all">você</span>' : '') + '</td>' +
         '<td><select class="inp" style="min-width:180px" onchange="setPapel(\'' + esc(e) + '\',this.value)">' +
         PAPEIS.map(function (x) { return '<option value="' + x + '"' + (pp === x ? ' selected' : '') + '>' + PAPEL_CURTO[x] + '</option>'; }).join('') +
         '</select></td>' +
         '<td class="tac"><span class="badge ' + (lanc ? 'b-all' : 'b-off') + '">' + (lanc ? 'sim' : 'não') + '</span></td>' +
         '<td class="tac"><span class="badge ' + (pac ? 'b-all' : 'b-off') + '">' + (pac ? 'sim' : 'não') + '</span></td>' +
+        '<td class="tac"><span class="badge ' + (clin ? 'b-all' : 'b-off') + '">' + (clin ? 'sim' : 'não') + '</span></td>' +
         '<td class="tac"><span class="badge ' + (adm ? 'b-all' : 'b-off') + '">' + (adm ? 'sim' : 'não') + '</span></td>' +
         '<td><button class="icon-btn dgr" onclick="delUsuario(\'' + esc(e) + '\')" title="Remover">🗑</button></td></tr>';
     }).join('') + '</tbody>'
