@@ -179,6 +179,7 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
   border:1px solid #e6e0d6;border-radius:5px;padding:0 5px;white-space:nowrap;cursor:help;
 }
 .med-cell{text-align:center;white-space:nowrap;border-left:1px solid var(--line-2)}
+.med-cell.na{color:#c3ccd4;background:repeating-linear-gradient(135deg,transparent,transparent 5px,#f4f7f9 5px,#f4f7f9 10px);font-weight:600}
 .med-wrap{display:inline-flex;align-items:center;gap:5px}
 .med-wrap input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand);cursor:pointer;margin:0;flex:0 0 auto}
 .dose-in{
@@ -189,8 +190,10 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 .dose-un{font-size:10.5px;color:var(--muted);width:26px;text-align:left;flex:0 0 auto}
 .freq-tag{
   display:block;font-size:9.5px;font-weight:700;color:#8c4405;background:var(--brand-l);
-  border:1px solid #eddcc3;border-radius:4px;padding:0 4px;margin-top:3px;letter-spacing:.02em;
+  border:1px solid #eddcc3;border-radius:4px;padding:0 4px;margin-bottom:3px;letter-spacing:.02em;
 }
+/* frequência padrão (toda sessão) fica discreta; o destaque é para a exceção */
+.freq-tag.rot{color:var(--muted);background:var(--surface-2);border-color:var(--line-2);font-weight:600}
 
 .chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .chip{
@@ -203,6 +206,7 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 .badge{display:inline-block;padding:1.5px 7px;border-radius:5px;font-size:10.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
 .b-sqs{background:#e8eef4;color:#2c4a63}
 .b-tqs{background:#f3ecf9;color:#6a3f94}
+.b-sqss{background:#e6f1f2;color:#12626d}
 .b-all{background:#e9f4ee;color:#15794f}
 .b-off{background:#eef1f4;color:#6b7c8d}
 .b-cdl{background:var(--warn-l);color:#8a5406}
@@ -290,19 +294,18 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 #printRoot{display:none}
 
 @media print{
-  @page{size:A4 portrait;margin:9mm 10mm}
-  body{background:#fff;font-size:10.2pt}
-  .topbar,.wrap,.mask,.toast,#noPrint{display:none !important}
+  /* margem zero na @page faz o Chrome nao desenhar o cabecalho/rodape
+     proprio (URL, titulo, data) — as margens ficam no padding da folha */
+  @page{size:A4 portrait;margin:0}
+  html,body{width:210mm;background:#fff;font-size:10.2pt}
+  .topbar,.wrap,.mask,.toast,#noPrint,#alertBar{display:none !important}
   #printRoot{display:block !important}
 }
 
 /* preview mode on screen */
 body.previewing .topbar,body.previewing .wrap{display:none}
 body.previewing #printRoot{display:block;background:#8792a0;padding:22px 0;min-height:100vh}
-body.previewing .sheet{
-  background:#fff;width:210mm;min-height:297mm;margin:0 auto 18px;box-shadow:0 6px 24px rgba(0,0,0,.3);
-  padding:9mm 10mm;
-}
+body.previewing .sheet{background:#fff;margin:0 auto 18px;box-shadow:0 6px 24px rgba(0,0,0,.3)}
 body.previewing .pv-bar{display:flex !important}
 .pv-bar{
   display:none;position:fixed;top:0;left:0;right:0;background:var(--ink);color:#fff;
@@ -314,8 +317,12 @@ body.previewing #printRoot{padding-top:70px}
 @media print{.pv-bar{display:none !important}}
 
 /* ============================ SHEET (print doc) ============================ */
-.sheet{page-break-after:always;position:relative}
-.sheet:last-child{page-break-after:auto}
+/* folha A4 com as margens por dentro: garante o mesmo resultado na tela e no papel */
+.sheet{
+  width:210mm;height:296mm;padding:9mm 10mm;box-sizing:border-box;
+  page-break-after:always;break-after:page;position:relative;overflow:hidden;
+}
+.sheet:last-child{page-break-after:auto;break-after:auto}
 
 /* cada via ocupa exatamente metade da area util da folha A4 */
 .via{
@@ -637,6 +644,7 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
               <option value="">Todas</option>
               <option value="SQS">Seg / Qua / Sex</option>
               <option value="TQS">Ter / Qui / Sáb</option>
+              <option value="SQSS">Seg / Qua / Sex / Sáb</option>
               <option value="TODOS">Diário</option>
             </select>
           </div>
@@ -858,10 +866,10 @@ function defaults() {
     ],
     medicos: [],
     medsCont: [
-      { id: 'mc1', nome: 'Paricalcitol', desc: 'Ativador seletivo do receptor de vitamina D', un: 'mcg', dose: 5, via: 'EV' },
-      { id: 'mc2', nome: 'Alfaepoetina', desc: 'Eritropoetina humana recombinante', un: 'UI', dose: 4000, via: 'EV' },
-      { id: 'mc3', nome: 'Noripurum EV', desc: 'Sacarato de hidróxido férrico III', un: 'mg', dose: 100, via: 'EV' },
-      { id: 'mc4', nome: 'Taurolock', desc: 'Selo de cateter — por lúmen', un: 'mL', dose: 2, via: 'Lock CVC' }
+      { id: 'mc2', nome: 'Alfaepoetina', desc: 'Eritropoetina humana recombinante', un: 'UI', dose: 4000, via: 'EV', acesso: '' },
+      { id: 'mc3', nome: 'Noripurum EV', desc: 'Sacarato de hidróxido férrico III', un: 'mg', dose: 100, via: 'EV', acesso: '' },
+      { id: 'mc1', nome: 'Paricalcitol', desc: 'Ativador seletivo do receptor de vitamina D', un: 'mcg', dose: 5, via: 'EV', acesso: '' },
+      { id: 'mc4', nome: 'Taurolock', desc: 'Selo de cateter — por lúmen', un: 'mL', dose: 2, via: 'Lock CVC', acesso: 'CDL' }
     ],
     medsResg: [
       { id: 'mr1', nome: 'Glicose 50%', desc: 'Hipoglicemia', un: 'mL', dose: 40, via: 'EV' },
@@ -881,14 +889,51 @@ function defaults() {
 }
 
 var DB = defaults();
-var CHAVES_CFG = ['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg'];
+var CHAVES_CFG = ['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg', 'migr'];
+var MIGR_ATUAL = 2;
+
+/* Restrição por acesso vascular de uma medicação:
+   ''    = qualquer acesso
+   'CDL' = somente cateter (ex.: selo de cateter)
+   'FAV' = somente fístula ou enxerto */
+var ACESSO_RESTR = { '': 'Todos os acessos', CDL: 'Somente cateter (CDL)', FAV: 'Somente fístula / enxerto' };
+function medAplicavel(m, p) {
+  if (!m || !m.acesso) return true;
+  var a = (p && p.acesso) || '';
+  if (m.acesso === 'CDL') return a === 'CDL';
+  if (m.acesso === 'FAV') return a === 'FAV' || a === 'PTFE' || a === 'Enxerto';
+  return true;
+}
+/* medicações contínuas que se aplicam a este paciente, na ordem configurada */
+function medsDoPaciente(p) {
+  return DB.medsCont.filter(function (m) { return medAplicavel(m, p); });
+}
+/* devolve true quando algo foi migrado e precisa ser gravado de volta */
 function normalizeDB() {
-  var d = defaults();
+  var d = defaults(), mudou = false;
   CHAVES_CFG.concat(['pacientes', 'sessoes']).forEach(function (k) { if (DB[k] == null) DB[k] = d[k]; });
   DB.medicos.forEach(function (m) {
     if (!m.escala) { m.escala = {}; (m.turnos || []).forEach(function (x) { m.escala[x] = 'TODOS'; }); }
     delete m.turnos;
   });
+  if ((DB.migr || 0) < MIGR_ATUAL) {
+    /* selo de cateter só faz sentido em paciente com CDL */
+    DB.medsCont.forEach(function (m) {
+      if (m.acesso === undefined) m.acesso = /taurolock|selo de cateter/i.test(m.nome + ' ' + (m.desc || '')) ? 'CDL' : '';
+    });
+    /* ordem pedida pela clínica: Alfaepoetina, Noripurum, Paricalcitol, Taurolock */
+    var ordem = ['alfaepoetina', 'noripurum', 'paricalcitol', 'taurolock'];
+    var pos = function (m) {
+      var n = String(m.nome).toLowerCase();
+      for (var i = 0; i < ordem.length; i++) if (n.indexOf(ordem[i]) === 0) return i;
+      return ordem.length;
+    };
+    DB.medsCont = DB.medsCont.map(function (m, i) { return { m: m, i: i }; })
+      .sort(function (a, b) { return (pos(a.m) - pos(b.m)) || (a.i - b.i); })
+      .map(function (x) { return x.m; });
+    DB.migr = MIGR_ATUAL; mudou = true;
+  }
+  return mudou;
 }
 
 /* ================= HELPERS DE DOMÍNIO ================= */
@@ -906,20 +951,36 @@ function medById(id) {
   for (i = 0; i < DB.medsResg.length; i++) if (DB.medsResg[i].id === id) return DB.medsResg[i];
   return null;
 }
-var LINHA_LBL = { SQS: 'Seg / Qua / Sex', TQS: 'Ter / Qui / Sáb', TODOS: 'Diário' };
+var LINHA_ORDEM = ['SQS', 'TQS', 'SQSS', 'TODOS'];
+var LINHA_LBL = {
+  SQS: 'Seg / Qua / Sex', TQS: 'Ter / Qui / Sáb',
+  SQSS: 'Seg / Qua / Sex / Sáb', TODOS: 'Diário'
+};
 /* frequência semanal das medicações de rotina do paciente */
 var FREQ_ORDEM = ['TODA', 'X2', 'X1', 'Q15', 'MES', 'SN'];
 var FREQ_LBL = {
-  TODA: 'Toda sessão (3x/semana)', X2: '2x por semana', X1: '1x por semana',
+  TODA: 'Toda sessão', X2: '2x por semana', X1: '1x por semana',
   Q15: 'Quinzenal', MES: 'Mensal', SN: 'Conforme prescrição'
 };
-var FREQ_CURTA = { TODA: '', X2: '2x/sem', X1: '1x/sem', Q15: 'quinzenal', MES: 'mensal', SN: 's/n' };
+var FREQ_CURTA = { X2: '2x/sem', X1: '1x/sem', Q15: 'quinzenal', MES: 'mensal', SN: 's/n' };
+/* quantas sessões por semana cada linha de dias representa */
+var LINHA_SESSOES = { SQS: 3, TQS: 3, SQSS: 4, TODOS: 6 };
 function freqDe(o) { return (o && o.freq) || 'TODA'; }
-var LINHA_CLS = { SQS: 'b-sqs', TQS: 'b-tqs', TODOS: 'b-all' };
+/* etiqueta curta: "toda sessão" vira 3x ou 4x conforme a linha do paciente */
+function freqCurta(fq, linha) {
+  if (!fq || fq === 'TODA') return (LINHA_SESSOES[linha] || 3) + 'x/sem';
+  return FREQ_CURTA[fq] || '';
+}
+function freqDetalhe(fq, linha) {
+  if (!fq || fq === 'TODA') return 'Toda sessão — ' + (LINHA_SESSOES[linha] || 3) + ' por semana nesta linha';
+  return FREQ_LBL[fq] || '';
+}
+var LINHA_CLS = { SQS: 'b-sqs', TQS: 'b-tqs', SQSS: 'b-sqss', TODOS: 'b-all' };
 function linhaAtendeDia(linha, dow) {
   if (linha === 'TODOS') return dow >= 1 && dow <= 6;
   if (linha === 'SQS') return dow === 1 || dow === 3 || dow === 5;
   if (linha === 'TQS') return dow === 2 || dow === 4 || dow === 6;
+  if (linha === 'SQSS') return dow === 1 || dow === 3 || dow === 5 || dow === 6;
   return false;
 }
 function sessKey(iso, turnoId) { return iso + '|' + turnoId; }
@@ -959,6 +1020,47 @@ function montaSess(iso, turnoId) {
   return s;
 }
 
+/* Já houve algum lançamento neste paciente nesta sessão? */
+function itemTocado(it) {
+  if (it.presente === false || it.obs) return true;
+  if ((it.resg || []).length) return true;
+  var t = false;
+  Object.keys(it.meds || {}).forEach(function (k) { if (it.meds[k].f) t = true; });
+  return t;
+}
+
+/* Mantém a escala do dia alinhada com o cadastro, sem esperar ação do usuário:
+   inclui quem passou a ser do turno/linha e retira quem deixou de ser — mas
+   apenas se nada tiver sido lançado nele e se não tiver sido removido à mão
+   (removidos ficam registrados em s.excl para não voltarem sozinhos). */
+function autoSincroniza(iso, turnoId) {
+  var s = DB.sessoes[sessKey(iso, turnoId)];
+  if (!s || s._carregando) return;
+  var dow = dayOf(iso), incluir = [], remover = [];
+  var have = {}; s.itens.forEach(function (i) { have[i.pid] = 1; });
+  var excl = s.excl || {};
+
+  DB.pacientes.forEach(function (p) {
+    if (p.ativo === false || p.turno !== turnoId) return;
+    if (!linhaAtendeDia(p.linha, dow)) return;
+    if (have[p.id] || excl[p.id]) return;
+    s.itens.push(novoItem(p)); incluir.push(p.id);
+  });
+
+  s.itens = s.itens.filter(function (it) {
+    if (it.de || itemTocado(it)) return true;
+    var p = pacById(it.pid);
+    var deveria = p && p.ativo !== false && p.turno === turnoId && linhaAtendeDia(p.linha, dow);
+    if (deveria) return true;
+    remover.push(it.pid); return false;
+  });
+
+  if (!incluir.length && !remover.length) return;
+  ordenaItens(s);
+  incluir.forEach(function (pid) { saveSessEm(turnoId, pid); });
+  remover.forEach(function (pid) { removeSessItemEm(turnoId, pid); });
+}
+
 /* Devolve a sessão do dia+turno.
    SESS_READY marca que o Firestore já respondeu sobre aquele documento —
    só então podemos criar a escala, para nunca sobrescrever o que já existe
@@ -980,7 +1082,7 @@ function getSess(iso, turnoId, create) {
 }
 function novoItem(p) {
   var it = { pid: p.id, presente: true, meds: {}, resg: [], obs: '' };
-  DB.medsCont.forEach(function (m) {
+  medsDoPaciente(p).forEach(function (m) {
     var pm = (p.meds || {})[m.id];
     it.meds[m.id] = { f: false, d: pm && pm.dose != null ? pm.dose : m.dose, rot: !!(pm && pm.on), fq: freqDe(pm) };
   });
@@ -1199,10 +1301,10 @@ function itemToDoc(it) {
 function sessToDoc(s) {
   var m = {};
   s.itens.forEach(function (it) { m[it.pid] = itemToDoc(it); });
-  return limpa({ data: s.data, turno: s.turno, medicoId: s.medicoId || '', itens: m, criadoEm: s.criadoEm || new Date().toISOString() });
+  return limpa({ data: s.data, turno: s.turno, medicoId: s.medicoId || '', itens: m, excl: s.excl || {}, criadoEm: s.criadoEm || new Date().toISOString() });
 }
 function docToSess(d, iso, turnoId) {
-  var s = { data: d.data || iso, turno: d.turno || turnoId, medicoId: d.medicoId || '', criadoEm: d.criadoEm, itens: [] };
+  var s = { data: d.data || iso, turno: d.turno || turnoId, medicoId: d.medicoId || '', criadoEm: d.criadoEm, excl: d.excl || {}, itens: [] };
   var m = d.itens || {};
   Object.keys(m).forEach(function (pid) {
     var x = m[pid] || {};
@@ -1252,7 +1354,8 @@ function subConfig() {
     } else {
       FS.collection(COL_APP).doc('config').set(cfgToDoc());
     }
-    normalizeDB(); CFG_OK = true; aposCarga();
+    var migrou = normalizeDB(); CFG_OK = true; aposCarga();
+    if (migrou && snap.exists) saveConfig();
   }, erroSnap);
 }
 function subPacientes() {
@@ -1277,8 +1380,10 @@ function erroSnap(e) {
 var BOOTED = false;
 function aposCarga() {
   if (!CFG_OK || !PAC_OK) return;
-  if (!BOOTED) { BOOTED = true; iniciarUI(); }
-  else { subDia(CUR.iso); renderPage(); }
+  if (!BOOTED) { BOOTED = true; iniciarUI(); return; }
+  subDia(CUR.iso);
+  turnosDoDia(CUR.iso).forEach(function (t) { autoSincroniza(CUR.iso, t.id); });
+  renderPage();
 }
 
 /* assina os documentos de todos os turnos do dia visível */
@@ -1295,6 +1400,7 @@ function subDia(iso) {
       if (snap.exists) DB.sessoes[k] = docToSess(snap.data(), iso, turnoId);
       else delete DB.sessoes[k];
       SESS_READY[k] = true;
+      if (PAC_OK) autoSincroniza(iso, turnoId);
       if (VIEW === 'escala') renderEscala();
     }, erroSnap);
   });
@@ -1335,6 +1441,21 @@ function saveSessMeta(campo, valor) {
   enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, CUR.turno)), d);
 }
 function removeSessItem(pid) { removeSessItemEm(CUR.turno, pid); }
+/* marca o paciente como retirado à mão daquele turno, para a sincronização
+   automática não recolocá-lo em seguida */
+function excluirDoTurno(turnoId, pid) {
+  var s = DB.sessoes[sessKey(CUR.iso, turnoId)];
+  if (s) { s.excl = s.excl || {}; s.excl[pid] = true; }
+  if (!FS || !turnoId) return;
+  var d = { excl: {} }; d.excl[pid] = true;
+  enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, turnoId)), d);
+}
+function limparExclusoes(turnoId) {
+  var s = DB.sessoes[sessKey(CUR.iso, turnoId)];
+  if (s) s.excl = {};
+  if (!FS || !turnoId) return;
+  enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, turnoId)), { excl: {} });
+}
 /* remove o paciente do documento de um turno qualquer do dia visível */
 function removeSessItemEm(turnoId, pid) {
   if (!FS || !turnoId) return;
@@ -1584,10 +1705,16 @@ function renderShiftTable(sess) {
     var p = pacById(it.pid);
     if (!p) return '';
     var meds = DB.medsCont.map(function (m) {
+      if (!medAplicavel(m, p)) {
+        return '<td class="med-cell na" title="Não se aplica a acesso ' + esc(p.acesso || '—') + '">—</td>';
+      }
       var st = it.meds[m.id] || (it.meds[m.id] = { f: false, d: m.dose, rot: false });
       var pm = (p.meds || {})[m.id];
       var fq = st.fq || freqDe(pm);
-      var tagFq = (st.rot && FREQ_CURTA[fq]) ? '<span class="freq-tag" title="Frequência prescrita: ' + esc(FREQ_LBL[fq]) + ' — não é de toda sessão">' + esc(FREQ_CURTA[fq]) + '</span>' : '';
+      var tagFq = st.rot
+        ? '<span class="freq-tag' + (fq === 'TODA' ? ' rot' : '') + '" title="Frequência prescrita: ' +
+          esc(freqDetalhe(fq, p.linha)) + '">' + esc(freqCurta(fq, p.linha)) + '</span>'
+        : '';
       return '<td class="med-cell">' + tagFq + '<div class="med-wrap">' +
         '<input type="checkbox" ' + (st.f ? 'checked' : '') + ' onchange="tglMed(' + ix + ',\'' + m.id + '\',this.checked)" title="' +
         esc(st.f ? (tipAutoria(st, 'Marcado') || 'Realizada') : (st.rot ? 'Medicação de rotina deste paciente' : 'Marcar como realizada')) + '">' +
@@ -1652,7 +1779,9 @@ function delResg(ix, ri) {
 function rmFromShift(ix) {
   var s = curSess(); var p = pacById(s.itens[ix].pid);
   if (!confirm('Remover ' + (p ? p.nome : 'este paciente') + ' deste turno?\n\nO cadastro do paciente não é apagado.')) return;
-  var pid = s.itens[ix].pid; s.itens.splice(ix, 1); removeSessItem(pid); renderEscala(); toast('Paciente removido do turno.');
+  var pid = s.itens[ix].pid; s.itens.splice(ix, 1);
+  removeSessItem(pid); excluirDoTurno(CUR.turno, pid);
+  renderEscala(); toast('Paciente removido do turno.');
 }
 /* Marca só as medicações de TODA SESSÃO. As de frequência menor (1x ou 2x
    por semana, quinzenal, mensal) ficam para marcação manual no dia certo —
@@ -1665,6 +1794,8 @@ function markAllRoutine() {
     Object.keys(it.meds).forEach(function (k) {
       var st = it.meds[k];
       if (!st.rot || st.f) return;
+      var m = medById(k);
+      if (m && !medAplicavel(m, p)) return;
       var fq = st.fq || freqDe((p.meds || {})[k]);
       if (fq === 'TODA') { st.f = true; carimbar(st); n++; }
       else pulou++;
@@ -1674,8 +1805,12 @@ function markAllRoutine() {
   if (!n && !pulou) { toast('Nenhuma medicação de rotina pendente. Defina a rotina no cadastro do paciente.'); return; }
   toast(n + ' de toda sessão marcada(s).' + (pulou ? ' ' + pulou + ' de frequência menor ficaram para marcação manual.' : ''), n ? 'ok' : '');
 }
+/* Botão manual: além de incluir quem falta, desfaz as remoções feitas à mão
+   (a sincronização automática respeita essas remoções; esta não). */
 function resyncShift() {
   var s = curSess(), iso = CUR.iso, dow = dayOf(iso), add = 0;
+  var tinhaExcl = Object.keys(s.excl || {}).length;
+  s.excl = {}; limparExclusoes(CUR.turno);
   var have = {}; s.itens.forEach(function (i) { have[i.pid] = 1; });
   DB.pacientes.forEach(function (p) {
     if (p.ativo === false || p.turno !== CUR.turno || have[p.id]) return;
@@ -1683,7 +1818,9 @@ function resyncShift() {
     s.itens.push(novoItem(p)); add++;
   });
   ordenaItens(s); saveSess(); renderEscala();
-  toast(add ? add + ' paciente(s) incluído(s) a partir do cadastro.' : 'Escala já está sincronizada com o cadastro.', add ? 'ok' : '');
+  toast(add ? add + ' paciente(s) incluído(s) a partir do cadastro.'
+    : (tinhaExcl ? 'Remoções desfeitas. Escala alinhada com o cadastro.' : 'Escala já está sincronizada com o cadastro.'),
+    (add || tinhaExcl) ? 'ok' : '');
 }
 /* Em qual outro turno DE HOJE este paciente já está escalado */
 function origemHoje(pid) {
@@ -1744,6 +1881,7 @@ function addToShift() {
     var so = DB.sessoes[sessKey(CUR.iso, org.turnoId)];
     so.itens = so.itens.filter(function (x) { return x.pid !== id; });
     removeSessItemEm(org.turnoId, id);
+    excluirDoTurno(org.turnoId, id);
   }
   closeModal(); renderEscala();
   toast(p.nome + (org && mover ? ' transferido do ' + ((turnoById(org.turnoId) || {}).nome || 'outro turno') : ' incluído no turno') + '.', 'ok');
@@ -1831,9 +1969,10 @@ function renderPacientes() {
     list.map(function (p) {
       var rot = Object.keys(p.meds || {}).filter(function (k) { return p.meds[k].on; })
         .map(function (k) {
-          var m = medById(k); if (!m) return '';
-          var fq = FREQ_CURTA[freqDe(p.meds[k])];
-          return '<span class="chip x">' + esc(m.nome) + ' ' + esc(fmtNum(p.meds[k].dose)) + ' ' + esc(m.un) +
+          var m = medById(k); if (!m || !medAplicavel(m, p)) return '';
+          var fq = freqCurta(freqDe(p.meds[k]), p.linha);
+          return '<span class="chip x" title="' + esc(freqDetalhe(freqDe(p.meds[k]), p.linha)) + '">' +
+            esc(m.nome) + ' ' + esc(fmtNum(p.meds[k].dose)) + ' ' + esc(m.un) +
             (fq ? ' <b>· ' + esc(fq) + '</b>' : '') + '</span>';
         }).join('');
       return '<tr><td><div class="pname">' + esc(p.nome) + '</div><div class="pmeta">' +
@@ -1855,19 +1994,20 @@ function openPat(id) {
     '<div class="fld"><label>Prontuário</label><input class="inp" id="pPront" value="' + esc(p.prontuario || '') + '"></div>' +
     '<div class="fld"><label>Data de nascimento</label><input type="date" class="inp" id="pNasc" value="' + esc(p.nasc || '') + '"></div>' +
     '<div class="fld"><label>Cartão SUS (CNS)</label><input class="inp" id="pCns" value="' + esc(p.cns || '') + '"></div>' +
-    '<div class="fld"><label>Acesso vascular</label><select class="inp" id="pAcesso">' +
+    '<div class="fld"><label>Acesso vascular</label><select class="inp" id="pAcesso" onchange="filtraMedsPorAcesso()">' +
     ['FAV', 'CDL', 'PTFE', 'Outro'].map(function (a) { return '<option' + (p.acesso === a ? ' selected' : '') + '>' + a + '</option>'; }).join('') + '</select></div>' +
     '<div class="fld"><label>Turno *</label><select class="inp" id="pTurno">' +
     DB.turnos.map(function (t) { return '<option value="' + t.id + '"' + (p.turno === t.id ? ' selected' : '') + '>' + esc(t.nome) + ' (' + t.ini + '–' + t.fim + ')</option>'; }).join('') + '</select></div>' +
     '<div class="fld"><label>Linha de dias *</label><select class="inp" id="pLinha">' +
-    ['SQS', 'TQS', 'TODOS'].map(function (l) { return '<option value="' + l + '"' + (p.linha === l ? ' selected' : '') + '>' + LINHA_LBL[l] + '</option>'; }).join('') + '</select></div>' +
+    LINHA_ORDEM.map(function (l) { return '<option value="' + l + '"' + (p.linha === l ? ' selected' : '') + '>' + LINHA_LBL[l] + '</option>'; }).join('') + '</select></div>' +
     '<div class="fld"><label>Situação</label><select class="inp" id="pAtivo"><option value="1"' + (p.ativo !== false ? ' selected' : '') + '>Ativo</option><option value="0"' + (p.ativo === false ? ' selected' : '') + '>Inativo</option></select></div>' +
     '</div>' +
     '<fieldset class="fieldset"><legend>Medicações de rotina e doses padrão</legend>' +
-    '<div class="hint" style="margin-bottom:10px">Marque as medicações de uso contínuo deste paciente, a dose habitual e com que frequência ele usa. As doses já vêm pré-preenchidas na escala; o botão <b>“Marcar rotina”</b> aplica automaticamente apenas as de <b>toda sessão</b> — as demais aparecem sinalizadas na grade para serem marcadas no dia certo.</div>' +
+    '<div class="hint" style="margin-bottom:10px">Marque as medicações de uso contínuo deste paciente, a dose habitual e com que frequência ele usa. <b>Toda sessão</b> equivale a ' + (LINHA_SESSOES[p.linha] || 3) + 'x por semana na linha atual. As doses já vêm pré-preenchidas na escala; o botão <b>“Marcar rotina”</b> aplica automaticamente apenas as de <b>toda sessão</b> — as demais aparecem sinalizadas na grade para serem marcadas no dia certo.</div>' +
     DB.medsCont.map(function (m) {
       var pm = (p.meds || {})[m.id] || {};
-      return '<div class="medrow"><input type="checkbox" id="pm_' + m.id + '"' + (pm.on ? ' checked' : '') + '>' +
+      return '<div class="medrow" id="pmr_' + m.id + '" data-acesso="' + esc(m.acesso || '') + '">' +
+        '<input type="checkbox" id="pm_' + m.id + '"' + (pm.on ? ' checked' : '') + '>' +
         '<div class="nm">' + esc(m.nome) + '<small>' + esc(m.desc || '') + ' · ' + esc(m.via || '') + '</small></div>' +
         '<input class="dose-in" id="pmd_' + m.id + '" value="' + esc(fmtNum(pm.dose != null ? pm.dose : m.dose)) + '" style="width:78px">' +
         '<span class="dose-un" style="width:30px">' + esc(m.un) + '</span>' +
@@ -1878,6 +2018,17 @@ function openPat(id) {
     }).join('') + '</fieldset>' +
     '<div class="fld" style="margin-top:14px"><label>Observações clínicas</label><textarea class="inp" id="pObs">' + esc(p.obs || '') + '</textarea></div>';
   openModal(id ? 'Editar paciente' : 'Novo paciente', body, [{ t: 'Salvar', c: 'btn', f: "savePat('" + (id || '') + "')" }], 'wide');
+  filtraMedsPorAcesso();
+}
+/* mostra apenas as medicações compatíveis com o acesso escolhido */
+function filtraMedsPorAcesso() {
+  var acesso = $('#pAcesso') ? $('#pAcesso').value : '';
+  DB.medsCont.forEach(function (m) {
+    var el = $('#pmr_' + m.id); if (!el) return;
+    var ok = medAplicavel(m, { acesso: acesso });
+    el.style.display = ok ? '' : 'none';
+    if (!ok) { var c = $('#pm_' + m.id); if (c) c.checked = false; }
+  });
 }
 function savePat(id) {
   var nome = $('#pNome').value.trim();
@@ -1892,6 +2043,7 @@ function savePat(id) {
   p.ativo = $('#pAtivo').value === '1'; p.obs = $('#pObs').value.trim();
   p.meds = {};
   DB.medsCont.forEach(function (m) {
+    if (!medAplicavel(m, p)) return;
     p.meds[m.id] = { on: $('#pm_' + m.id).checked, dose: num($('#pmd_' + m.id).value, m.dose), freq: $('#pmf_' + m.id).value };
   });
   savePacientes(); closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
@@ -1976,9 +2128,9 @@ function openDoc(id) {
       var atual = escalaMedico(m)[t.id] || '';
       return '<div class="medrow"><div class="nm">' + esc(t.nome) +
         '<small>' + t.ini + ' às ' + t.fim + (t.fds ? ' · também aos fins de semana' : ' · somente dias úteis') + '</small></div>' +
-        '<select class="inp" id="dt_' + t.id + '" style="width:172px;min-height:32px">' +
+        '<select class="inp" id="dt_' + t.id + '" style="width:200px;min-height:32px">' +
         '<option value="">Não atende</option>' +
-        ['SQS', 'TQS', 'TODOS'].map(function (l) {
+        LINHA_ORDEM.map(function (l) {
           return '<option value="' + l + '"' + (atual === l ? ' selected' : '') + '>' + LINHA_LBL[l] + '</option>';
         }).join('') + '</select></div>';
     }).join('') + '</fieldset>',
@@ -2007,14 +2159,26 @@ function renderMedTable(kind) {
   var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
   var el = kind === 'cont' ? $('#medContTable') : $('#medResgTable');
   el.innerHTML = arr.length
-    ? '<thead><tr><th>Medicação</th><th>Descrição</th><th>Dose padrão</th><th>Unidade</th><th>Via</th><th style="width:86px"></th></tr></thead><tbody>' +
-    arr.map(function (m) {
-      return '<tr><td class="pname">' + esc(m.nome) + '</td><td style="font-size:12.5px;color:var(--muted)">' + esc(m.desc || '—') + '</td>' +
+    ? '<thead><tr><th style="width:70px">Ordem</th><th>Medicação</th><th>Descrição</th><th>Dose padrão</th><th>Unidade</th><th>Via</th>' +
+    (kind === 'cont' ? '<th>Acesso</th>' : '') + '<th style="width:86px"></th></tr></thead><tbody>' +
+    arr.map(function (m, i) {
+      return '<tr><td class="nowrap">' +
+        '<button class="icon-btn" onclick="moveMed(\'' + kind + '\',' + i + ',-1)" title="Subir"' + (i === 0 ? ' disabled' : '') + '>▲</button>' +
+        '<button class="icon-btn" onclick="moveMed(\'' + kind + '\',' + i + ',1)" title="Descer"' + (i === arr.length - 1 ? ' disabled' : '') + '>▼</button></td>' +
+        '<td class="pname">' + esc(m.nome) + '</td><td style="font-size:12.5px;color:var(--muted)">' + esc(m.desc || '—') + '</td>' +
         '<td class="mono">' + esc(fmtNum(m.dose)) + '</td><td>' + esc(m.un) + '</td><td>' + esc(m.via || '—') + '</td>' +
+        (kind === 'cont' ? '<td>' + (m.acesso ? '<span class="badge ' + (m.acesso === 'CDL' ? 'b-cdl' : 'b-fav') + '">' + esc(ACESSO_RESTR[m.acesso]) + '</span>' : '<span class="pmeta">todos</span>') + '</td>' : '') +
         '<td class="nowrap"><button class="icon-btn" onclick="openMed(\'' + kind + '\',\'' + m.id + '\')">✎</button>' +
         '<button class="icon-btn dgr" onclick="delMed(\'' + kind + '\',\'' + m.id + '\')">🗑</button></td></tr>';
     }).join('') + '</tbody>'
     : '<tbody><tr><td class="empty">Nenhuma medicação cadastrada.</td></tr></tbody>';
+}
+/* reordena a lista — a ordem vale para as colunas da escala e para a impressão */
+function moveMed(kind, i, dir) {
+  var arr = kind === 'cont' ? DB.medsCont : DB.medsResg;
+  var j = i + dir; if (j < 0 || j >= arr.length) return;
+  var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  saveConfig(); renderMedTable(kind); renderEscala();
 }
 function openMed(kind, id) {
   var m = id ? medById(id) : { nome: '', desc: '', un: 'mg', dose: 1, via: 'EV' };
@@ -2023,8 +2187,13 @@ function openMed(kind, id) {
     '<div class="fld"><label>Descrição / indicação</label><input class="inp" id="mDesc" value="' + esc(m.desc || '') + '"></div>' +
     '<div class="fld"><label>Dose padrão</label><input class="inp" id="mDose" value="' + esc(fmtNum(m.dose)) + '"></div>' +
     '<div class="fld"><label>Unidade *</label><input class="inp" id="mUn" value="' + esc(m.un) + '" placeholder="mg, mL, mcg, UI"></div>' +
-    '<div class="fld"><label>Via</label><input class="inp" id="mVia" value="' + esc(m.via || '') + '" placeholder="EV, SC, VO, IM, Lock CVC"></div></div>' +
-    (kind === 'cont' ? '<div class="note" style="margin-top:14px">Medicações contínuas viram <b>colunas fixas</b> na tela da escala. Muitas colunas deixam a grade larga — mantenha apenas as de uso rotineiro.</div>' : ''),
+    '<div class="fld"><label>Via</label><input class="inp" id="mVia" value="' + esc(m.via || '') + '" placeholder="EV, SC, VO, IM, Lock CVC"></div>' +
+    (kind === 'cont' ? '<div class="fld"><label>Aplica-se a</label><select class="inp" id="mAcesso">' +
+      Object.keys(ACESSO_RESTR).map(function (a) {
+        return '<option value="' + a + '"' + ((m.acesso || '') === a ? ' selected' : '') + '>' + ACESSO_RESTR[a] + '</option>';
+      }).join('') + '</select></div>' : '') + '</div>' +
+    (kind === 'cont' ? '<div class="note" style="margin-top:14px">Medicações contínuas viram <b>colunas fixas</b> na tela da escala, na ordem da lista. ' +
+      'O campo <b>Aplica-se a</b> esconde a medicação para quem não tem aquele tipo de acesso — é como o selo de cateter fica indisponível para paciente com fístula.</div>' : ''),
     [{ t: 'Salvar', c: 'btn', f: "saveMed('" + kind + "','" + (id || '') + "')" }], 'slim');
 }
 function saveMed(kind, id) {
@@ -2034,6 +2203,7 @@ function saveMed(kind, id) {
   var m = id ? medById(id) : null;
   if (!m) { m = { id: uid('m') }; arr.push(m); }
   m.nome = n; m.un = u; m.desc = $('#mDesc').value.trim(); m.dose = num($('#mDose').value, 1); m.via = $('#mVia').value.trim();
+  if (kind === 'cont') m.acesso = $('#mAcesso') ? $('#mAcesso').value : '';
   saveConfig(); closeModal(); renderConfig(); renderEscala(); toast('Medicação salva.', 'ok');
 }
 function delMed(kind, id) {
@@ -2205,6 +2375,7 @@ function viaHTML(sess, it, viaN, viaQ, op) {
   var rows = '', anyC = false, nLinhas = 0;
   DB.medsCont.forEach(function (m) {
     var st = it.meds[m.id]; if (!st) return;
+    if (!medAplicavel(m, p)) return;
     if (!st.f && !(op.rot && st.rot)) return;
     anyC = true; nLinhas++;
     rows += '<tr><td class="c mk">' + (st.f ? '☑' : '☐') + '</td><td>' + esc(m.nome) +
@@ -2264,9 +2435,10 @@ function consHTML(sess, alvo) {
   var t = turnoById(sess.turno) || {}, d = docById(sess.medicoId), c = DB.clinic;
   var totC = {}, totR = {}, cntC = {}, cntR = {};
   alvo.forEach(function (it) {
+    var pac = pacById(it.pid);
     DB.medsCont.forEach(function (m) {
       var st = it.meds[m.id];
-      if (st && st.f) { totC[m.id] = (totC[m.id] || 0) + num(st.d); cntC[m.id] = (cntC[m.id] || 0) + 1; }
+      if (st && st.f && medAplicavel(m, pac)) { totC[m.id] = (totC[m.id] || 0) + num(st.d); cntC[m.id] = (cntC[m.id] || 0) + 1; }
     });
     (it.resg || []).forEach(function (r) {
       totR[r.mid] = (totR[r.mid] || 0) + num(r.d); cntR[r.mid] = (cntR[r.mid] || 0) + 1;
@@ -2290,7 +2462,7 @@ function consHTML(sess, alvo) {
     (alvo.length ? alvo.map(function (it, i) {
       var p = pacById(it.pid) || { nome: '—', endereco: '' };
       var ms = [];
-      DB.medsCont.forEach(function (m) { var st = it.meds[m.id]; if (st && st.f) ms.push(m.nome + ' ' + fmtNum(st.d) + ' ' + m.un); });
+      DB.medsCont.forEach(function (m) { var st = it.meds[m.id]; if (st && st.f && medAplicavel(m, p)) ms.push(m.nome + ' ' + fmtNum(st.d) + ' ' + m.un); });
       (it.resg || []).forEach(function (r) { var m = medById(r.mid); if (m) ms.push(m.nome + ' ' + fmtNum(r.d) + ' ' + m.un + (r.h ? ' (' + r.h + ')' : '')); });
       return '<tr><td class="c">' + (i + 1) + '</td><td><b>' + esc(p.nome) + '</b>' +
         (it.de ? '<div style="font-size:7pt;color:#555">transferido do ' + esc((turnoById(it.de) || {}).nome || '') + '</div>' : '') +
@@ -2376,7 +2548,7 @@ function exportCSV() {
         var any = false;
         DB.medsCont.forEach(function (m) {
           var st = (it.meds || {})[m.id];
-          if (st && st.f) { any = true; L.push(base.concat(['Continua', m.nome, fmtNum(st.d), m.un, m.via || '', fmtHora(st.em), usuarioCurto(st.por), it.obs || ''])); }
+          if (st && st.f && medAplicavel(m, p)) { any = true; L.push(base.concat(['Continua', m.nome, fmtNum(st.d), m.un, m.via || '', fmtHora(st.em), usuarioCurto(st.por), it.obs || ''])); }
         });
         (it.resg || []).forEach(function (rr) {
           var m = medById(rr.mid) || {}; any = true;
