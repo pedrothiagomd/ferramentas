@@ -189,6 +189,57 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 .dose-in:disabled{background:#f2f5f7;color:#aab6c1;border-color:var(--line-2)}
 .dose-un{font-size:10.5px;color:var(--muted);width:26px;text-align:left;flex:0 0 auto}
 .reg-line{font-size:11px;color:var(--muted);font-weight:600;min-height:14px;letter-spacing:.01em}
+/* botão de parâmetros da sessão na grade */
+.dial-btn{
+  width:100%;min-height:30px;background:#fff;border:1px dashed var(--line);border-radius:6px;
+  padding:4px 8px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;
+  text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:.15s;
+}
+.dial-btn:hover{border-color:var(--brand);color:var(--brand-d);background:var(--brand-l)}
+.dial-btn.ok{border-style:solid;border-color:#c7e6d6;background:var(--ok-l);color:var(--ok)}
+.dial-btn.alerta{border-style:solid;border-color:#f0c9c8;background:var(--danger-l);color:var(--danger)}
+/* prescrição de referência dentro do modal */
+.pr-ref{background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-s);padding:11px 13px}
+.pr-ref-h{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.pr-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:7px 14px}
+.pr-cel{display:flex;flex-direction:column;min-width:0}
+.pr-cel span{font-size:10.5px;color:var(--muted);font-weight:600;line-height:1.2}
+.pr-cel b{font-size:12.5px;font-variant-numeric:tabular-nums;line-height:1.3}
+.pr-calc{margin-top:12px;display:grid;gap:5px}
+.pr-calc div{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:5px 11px;
+  background:var(--surface-2);border-radius:6px}
+.pr-calc span{color:var(--muted);font-weight:600}
+.pr-calc b{font-variant-numeric:tabular-nums}
+/* cálculo da UF do dia */
+.uf-box{border:1px solid var(--line);border-radius:var(--radius-s);padding:11px 13px;background:var(--surface-2);font-size:12.5px}
+.uf-box.vazio{color:var(--muted)}
+.uf-box.excede{border-color:var(--danger);background:var(--danger-l)}
+.uf-conta{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.uf-conta span{color:var(--muted);font-weight:600}
+.uf-conta b{font-variant-numeric:tabular-nums}
+.uf-conta.total{border-top:1px solid var(--line);margin-top:5px;padding-top:7px;font-size:13.5px}
+.uf-conta.total span{color:var(--ink);font-weight:700}
+.uf-conta.total b{color:var(--brand);font-size:15px}
+.uf-box.excede .uf-conta.total b{color:var(--danger)}
+.uf-nota{margin-top:8px;font-size:11.8px;line-height:1.45;color:#8a2b2b}
+.uf-nota.ok{color:var(--muted)}
+input.inp.uf-auto{background:#f0fdf4;border-color:#86efac}
+/* dias de diálise: um botão por dia da semana */
+.dia-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.dia-bt{
+  min-width:52px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-s);
+  background:var(--surface);color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;
+  cursor:pointer;transition:.12s;
+}
+.dia-bt:hover{border-color:var(--brand);color:var(--ink)}
+.dia-bt.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.dia-cnt{font-size:12px;color:var(--muted);font-weight:600;margin-left:4px}
+.b-pers{background:#ede9fe;color:#5b21b6;border-color:#ddd6fe}
+/* pressão arterial: sistólica / diastólica lado a lado, como se escreve */
+.pa-par{display:flex;align-items:center;gap:7px}
+.pa-par input{min-width:0;flex:1;text-align:center}
+.pa-par i{font-style:normal;color:var(--muted);font-weight:700;font-size:15px}
+@media(max-width:820px){.pr-grade{grid-template-columns:1fr 1fr}}
 .team-btn{
   display:flex;align-items:center;gap:8px;width:100%;min-height:34px;cursor:pointer;text-align:left;
   background:#fff;border:1px solid var(--line);border-radius:var(--radius-s);padding:6px 10px;
@@ -283,6 +334,7 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 .modal-f{padding:13px 18px;border-top:1px solid var(--line-2);display:flex;gap:9px;justify-content:flex-end;background:var(--surface-2);border-radius:0 0 12px 12px;flex-wrap:wrap}
 
 .grid{display:grid;gap:13px}
+.grid>*{min-width:0}
 .g2{grid-template-columns:1fr 1fr}
 .g3{grid-template-columns:1fr 1fr 1fr}
 .g4{grid-template-columns:repeat(4,1fr)}
@@ -430,6 +482,17 @@ table.vtab .mk{font-size:9.4pt;font-weight:900;line-height:1}
 table.vtab .sub{font-size:6.3pt;color:#555;line-height:1.15}
 table.vtab .who{font-size:6.2pt;color:#333;line-height:1.1;font-weight:700;letter-spacing:.01em}
 .vnone{font-size:7.8pt;color:#555;font-style:italic;padding:1.2mm 0 2mm;flex:0 0 auto}
+/* relatório da sessão: grade de parâmetros */
+.prsec{
+  font-size:7pt;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+  background:#f0f0f0;border:.7pt solid #999;border-bottom:0;padding:.9mm 2mm;flex:0 0 auto;
+}
+table.prtab{margin-bottom:1.8mm}
+table.prtab td{padding:1.1mm 2mm;vertical-align:top;width:20%}
+table.prtab .pk{font-size:6pt;text-transform:uppercase;letter-spacing:.05em;color:#555;font-weight:700;line-height:1.1}
+table.prtab .pv{font-size:8.6pt;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
+table.prtab .pv.alerta{color:#a3211f}
+.via.rel .vobs{min-height:10mm}
 
 .vobs{border:.7pt solid #999;padding:1.1mm 2mm;min-height:8mm;flex:0 0 auto}
 .vobs .k{font-size:6pt;text-transform:uppercase;letter-spacing:.06em;color:#555;font-weight:700}
@@ -670,6 +733,7 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
         <button class="btn sm sec" id="btnRotina" onclick="markAllRoutine()" title="Marca as medicações de toda sessão dos pacientes presentes">✓ Marcar rotina</button>
       </div>
       <div class="card-b flush">
+        <div id="fdsAviso"></div>
         <div class="tw"><table class="zebra" id="shiftTable"></table></div>
         <div id="shiftEmpty"></div>
       </div>
@@ -962,6 +1026,7 @@ function defaults() {
       { id: 'mr10', nome: 'Captopril', desc: 'Crise hipertensiva intradialítica', un: 'mg', dose: 25, via: 'VO/SL' }
     ],
     pacientes: [],
+    presc: {},
     sessoes: {}
   };
 }
@@ -1003,6 +1068,7 @@ function medsDoPaciente(p) {
 function normalizeDB() {
   var d = defaults(), mudou = false;
   CHAVES_CFG.concat(['pacientes', 'sessoes']).forEach(function (k) { if (DB[k] == null) DB[k] = d[k]; });
+  if (DB.presc == null) DB.presc = {};
   DB.medicos.forEach(function (m) {
     if (!m.escala) { m.escala = {}; (m.turnos || []).forEach(function (x) { m.escala[x] = 'TODOS'; }); }
     delete m.turnos;
@@ -1055,7 +1121,8 @@ function medById(id) {
 var LINHA_ORDEM = ['SQS', 'TQS', 'SQSS', 'TODOS'];
 var LINHA_LBL = {
   SQS: 'Seg / Qua / Sex', TQS: 'Ter / Qui / Sáb',
-  SQSS: 'Seg / Qua / Sex / Sáb', TODOS: 'Diário'
+  SQSS: 'Seg / Qua / Sex / Sáb', TODOS: 'Diário',
+  PERS: 'Dias escolhidos'
 };
 /* frequência semanal das medicações de rotina do paciente */
 var FREQ_ORDEM = ['TODA', 'X2', 'X1', 'Q15', 'MES', 'SN'];
@@ -1067,24 +1134,147 @@ var FREQ_CURTA = { X2: '2x/sem', X1: '1x/sem', Q15: 'quinzenal', MES: 'mensal', 
 /* quantas sessões por semana cada linha de dias representa */
 var LINHA_SESSOES = { SQS: 3, TQS: 3, SQSS: 4, TODOS: 6 };
 function freqDe(o) { return (o && o.freq) || 'TODA'; }
-/* etiqueta curta: "toda sessão" vira 3x ou 4x conforme a linha do paciente */
-function freqCurta(fq, linha) {
-  if (!fq || fq === 'TODA') return (LINHA_SESSOES[linha] || 3) + 'x/sem';
+/* etiqueta curta: "toda sessão" vira 3x, 4x... conforme os dias do paciente */
+function freqCurta(fq, p) {
+  if (!fq || fq === 'TODA') return sessoesSemana(p) + 'x/sem';
   return FREQ_CURTA[fq] || '';
 }
-function freqDetalhe(fq, linha) {
-  if (!fq || fq === 'TODA') return 'Toda sessão — ' + (LINHA_SESSOES[linha] || 3) + ' por semana nesta linha';
+function freqDetalhe(fq, p) {
+  if (!fq || fq === 'TODA') return 'Toda sessão — ' + sessoesSemana(p) + ' por semana nos dias deste paciente';
   return FREQ_LBL[fq] || '';
 }
-var LINHA_CLS = { SQS: 'b-sqs', TQS: 'b-tqs', SQSS: 'b-sqss', TODOS: 'b-all' };
+var LINHA_CLS = { SQS: 'b-sqs', TQS: 'b-tqs', SQSS: 'b-sqss', TODOS: 'b-all', PERS: 'b-pers' };
+/* dias de cada linha pronta — 0 = domingo, 6 = sábado */
+var LINHA_DIAS = {
+  SQS: [1, 3, 5], TQS: [2, 4, 6], SQSS: [1, 3, 5, 6], TODOS: [1, 2, 3, 4, 5, 6]
+};
 function linhaAtendeDia(linha, dow) {
-  if (linha === 'TODOS') return dow >= 1 && dow <= 6;
-  if (linha === 'SQS') return dow === 1 || dow === 3 || dow === 5;
-  if (linha === 'TQS') return dow === 2 || dow === 4 || dow === 6;
-  if (linha === 'SQSS') return dow === 1 || dow === 3 || dow === 5 || dow === 6;
-  return false;
+  return (LINHA_DIAS[linha] || []).indexOf(dow) >= 0;
+}
+/* linha que casa exatamente com um conjunto de dias, ou 'PERS' */
+function linhaDosDias(dias) {
+  var chave = (dias || []).slice().sort(function (a, b) { return a - b; }).join(',');
+  var achou = '';
+  LINHA_ORDEM.forEach(function (l) { if (!achou && LINHA_DIAS[l].join(',') === chave) achou = l; });
+  return achou || 'PERS';
+}
+
+/* ================= DIAS E TURNO DE CADA PACIENTE =================
+   A linha pronta cobre a maioria dos casos; quem foge dela (4, 5 ou 6
+   sessões em dias específicos) usa 'PERS' com a lista de dias. */
+function diasDoPaciente(p) {
+  if (!p) return [];
+  if (p.linha === 'PERS') {
+    return (p.dias || []).slice().filter(function (d) { return d >= 0 && d <= 6; })
+      .sort(function (a, b) { return a - b; });
+  }
+  return LINHA_DIAS[p.linha] || [];
+}
+function pacienteAtendeDia(p, dow) { return diasDoPaciente(p).indexOf(dow) >= 0; }
+function sessoesSemana(p) { return diasDoPaciente(p).length || 3; }
+function linhaTexto(p) {
+  if (!p) return '—';
+  if (p.linha !== 'PERS') return LINHA_LBL[p.linha] || '—';
+  var d = diasDoPaciente(p);
+  return d.length ? d.map(function (x) { return DIAS_C[x]; }).join(' / ') : 'Sem dias definidos';
+}
+function temDiaDeFds(p) {
+  var d = diasDoPaciente(p);
+  return d.indexOf(0) >= 0 || d.indexOf(6) >= 0;
+}
+function turnosDeFds() { return DB.turnos.filter(function (t) { return t.fds; }); }
+/* No fim de semana funcionam menos turnos. Quem dialisa sábado ou domingo
+   num turno que não abre precisa de um turno próprio para esses dias. */
+function turnoDoPaciente(p, iso) {
+  if (!p) return '';
+  if (!isWeekend(iso)) return p.turno;
+  if (p.turnoFds && turnoById(p.turnoFds)) return p.turnoFds;
+  var t = turnoById(p.turno);
+  return (t && t.fds) ? p.turno : '';
+}
+/* paciente que dialisa no fim de semana e ficaria de fora por falta de turno */
+function semTurnoFds(p) {
+  if (!p || p.ativo === false || !temDiaDeFds(p)) return false;
+  if (p.turnoFds && turnoById(p.turnoFds)) return false;
+  var t = turnoById(p.turno);
+  return !(t && t.fds);
 }
 function sessKey(iso, turnoId) { return iso + '|' + turnoId; }
+
+/* ================= PRESCRIÇÃO DE DIÁLISE =================
+   Parâmetros fixos do paciente, definidos pela equipe médica.
+   Ficam em documento próprio (chb/prescricoes) para que a restrição
+   valha no banco, e não apenas na tela. */
+var PRESC_CAMPOS = [
+  { k: 'qb', lbl: 'Fluxo sanguíneo (Qb)', un: 'mL/min', ph: '300' },
+  { k: 'qd', lbl: 'Fluxo do dialisato (Qd)', un: 'mL/min', ph: '500' },
+  { k: 'tempo', lbl: 'Tempo de sessão', un: 'min', ph: '240' },
+  { k: 'pesoSeco', lbl: 'Peso seco', un: 'kg', ph: '68,5', dec: true },
+  { k: 'ufMax', lbl: 'UF máxima', un: 'mL', ph: '3000' },
+  { k: 'perfilUf', lbl: 'Perfil de UF', un: '', ph: '0', txt: true },
+  { k: 'temp', lbl: 'Temperatura do banho', un: '°C', ph: '36,0', dec: true },
+  { k: 'bic', lbl: 'Bicarbonato', un: 'mmol/L', ph: '32' },
+  { k: 'na', lbl: 'Sódio', un: 'mmol/L', ph: '138' },
+  { k: 'primer', lbl: 'Reposição do sistema (primer)', un: 'mL', ph: '500' }
+];
+function prescDe(pid) { return (DB.presc || {})[pid] || {}; }
+function temPresc(pid) {
+  var o = prescDe(pid);
+  return PRESC_CAMPOS.some(function (c) { return o[c.k] !== undefined && o[c.k] !== ''; });
+}
+function fmtPresc(pid, k) {
+  var o = prescDe(pid), c = PRESC_CAMPOS.filter(function (x) { return x.k === k; })[0];
+  if (!c || o[k] === undefined || o[k] === '') return '—';
+  return (c.txt ? String(o[k]) : fmtNum(o[k])) + (c.un ? ' ' + c.un : '');
+}
+
+/* ================= MEDIDAS DA SESSÃO =================
+   Peso e pressão de entrada e saída ficam com quem lança;
+   a UF do dia é definida pela equipe médica. */
+function dialDe(it) { return (it && it.dial) || {}; }
+function perdaPeso(d) {
+  if (d.pesoEnt === undefined || d.pesoSai === undefined || d.pesoEnt === '' || d.pesoSai === '') return null;
+  return Math.round((num(d.pesoEnt) - num(d.pesoSai)) * 1000) / 1000;
+}
+function fmtPA(s, dia) {
+  if (!s && !dia) return '—';
+  return (s ? fmtNum(s) : '—') + '/' + (dia ? fmtNum(dia) : '—');
+}
+/* ================= UF DO DIA =================
+   UF = ganho interdialítico (peso de entrada − peso seco) + volume de
+   reposição do sistema (priming/lavagem), padrão de 500 mL para todos.
+   O resultado é uma sugestão: se passar da UF máxima prescrita, o sistema
+   não aplica nada e a equipe médica define o valor à mão. */
+var PRIMER_PADRAO = 500;
+function primerDe(pid) {
+  var p = prescDe(pid).primer;
+  if (p === undefined || p === '') p = DB.clinic && DB.clinic.primer;
+  if (p === undefined || p === '') return PRIMER_PADRAO;
+  return num(p, PRIMER_PADRAO);
+}
+/* devolve null quando faltam peso seco ou peso de entrada */
+function ufSugerida(pid, d) {
+  var seco = prescDe(pid).pesoSeco;
+  if (seco === undefined || seco === '' || !d || d.pesoEnt === undefined || d.pesoEnt === '') return null;
+  var ganho = Math.round((num(d.pesoEnt) - num(seco)) * 1000);   // kg -> mL
+  var primer = primerDe(pid);
+  var uf = Math.max(0, ganho) + primer;
+  var mx = num(prescDe(pid).ufMax, 0);
+  return { uf: uf, ganho: ganho, primer: primer, max: mx, excede: mx > 0 && uf > mx };
+}
+
+/* quanto o paciente saiu acima (ou abaixo) do peso seco prescrito */
+function difSeco(pid, d) {
+  var seco = prescDe(pid).pesoSeco;
+  if (seco === undefined || seco === '' || d.pesoSai === undefined || d.pesoSai === '') return '________';
+  var dif = Math.round((num(d.pesoSai) - num(seco)) * 1000) / 1000;
+  return (dif > 0 ? '+' : '') + fmtNum(dif) + ' kg';
+}
+/* UF do dia acima do teto prescrito é erro de programação da máquina */
+function ufExcedida(pid, d) {
+  var mx = num(prescDe(pid).ufMax, 0);
+  return mx > 0 && num(d.ufHoje, 0) > mx;
+}
 
 /* ================= PERMISSÕES =================
    admin      → tudo, inclusive cadastros e configurações
@@ -1169,7 +1359,7 @@ function freqControlada(fq) { return FREQ_META[fq] !== undefined; }
 /* sessões que ainda restam ao paciente nesta semana, contando hoje */
 function sessoesRestantes(p, iso) {
   var fim = fimSemana(iso), n = 0, d = iso;
-  while (d <= fim) { if (linhaAtendeDia(p.linha, dayOf(d))) n++; d = isoAddDias(d, 1); }
+  while (d <= fim) { if (pacienteAtendeDia(p, dayOf(d))) n++; d = isoAddDias(d, 1); }
   return n;
 }
 
@@ -1193,15 +1383,15 @@ function statusDose(p, m, iso, fq) {
     ultima: adm[adm.length - 1], restantes: restantes
   };
 }
-function textoDose(st, fq, linha) {
-  if (!st) return freqCurta(fq, linha);
-  var base = freqCurta(fq, linha);
+function textoDose(st, fq, p) {
+  if (!st) return freqCurta(fq, p);
+  var base = freqCurta(fq, p);
   if (st.estado === 'COMPLETO') return '✓ ' + (st.ultima ? fmtBR(st.ultima).slice(0, 5) : 'feita');
   if (st.estado === 'ULTIMA') return base + ' · hoje!';
   return base + ' · pendente';
 }
-function tipDose(st, fq, linha) {
-  if (!st) return 'Frequência prescrita: ' + freqDetalhe(fq, linha);
+function tipDose(st, fq, p) {
+  if (!st) return 'Frequência prescrita: ' + freqDetalhe(fq, p);
   var q = st.feitas + ' de ' + st.meta + (FREQ_JANELA[fq] ? ' nos últimos ' + FREQ_JANELA[fq] + ' dias' : ' nesta semana');
   if (st.estado === 'COMPLETO') return FREQ_LBL[fq] + ' — já administrada' + (st.ultima ? ' em ' + fmtBR(st.ultima) : '') + ' (' + q + ')';
   if (st.estado === 'ULTIMA') return FREQ_LBL[fq] + ' — ÚLTIMA sessão do período para esta dose (' + q + ')';
@@ -1238,8 +1428,8 @@ function montaSess(iso, turnoId) {
   CAT_ORDEM.forEach(function (c) { s[CAT_CAMPO[c]] = profPadrao(c, turnoId, iso); });
   var dow = dayOf(iso);
   DB.pacientes.forEach(function (p) {
-    if (p.ativo === false || p.turno !== turnoId) return;
-    if (!linhaAtendeDia(p.linha, dow)) return;
+    if (p.ativo === false || turnoDoPaciente(p, iso) !== turnoId) return;
+    if (!pacienteAtendeDia(p, dow)) return;
     s.itens.push(novoItem(p));
   });
   ordenaItens(s);
@@ -1267,16 +1457,18 @@ function autoSincroniza(iso, turnoId) {
   var excl = s.excl || {};
 
   DB.pacientes.forEach(function (p) {
-    if (p.ativo === false || p.turno !== turnoId) return;
-    if (!linhaAtendeDia(p.linha, dow)) return;
+    if (p.ativo === false || turnoDoPaciente(p, iso) !== turnoId) return;
+    if (!pacienteAtendeDia(p, dow)) return;
     if (have[p.id] || excl[p.id]) return;
     s.itens.push(novoItem(p)); incluir.push(p.id);
   });
 
+  /* it.man = incluído à mão neste turno · it.de = veio de outro turno hoje.
+     Os dois ficam: quem lançou decidiu que o paciente dialisa aqui hoje. */
   s.itens = s.itens.filter(function (it) {
-    if (it.de || itemTocado(it)) return true;
+    if (it.man || it.de || itemTocado(it)) return true;
     var p = pacById(it.pid);
-    var deveria = p && p.ativo !== false && p.turno === turnoId && linhaAtendeDia(p.linha, dow);
+    var deveria = p && p.ativo !== false && turnoDoPaciente(p, iso) === turnoId && pacienteAtendeDia(p, dow);
     if (deveria) return true;
     remover.push(it.pid); return false;
   });
@@ -1328,7 +1520,7 @@ function ordenaItens(s) {
    Fonte de verdade: Firestore. DB (memória) é espelho dos listeners.
    ================================================================== */
 var FB = null, FS = null, AU = null, CUR_USER = null;
-var UNSUB = { cfg: null, pac: null, usr: null, sess: {} };
+var UNSUB = { cfg: null, pac: null, usr: null, presc: null, sess: {} };
 var CFG_OK = false, PAC_OK = false;
 
 var CFG_KEY = 'chb_fbcfg';
@@ -1468,8 +1660,8 @@ function alertaPermissao(acao) {
 function sairApp() {
   Object.keys(UNSUB.sess).forEach(function (k) { UNSUB.sess[k](); });
   UNSUB.sess = {};
-  if (UNSUB.cfg) UNSUB.cfg(); if (UNSUB.pac) UNSUB.pac(); if (UNSUB.usr) UNSUB.usr();
-  UNSUB.cfg = UNSUB.pac = UNSUB.usr = null; CFG_OK = PAC_OK = false;
+  if (UNSUB.cfg) UNSUB.cfg(); if (UNSUB.pac) UNSUB.pac(); if (UNSUB.usr) UNSUB.usr(); if (UNSUB.presc) UNSUB.presc();
+  UNSUB.cfg = UNSUB.pac = UNSUB.usr = UNSUB.presc = null; CFG_OK = PAC_OK = false;
   USUARIOS = {}; PAPEL_ABERTO = true;
   DB = defaults(); DB.sessoes = {}; SESS_READY = {};
   $('#loginScreen').style.display = 'flex';
@@ -1480,7 +1672,7 @@ function entrarApp() {
   $('#appShell').style.display = 'block';
   $('#userMail').textContent = (CUR_USER.email || '').split('@')[0];
   setSync(navigator.onLine ? 'ok' : 'offline');
-  subConfig(); subPacientes(); subUsuarios();
+  subConfig(); subPacientes(); subUsuarios(); subPrescricoes();
 }
 
 /* ---------- login ---------- */
@@ -1522,8 +1714,25 @@ function limpa(o) {
   if (typeof o === 'number' && !isFinite(o)) return 0;
   return o;
 }
-function itemToDoc(it) {
-  return limpa({ presente: it.presente !== false, meds: it.meds || {}, resg: it.resg || [], obs: it.obs || '', por: it.por || '', em: it.em || 0, de: it.de || '' });
+/* Os campos das medidas da sessão são gravados um a um, e o que estiver
+   vazio vai como FieldValue.delete(). Sem isso o merge do Firestore apenas
+   acrescenta: apagar um peso ou a UF na tela deixava o valor antigo vivo no
+   banco, e o próximo snapshot o trazia de volta. */
+var DIAL_CAMPOS = ['pesoEnt', 'pesoSai', 'paEntS', 'paEntD', 'paSaiS', 'paSaiD', 'ufHoje', 'ufAuto', 'por', 'em'];
+function dialToDoc(d, comDeletes) {
+  d = d || {};
+  var o = {};
+  DIAL_CAMPOS.forEach(function (k) {
+    var v = d[k];
+    if (v === undefined || v === '') {
+      /* FieldValue.delete() só vale em set com merge — nunca no set inteiro */
+      if (comDeletes) o[k] = firebase.firestore.FieldValue.delete();
+    } else o[k] = v;
+  });
+  return o;
+}
+function itemToDoc(it, comDeletes) {
+  return limpa({ presente: it.presente !== false, meds: it.meds || {}, resg: it.resg || [], obs: it.obs || '', por: it.por || '', em: it.em || 0, de: it.de || '', man: it.man ? 1 : 0, dial: dialToDoc(it.dial, comDeletes) });
 }
 function sessToDoc(s) {
   var m = {};
@@ -1540,7 +1749,7 @@ function docToSess(d, iso, turnoId) {
   var m = d.itens || {};
   Object.keys(m).forEach(function (pid) {
     var x = m[pid] || {};
-    s.itens.push({ pid: pid, presente: x.presente !== false, meds: x.meds || {}, resg: x.resg || [], obs: x.obs || '', por: x.por || '', em: x.em || 0, de: x.de || '' });
+    s.itens.push({ pid: pid, presente: x.presente !== false, meds: x.meds || {}, resg: x.resg || [], obs: x.obs || '', por: x.por || '', em: x.em || 0, de: x.de || '', man: x.man ? 1 : 0, dial: x.dial || {} });
   });
   ordenaItens(s);
   return s;
@@ -1569,12 +1778,15 @@ function descarrega() {
   if (!ps.length) return;
   Promise.all(ps).then(function () {
     setSync(navigator.onLine ? 'ok' : 'offline');
-  }).catch(function (e) {
-    setSync('error', 'Não salvou');
-    if (e.code === 'permission-denied') alertaPermissao('gravação');
-    else mostrarAlerta('Não foi possível salvar', esc(e.message || String(e)));
-    toast('Não foi possível salvar — veja o aviso no topo.', 'err');
-  });
+  }).catch(erroGravacao);
+}
+/* tratamento único de falha de gravação, usado pela fila e pelas gravações
+   diretas (usuários e prescrições, que sobrescrevem o documento inteiro) */
+function erroGravacao(e) {
+  setSync('error', 'Não salvou');
+  if (e && e.code === 'permission-denied') alertaPermissao('gravação');
+  else mostrarAlerta('Não foi possível salvar', esc((e && e.message) || String(e)));
+  toast('Não foi possível salvar — veja o aviso no topo.', 'err');
 }
 
 /* ---------- listeners ---------- */
@@ -1600,11 +1812,34 @@ function subUsuarios() {
     if (VIEW === 'config') renderConfig();
   }, function () { PAPEL_ABERTO = true; aplicaPapel(); });
 }
+/* ATENÇÃO — gravação SEM merge, de propósito.
+   `lista` é um mapa e o merge do Firestore só acrescenta chaves: nunca apaga
+   as que sumiram. Com merge, remover alguém da lista deixava a permissão dele
+   viva no banco — a tela mostrava a remoção e o acesso continuava valendo.
+   Como o documento inteiro é desta função, sobrescrever é o correto. */
 function salvarUsuarios() {
   if (!FS) return;
   var lista = {};
   Object.keys(USUARIOS).forEach(function (e) { lista[e] = USUARIOS[e]; });
-  enfileira(FS.collection(COL_APP).doc('usuarios'), { lista: lista });
+  setSync('saving');
+  return FS.collection(COL_APP).doc('usuarios').set({ lista: lista })
+    .then(function () { setSync('ok'); })
+    .catch(erroGravacao);
+}
+function subPrescricoes() {
+  UNSUB.presc = FS.collection(COL_APP).doc('prescricoes').onSnapshot(function (snap) {
+    DB.presc = (snap.exists && snap.data().lista) || {};
+    if (VIEW === 'escala') renderEscala();
+    if (VIEW === 'pacientes') renderPacientes();
+  }, function () { });
+}
+/* também sem merge: a prescrição de um paciente excluído precisa sair do banco */
+function savePrescricoes() {
+  if (!FS) return;
+  setSync('saving');
+  return FS.collection(COL_APP).doc('prescricoes').set({ lista: limpa(DB.presc || {}) })
+    .then(function () { setSync('ok'); })
+    .catch(erroGravacao);
 }
 function subPacientes() {
   UNSUB.pac = FS.collection(COL_APP).doc('pacientes').onSnapshot(function (snap) {
@@ -1678,7 +1913,7 @@ function saveSess(pid) {
     var it = s.itens.filter(function (x) { return x.pid === pid; })[0];
     if (!it) return;
     var d = { itens: {}, data: s.data, turno: s.turno };
-    d.itens[pid] = itemToDoc(it);
+    d.itens[pid] = itemToDoc(it, true);
     enfileira(ref, d);
   } else {
     enfileira(ref, sessToDoc(s));
@@ -1697,6 +1932,14 @@ function excluirDoTurno(turnoId, pid) {
   if (s) { s.excl = s.excl || {}; s.excl[pid] = true; }
   if (!FS || !turnoId) return;
   var d = { excl: {} }; d.excl[pid] = true;
+  enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, turnoId)), d);
+}
+/* desfaz a exclusão de um paciente só, sem mexer nas demais */
+function limparExclusao(turnoId, pid) {
+  var s = DB.sessoes[sessKey(CUR.iso, turnoId)];
+  if (s && s.excl) delete s.excl[pid];
+  if (!FS || !turnoId) return;
+  var d = { excl: {} }; d.excl[pid] = firebase.firestore.FieldValue.delete();
   enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, turnoId)), d);
 }
 function limparExclusoes(turnoId) {
@@ -1718,7 +1961,7 @@ function saveSessEm(turnoId, pid) {
   var s = DB.sessoes[sessKey(CUR.iso, turnoId)]; if (!s) return;
   var it = s.itens.filter(function (x) { return x.pid === pid; })[0]; if (!it) return;
   var d = { itens: {}, data: s.data, turno: s.turno };
-  d.itens[pid] = itemToDoc(it);
+  d.itens[pid] = itemToDoc(it, true);
   enfileira(FS.collection(COL_SESS).doc(sessDocId(CUR.iso, turnoId)), d);
 }
 
@@ -1771,6 +2014,9 @@ function carregarHistorico() {
     .then(function (q) {
       var out = [];
       q.forEach(function (doc) {
+        /* só identificadores no formato AAAA-MM-DD_TURNO; ignora qualquer
+           documento avulso na coleção (por exemplo o teste de conexão) */
+        if (!/^\d{4}-\d{2}-\d{2}_/.test(doc.id)) return;
         var p = doc.id.split('_');
         out.push(docToSess(doc.data(), p[0], p[1]));
       });
@@ -1788,6 +2034,7 @@ function gravarTudo(dados) {
     var o = {}; CHAVES_CFG.forEach(function (k) { o[k] = dados[k]; }); return o;
   })()));
   lote.set(FS.collection(COL_APP).doc('pacientes'), { lista: limpa(dados.pacientes || []) });
+  if (dados.presc) lote.set(FS.collection(COL_APP).doc('prescricoes'), { lista: limpa(dados.presc) });
   var chaves = Object.keys(dados.sessoes || {}).slice(0, 400);
   chaves.forEach(function (k) {
     var p = k.split('|'), s = dados.sessoes[k];
@@ -1945,15 +2192,35 @@ function renderEscala() {
   });
   pintaEquipe(sess);
 
+  avisoFimDeSemana(iso);
   renderShiftTable(sess);
   renderStats(sess);
   pintaBadgePend();
 }
+/* Sábado e domingo abrem menos turnos. Quem dialisa nesses dias e está num
+   turno que não abre ficaria de fora sem qualquer sinal — este aviso mostra
+   quem é, com atalho para o cadastro. */
+function avisoFimDeSemana(iso) {
+  var el = $('#fdsAviso'); if (!el) return;
+  if (!isWeekend(iso)) { el.innerHTML = ''; return; }
+  var dow = dayOf(iso);
+  var fora = DB.pacientes.filter(function (p) {
+    return p.ativo !== false && pacienteAtendeDia(p, dow) && semTurnoFds(p);
+  });
+  if (!fora.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="note warn" style="margin:0 0 12px">' +
+    '<b>' + fora.length + ' paciente(s) com sessão hoje estão sem turno de fim de semana.</b> ' +
+    'O turno da semana deles não abre ' + DIAS[dow].toLowerCase() + ', então não entram em nenhuma escala. ' +
+    'Abra o cadastro e escolha o turno de fim de semana: ' +
+    fora.slice(0, 6).map(function (p) {
+      return '<a href="#" onclick="go(\'pacientes\');openPat(\'' + p.id + '\');return false"><b>' + esc(p.nome) + '</b></a>';
+    }).join(', ') + (fora.length > 6 ? ' e mais ' + (fora.length - 6) + '.' : '.') + '</div>';
+}
 function contaPrevisto(iso, turnoId) {
   var dow = dayOf(iso), n = 0;
   DB.pacientes.forEach(function (p) {
-    if (p.ativo === false || p.turno !== turnoId) return;
-    if (linhaAtendeDia(p.linha, dow)) n++;
+    if (p.ativo === false || turnoDoPaciente(p, iso) !== turnoId) return;
+    if (pacienteAtendeDia(p, dow)) n++;
   });
   return n;
 }
@@ -1989,7 +2256,8 @@ function renderShiftTable(sess) {
     DB.medsCont.map(function (m) {
       return '<th class="ctr" title="' + esc(m.desc || '') + '">' + esc(m.nome) + '<br><span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted)">' + esc(m.un) + '</span></th>';
     }).join('') +
-    '<th style="min-width:170px">Resgate / sintomáticos</th><th style="min-width:150px">Observações</th><th style="width:44px"></th></tr></thead>';
+    '<th style="min-width:170px">Resgate / sintomáticos</th><th style="min-width:150px">Parâmetros</th>' +
+    '<th style="min-width:150px">Observações</th><th style="width:44px"></th></tr></thead>';
 
   var rows = sess.itens.map(function (it, ix) {
     var p = pacById(it.pid);
@@ -2007,8 +2275,8 @@ function renderShiftTable(sess) {
       else if (sd.estado === 'COMPLETO') cls += ' feita';
       else if (sd.estado === 'ULTIMA') cls += ' ultima';
       var tagFq = st.rot
-        ? '<span class="' + cls + '" title="' + esc(tipDose(sd, fq, p.linha)) + '">' +
-          esc(textoDose(sd, fq, p.linha)) + '</span>'
+        ? '<span class="' + cls + '" title="' + esc(tipDose(sd, fq, p)) + '">' +
+          esc(textoDose(sd, fq, p)) + '</span>'
         : '';
       return '<td class="med-cell">' + tagFq + '<div class="med-wrap">' +
         '<input type="checkbox" ' + (st.f ? 'checked' : '') + ' onchange="tglMed(' + ix + ',\'' + m.id + '\',this.checked)" title="' +
@@ -2031,13 +2299,15 @@ function renderShiftTable(sess) {
       '<td class="mono" style="color:var(--muted)">' + (ix + 1) + '</td>' +
       '<td><div class="pname">' + esc(p.nome) + alerta + '</div>' +
       '<div class="pmeta">' + (p.prontuario ? 'Pront. ' + esc(p.prontuario) + ' · ' : '') +
-      '<span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(LINHA_LBL[p.linha] || '—') + '</span>' +
+      '<span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(linhaTexto(p)) + '</span>' +
       (ult ? ' <span class="autor" title="' + esc(tipAutoria(ult, 'Último lançamento')) + '">✎ ' + esc(usuarioCurto(ult.por)) + ' ' + fmtHora(ult.em) + '</span>' : '') +
       '</div></td>' +
       '<td class="tac"><label class="sw" style="justify-content:center"><input type="checkbox" ' + (it.presente ? 'checked' : '') +
       ' onchange="tglPres(' + ix + ',this.checked)"><span style="font-size:11.5px">' + (it.presente ? 'Sim' : 'Falta') + '</span></label></td>' +
       meds +
       '<td><div class="chips">' + chips + '<button class="icon-btn" onclick="openResg(' + ix + ')" title="Adicionar medicação de resgate">＋</button></div></td>' +
+      '<td><button class="' + classeDial(it, p.id) + '" onclick="openDados(' + ix + ')" title="' + esc(tipDial(it, p.id)) + '">' +
+      (resumoDial(it, p.id) ? esc(resumoDial(it, p.id)) : '＋ dados') + '</button></td>' +
       '<td><input class="obs-in" value="' + esc(it.obs || '') + '" placeholder="Intercorrências..." onchange="setObs(' + ix + ',this.value)"></td>' +
       '<td><button class="icon-btn dgr" onclick="rmFromShift(' + ix + ')" title="Remover deste turno">✕</button></td></tr>';
   }).join('');
@@ -2181,8 +2451,8 @@ function resyncShift() {
   s.excl = {}; limparExclusoes(CUR.turno);
   var have = {}; s.itens.forEach(function (i) { have[i.pid] = 1; });
   DB.pacientes.forEach(function (p) {
-    if (p.ativo === false || p.turno !== CUR.turno || have[p.id]) return;
-    if (!linhaAtendeDia(p.linha, dow)) return;
+    if (p.ativo === false || turnoDoPaciente(p, iso) !== CUR.turno || have[p.id]) return;
+    if (!pacienteAtendeDia(p, dow)) return;
     s.itens.push(novoItem(p)); add++;
   });
   ordenaItens(s); saveSess(); renderEscala();
@@ -2217,7 +2487,7 @@ function openAddToShift() {
   });
   function opc(x) {
     var tn = (turnoById(x.p.turno) || {}).nome || '';
-    var extra = x.o ? ' — hoje no ' + ((turnoById(x.o.turnoId) || {}).nome || '') : ' — agenda: ' + tn + ' · ' + (LINHA_LBL[x.p.linha] || '');
+    var extra = x.o ? ' — hoje no ' + ((turnoById(x.o.turnoId) || {}).nome || '') : ' — agenda: ' + tn + ' · ' + linhaTexto(x.p);
     return '<option value="' + x.p.id + '">' + esc(x.p.nome + extra) + '</option>';
   }
   var atual = (turnoById(CUR.turno) || {}).nome || 'turno atual';
@@ -2245,6 +2515,10 @@ function addToShift() {
     it = novoItem(p);
     if (org) it.de = org.turnoId;
   }
+  /* marca de inclusão manual: sem ela a sincronização automática devolveria
+     o paciente ao turno de origem no próximo desenho da escala */
+  it.man = 1;
+  delete (s.excl || {})[p.id]; limparExclusao(CUR.turno, p.id);
   s.itens.push(it); ordenaItens(s); saveSess(p.id);
   if (org && mover) {
     var so = DB.sessoes[sessKey(CUR.iso, org.turnoId)];
@@ -2282,6 +2556,236 @@ function saveResg() {
   });
   if (!n) { toast('Selecione ao menos uma medicação.', 'err'); return; }
   saveSess(it.pid); closeModal(); renderEscala(); toast(n + ' medicação(ões) de resgate registrada(s).', 'ok');
+}
+
+/* ================================================================== */
+
+/* ==================================================================
+   PARÂMETROS DA DIÁLISE
+   Prescrição (fixa, da equipe médica) e medidas da sessão (peso e
+   pressão de entrada e saída, lançadas por quem opera a sala).
+   ================================================================== */
+
+/* ---------- prescrição, dentro do cadastro do paciente ---------- */
+function campoPresc(o, c, editavel) {
+  return '<div class="fld"><label>' + esc(c.lbl) + (c.un ? ' (' + esc(c.un) + ')' : '') + '</label>' +
+    '<input class="inp" id="pr_' + c.k + '" value="' + esc(o[c.k] === undefined ? '' : (c.txt ? o[c.k] : fmtNum(o[c.k]))) + '" ' +
+    'placeholder="' + esc(c.ph || '') + '"' + (editavel ? '' : ' disabled') + '></div>';
+}
+function blocoPresc(pid) {
+  var o = prescDe(pid), ed = podeClinico();
+  return '<fieldset class="fieldset"><legend>Prescrição de diálise</legend>' +
+    '<div class="hint" style="margin-bottom:10px">' +
+    (ed ? 'Parâmetros da máquina e metas da sessão. Saem impressos no relatório do paciente.'
+        : '<b>Somente a equipe médica altera a prescrição.</b> Os valores abaixo são exibidos apenas para consulta.') +
+    '</div><div class="grid g3">' +
+    PRESC_CAMPOS.map(function (c) { return campoPresc(o, c, ed); }).join('') +
+    '</div></fieldset>';
+}
+function lerPresc() {
+  var o = {};
+  PRESC_CAMPOS.forEach(function (c) {
+    var el = $('#pr_' + c.k); if (!el) return;
+    var v = el.value.trim();
+    if (v !== '') o[c.k] = c.txt ? v : num(v, 0);
+  });
+  return o;
+}
+
+/* ---------- medidas da sessão ---------- */
+function resumoDial(it, pid) {
+  var d = dialDe(it), partes = [];
+  if (d.pesoEnt !== undefined && d.pesoEnt !== '') {
+    var pp = perdaPeso(d);
+    partes.push(fmtNum(d.pesoEnt) + (d.pesoSai !== undefined && d.pesoSai !== '' ? '→' + fmtNum(d.pesoSai) : '') + ' kg' +
+      (pp !== null ? ' (−' + fmtNum(pp) + ')' : ''));
+  }
+  if (d.ufHoje !== undefined && d.ufHoje !== '') {
+    partes.push('UF ' + fmtNum(d.ufHoje) + ' mL' + (d.ufAuto ? ' ⚙' : ''));
+  }
+  return partes.join(' · ');
+}
+/* explicação do resumo, mostrada ao passar o mouse na grade */
+function tipDial(it, pid) {
+  var d = dialDe(it), s = ufSugerida(pid, d), t = [];
+  if (d.ufHoje !== undefined && d.ufHoje !== '') {
+    t.push(d.ufAuto ? 'UF calculada automaticamente (ganho sobre o peso seco + ' +
+      fmtNum(primerDe(pid)) + ' mL de primer)' : 'UF definida manualmente pela equipe médica');
+  }
+  if (s && s.excede) t.push('O cálculo daria ' + fmtNum(s.uf) + ' mL, acima da UF máxima de ' + fmtNum(s.max) + ' mL');
+  if (ufExcedida(pid, d)) t.push('ATENÇÃO: a UF lançada passa da UF máxima prescrita');
+  return t.join(' · ') || 'Peso, pressão e UF do dia';
+}
+function classeDial(it, pid) {
+  var d = dialDe(it);
+  if (ufExcedida(pid, d)) return 'dial-btn alerta';
+  return 'dial-btn' + (resumoDial(it, pid) ? ' ok' : '');
+}
+
+function openDados(ix) {
+  if (!exigeLancar()) return;
+  var s = curSess(), it = s.itens[ix]; if (!it) return;
+  var p = pacById(it.pid); if (!p) return;
+  var d = dialDe(it), pr = prescDe(p.id), med = podeClinico();
+
+  function inp(id, val, ph, un, dis) {
+    return '<div class="fld"><label>' + esc(ph) + (un ? ' (' + un + ')' : '') + '</label>' +
+      '<input class="inp" id="' + id + '" value="' + esc(val === undefined ? '' : fmtNum(val)) + '"' + (dis ? ' disabled' : '') + '></div>';
+  }
+  /* pressão arterial em um só campo: sistólica / diastólica */
+  function pa(rot, ids) {
+    return '<div class="fld"><label>' + esc(rot) + ' (mmHg)</label><div class="pa-par">' +
+      ids.map(function (x, i) {
+        return '<input class="inp" id="' + x[0] + '" value="' + esc(d[x[1]] === undefined ? '' : fmtNum(d[x[1]])) +
+          '" placeholder="' + (i ? 'Diast.' : 'Sist.') + '">';
+      }).join('<i>/</i>') + '</div></div>';
+  }
+  var refPresc = PRESC_CAMPOS.map(function (c) {
+    return '<div class="pr-cel"><span>' + esc(c.lbl) + '</span><b>' + esc(fmtPresc(p.id, c.k)) + '</b></div>';
+  }).join('');
+
+  openModal('Parâmetros da sessão — ' + p.nome,
+    '<div class="pr-ref">' + (temPresc(p.id)
+      ? '<div class="pr-ref-h">Prescrição vigente</div><div class="pr-grade">' + refPresc + '</div>'
+      : '<div class="note warn">Este paciente ainda não tem prescrição de diálise cadastrada. A equipe médica define em Pacientes → editar.</div>') +
+    '</div>' +
+    '<div class="grid g2" style="margin-top:14px">' +
+    inp('dPesoEnt', d.pesoEnt, 'Peso de entrada', 'kg') +
+    inp('dPesoSai', d.pesoSai, 'Peso de saída', 'kg') +
+    '</div>' +
+    '<div class="grid g2" style="margin-top:2px">' +
+    pa('PA de entrada', [['dPaEntS', 'paEntS'], ['dPaEntD', 'paEntD']]) +
+    pa('PA de saída', [['dPaSaiS', 'paSaiS'], ['dPaSaiD', 'paSaiD']]) +
+    '</div>' +
+    '<fieldset class="fieldset" style="margin-top:14px">' +
+    '<legend>Ultrafiltração do dia</legend>' +
+    '<div class="hint" style="margin-bottom:10px">' +
+    'Calculada a partir do peso de entrada: <b>ganho sobre o peso seco + ' + fmtNum(primerDe(p.id)) + ' mL</b> de reposição do sistema. ' +
+    (med ? 'Você pode substituir o valor à mão a qualquer momento.'
+         : '<b>Somente a equipe médica define a UF do dia.</b> O cálculo automático é aplicado sozinho; ' +
+           'quando ele passa da UF máxima, o valor precisa ser definido por um médico.') + '</div>' +
+    '<div id="ufCalc" class="uf-box"></div>' +
+    '<div class="grid g2" style="margin-top:10px">' +
+    inp('dUfHoje', d.ufHoje, 'UF de hoje', 'mL', !med) +
+    '<div class="fld"><label>UF máxima prescrita</label><input class="inp" value="' +
+    esc(pr.ufMax === undefined ? '—' : fmtNum(pr.ufMax) + ' mL') + '" disabled></div>' +
+    '</div><div id="ufAviso"></div></fieldset>' +
+    '<div id="dialCalc" class="pr-calc"></div>',
+    [{ t: 'Salvar', c: 'btn', f: 'salvarDados(' + ix + ')' }]);
+
+  $('#dPesoEnt').oninput = function () { calcDial(p.id); };
+  $('#dPesoSai').oninput = function () { calcDial(p.id); };
+  /* digitar na UF passa a valer sobre o cálculo; o campo vazio devolve o automático */
+  $('#dUfHoje').oninput = function () {
+    UF_MANUAL = $('#dUfHoje').value.trim() !== '';
+    calcDial(p.id);
+  };
+  UF_MANUAL = d.ufHoje !== undefined && d.ufHoje !== '' && !d.ufAuto;
+  calcDial(p.id);
+}
+var UF_MANUAL = false;
+/* botão do aviso: joga o cálculo no campo, substituindo o valor manual */
+function aplicarUfCalculada(pid) {
+  UF_MANUAL = false; calcDial(pid);
+}
+
+/* mostra a perda de peso enquanto digita e confronta com a UF programada */
+function calcDial(pid) {
+  var ent = num($('#dPesoEnt').value, NaN), sai = num($('#dPesoSai').value, NaN);
+  var mx = num(prescDe(pid).ufMax, 0);
+  var seco = num(prescDe(pid).pesoSeco, NaN);
+
+  /* ---- UF sugerida a partir do peso de entrada ---- */
+  var sug = ufSugerida(pid, { pesoEnt: isNaN(ent) ? undefined : ent });
+  var cx = $('#ufCalc'), campo = $('#dUfHoje');
+  if (cx) {
+    if (!sug) {
+      cx.className = 'uf-box vazio';
+      cx.innerHTML = isNaN(seco)
+        ? 'Sem <b>peso seco</b> na prescrição — o cálculo automático precisa dele.'
+        : 'Informe o <b>peso de entrada</b> para calcular a UF do dia.';
+    } else {
+      var ganhoKg = Math.round((sug.ganho / 1000) * 1000) / 1000;
+      cx.className = 'uf-box' + (sug.excede ? ' excede' : '');
+      cx.innerHTML =
+        '<div class="uf-conta"><span>Ganho sobre o peso seco</span><b>' +
+        (ganhoKg >= 0 ? '+' : '') + fmtNum(ganhoKg) + ' kg → ' + fmtNum(Math.max(0, sug.ganho)) + ' mL</b></div>' +
+        '<div class="uf-conta"><span>Reposição do sistema (primer)</span><b>+ ' + fmtNum(sug.primer) + ' mL</b></div>' +
+        '<div class="uf-conta total"><span>UF calculada</span><b>' + fmtNum(sug.uf) + ' mL</b></div>' +
+        (sug.excede
+          ? '<div class="uf-nota">Acima da UF máxima prescrita (' + fmtNum(sug.max) +
+            ' mL). <b>Não foi aplicada</b> — a equipe médica define o valor abaixo.</div>'
+          : UF_MANUAL
+            ? '<div class="uf-nota ok">Há um valor definido à mão no campo abaixo. ' +
+              '<a href="#" onclick="aplicarUfCalculada(\'' + pid + '\');return false">Usar ' + fmtNum(sug.uf) + ' mL</a></div>'
+            : '<div class="uf-nota ok">Aplicada automaticamente. Digite outro valor no campo abaixo para substituir.</div>');
+    }
+  }
+  /* aplica o cálculo enquanto ninguém tiver digitado por cima */
+  if (campo && !UF_MANUAL) {
+    campo.value = (sug && !sug.excede) ? fmtNum(sug.uf) : '';
+    campo.classList.toggle('uf-auto', !!(sug && !sug.excede));
+  } else if (campo) { campo.classList.remove('uf-auto'); }
+
+  var uf = num($('#dUfHoje').value, NaN);
+  var linhas = [];
+  if (!isNaN(ent) && !isNaN(seco)) {
+    var acima = Math.round((ent - seco) * 1000) / 1000;
+    linhas.push('<div><span>Acima do peso seco</span><b>' + (acima >= 0 ? '+' : '') + fmtNum(acima) + ' kg</b></div>');
+  }
+  if (!isNaN(ent) && !isNaN(sai)) {
+    linhas.push('<div><span>Perda de peso na sessão</span><b>' + fmtNum(Math.round((ent - sai) * 1000) / 1000) + ' kg</b></div>');
+  }
+  if (!isNaN(sai) && !isNaN(seco)) {
+    var dif = Math.round((sai - seco) * 1000) / 1000;
+    linhas.push('<div><span>Saída em relação ao peso seco</span><b>' + (dif >= 0 ? '+' : '') + fmtNum(dif) + ' kg</b></div>');
+  }
+  $('#dialCalc').innerHTML = linhas.join('');
+  var av = $('#ufAviso');
+  if (av) {
+    av.innerHTML = (mx > 0 && !isNaN(uf) && uf > mx)
+      ? '<div class="note dgr" style="margin-top:10px"><b>UF de hoje acima da UF máxima prescrita</b> (' +
+        fmtNum(uf) + ' mL contra ' + fmtNum(mx) + ' mL). Confirme com a equipe médica antes de programar a máquina.</div>'
+      : '';
+  }
+}
+
+function salvarDados(ix) {
+  if (!exigeLancar()) return;
+  var s = curSess(), it = s.itens[ix]; if (!it) return;
+  var med = podeClinico();
+  var d = it.dial || (it.dial = {});
+  var antesUf = d.ufHoje;
+  [['pesoEnt', 'dPesoEnt'], ['pesoSai', 'dPesoSai'], ['paEntS', 'dPaEntS'], ['paEntD', 'dPaEntD'],
+  ['paSaiS', 'dPaSaiS'], ['paSaiD', 'dPaSaiD']].forEach(function (x) {
+    var v = $('#' + x[1]).value.trim();
+    if (v === '') delete d[x[0]]; else d[x[0]] = num(v, 0);
+  });
+  /* A UF calculada vem da prescrição médica (peso seco, primer) e do peso
+     pesado na hora — não é decisão de quem lança, então qualquer perfil pode
+     gravá-la. Já um valor DIFERENTE do cálculo é decisão clínica: só a equipe
+     médica escreve, e é justamente o caso de o cálculo passar da UF máxima. */
+  var sug = ufSugerida(it.pid, d);
+  var auto = (sug && !sug.excede) ? sug.uf : null;
+  var digitado = $('#dUfHoje').value.trim();
+  var valor = digitado === '' ? null : num(digitado, 0);
+
+  if (med) {
+    if (valor === null) { delete d.ufHoje; delete d.ufAuto; }
+    else { d.ufHoje = valor; if (valor === auto) d.ufAuto = 1; else delete d.ufAuto; }
+  } else if (valor !== null && valor === auto) {
+    d.ufHoje = valor; d.ufAuto = 1;                 // apenas o cálculo
+  } else if (auto !== null && antesUf === undefined) {
+    d.ufHoje = auto; d.ufAuto = 1;                  // ainda não havia valor
+  } else if (antesUf !== undefined) {
+    d.ufHoje = antesUf;                             // preserva o que o médico definiu
+    if (valor !== null && valor !== antesUf) {
+      toast('A UF do dia diferente do cálculo só pode ser definida pela equipe médica.', 'err');
+    }
+  }
+  carimbar(d);
+  saveSess(it.pid); closeModal(); renderEscala();
+  toast('Parâmetros da sessão salvos.', 'ok');
 }
 
 /* ================================================================== */
@@ -2336,21 +2840,27 @@ function renderPacientes() {
     return;
   }
   $('#patEmpty').innerHTML = '';
-  $('#patTable').innerHTML = '<thead><tr><th style="min-width:230px">Paciente</th><th>Turno</th><th>Linha</th><th>Acesso</th><th style="min-width:260px">Medicações de rotina</th><th class="ctr">Situação</th><th style="width:86px"></th></tr></thead><tbody>' +
+  $('#patTable').innerHTML = '<thead><tr><th style="min-width:230px">Paciente</th><th>Turno</th><th>Linha</th><th>Acesso</th><th>Prescrição</th><th style="min-width:230px">Medicações de rotina</th><th class="ctr">Situação</th><th style="width:86px"></th></tr></thead><tbody>' +
     list.map(function (p) {
       var rot = Object.keys(p.meds || {}).filter(function (k) { return p.meds[k].on; })
         .map(function (k) {
           var m = medById(k); if (!m || !medAplicavel(m, p)) return '';
-          var fq = freqCurta(freqDe(p.meds[k]), p.linha);
-          return '<span class="chip x" title="' + esc(freqDetalhe(freqDe(p.meds[k]), p.linha)) + '">' +
+          var fq = freqCurta(freqDe(p.meds[k]), p);
+          return '<span class="chip x" title="' + esc(freqDetalhe(freqDe(p.meds[k]), p)) + '">' +
             esc(m.nome) + ' ' + esc(fmtNum(p.meds[k].dose)) + ' ' + esc(m.un) +
             (fq ? ' <b>· ' + esc(fq) + '</b>' : '') + '</span>';
         }).join('');
       return '<tr><td><div class="pname">' + esc(p.nome) + '</div><div class="pmeta">' +
         (p.prontuario ? 'Pront. ' + esc(p.prontuario) : '') + (p.nasc ? ' · ' + fmtBR(p.nasc) : '') + '</div></td>' +
         '<td class="nowrap">' + esc((turnoById(p.turno) || {}).nome || '—') + '</td>' +
-        '<td><span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(LINHA_LBL[p.linha] || '—') + '</span></td>' +
+        '<td><span class="badge ' + (LINHA_CLS[p.linha] || 'b-off') + '">' + esc(linhaTexto(p)) + '</span>' +
+        (semTurnoFds(p) ? ' <span class="badge b-cdl" title="Dialisa no fim de semana, mas o turno escolhido não abre sábado/domingo. Edite o paciente e defina o turno de fim de semana.">sem turno no fds</span>' : '') +
+        (p.turnoFds ? ' <span class="badge b-off" title="Turno no sábado e domingo">fds: ' + esc((turnoById(p.turnoFds) || {}).nome || '') + '</span>' : '') + '</td>' +
         '<td><span class="badge ' + (p.acesso === 'CDL' ? 'b-cdl' : 'b-fav') + '">' + esc(p.acesso || '—') + '</span></td>' +
+        '<td class="nowrap" style="font-size:11.5px">' + (temPresc(p.id)
+          ? '<b>Qb ' + esc(fmtPresc(p.id, 'qb')) + '</b><div class="pmeta">Seco ' + esc(fmtPresc(p.id, 'pesoSeco')) +
+            ' · UF máx ' + esc(fmtPresc(p.id, 'ufMax')) + '</div>'
+          : '<span class="badge b-cdl">sem prescrição</span>') + '</td>' +
         '<td><div class="chips">' + (rot || '<span class="pmeta">—</span>') + '</div></td>' +
         '<td class="tac">' + (p.ativo === false ? '<span class="badge b-off">Inativo</span>' : '<span class="badge b-all">Ativo</span>') + '</td>' +
         '<td class="nowrap so-pac"><button class="icon-btn" onclick="openPat(\'' + p.id + '\')" title="Editar">✎</button>' +
@@ -2367,14 +2877,17 @@ function openPat(id) {
     '<div class="fld"><label>Cartão SUS (CNS)</label><input class="inp" id="pCns" value="' + esc(p.cns || '') + '"></div>' +
     '<div class="fld"><label>Acesso vascular</label><select class="inp" id="pAcesso" onchange="filtraMedsPorAcesso()">' +
     ['FAV', 'CDL', 'PTFE', 'Outro'].map(function (a) { return '<option' + (p.acesso === a ? ' selected' : '') + '>' + a + '</option>'; }).join('') + '</select></div>' +
-    '<div class="fld"><label>Turno *</label><select class="inp" id="pTurno">' +
+    '<div class="fld"><label>Turno *</label><select class="inp" id="pTurno" onchange="pintaAgenda()">' +
     DB.turnos.map(function (t) { return '<option value="' + t.id + '"' + (p.turno === t.id ? ' selected' : '') + '>' + esc(t.nome) + ' (' + t.ini + '–' + t.fim + ')</option>'; }).join('') + '</select></div>' +
-    '<div class="fld"><label>Linha de dias *</label><select class="inp" id="pLinha">' +
-    LINHA_ORDEM.map(function (l) { return '<option value="' + l + '"' + (p.linha === l ? ' selected' : '') + '>' + LINHA_LBL[l] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="fld"><label>Linha de dias *</label><select class="inp" id="pLinha" onchange="linhaEscolhida()">' +
+    LINHA_ORDEM.concat(['PERS']).map(function (l) {
+      return '<option value="' + l + '"' + (p.linha === l ? ' selected' : '') + '>' + LINHA_LBL[l] + '</option>';
+    }).join('') + '</select></div>' +
     '<div class="fld"><label>Situação</label><select class="inp" id="pAtivo"><option value="1"' + (p.ativo !== false ? ' selected' : '') + '>Ativo</option><option value="0"' + (p.ativo === false ? ' selected' : '') + '>Inativo</option></select></div>' +
     '</div>' +
+    blocoAgenda(p) +
     '<fieldset class="fieldset"><legend>Medicações de rotina e doses padrão</legend>' +
-    '<div class="hint" style="margin-bottom:10px">Marque as medicações de uso contínuo deste paciente, a dose habitual e com que frequência ele usa. <b>Toda sessão</b> equivale a ' + (LINHA_SESSOES[p.linha] || 3) + 'x por semana na linha atual. As doses já vêm pré-preenchidas na escala; o botão <b>“Marcar rotina”</b> aplica automaticamente apenas as de <b>toda sessão</b> — as demais aparecem sinalizadas na grade para serem marcadas no dia certo.</div>' +
+    '<div class="hint" style="margin-bottom:10px">Marque as medicações de uso contínuo deste paciente, a dose habitual e com que frequência ele usa. <b>Toda sessão</b> equivale a <b id="pSessLbl">' + sessoesSemana(p) + '</b>x por semana nos dias deste paciente. As doses já vêm pré-preenchidas na escala; o botão <b>“Marcar rotina”</b> aplica automaticamente apenas as de <b>toda sessão</b> — as demais aparecem sinalizadas na grade para serem marcadas no dia certo.</div>' +
     DB.medsCont.map(function (m) {
       var pm = (p.meds || {})[m.id] || {};
       return '<div class="medrow" id="pmr_' + m.id + '" data-acesso="' + esc(m.acesso || '') + '">' +
@@ -2387,9 +2900,80 @@ function openPat(id) {
           return '<option value="' + f + '"' + (freqDe(pm) === f ? ' selected' : '') + '>' + FREQ_LBL[f] + '</option>';
         }).join('') + '</select></div>';
     }).join('') + '</fieldset>' +
+    blocoPresc(p.id || '') +
     '<div class="fld" style="margin-top:14px"><label>Observações clínicas</label><textarea class="inp" id="pObs">' + esc(p.obs || '') + '</textarea></div>';
   openModal(id ? 'Editar paciente' : 'Novo paciente', body, [{ t: 'Salvar', c: 'btn', f: "savePat('" + (id || '') + "')" }], 'wide');
-  filtraMedsPorAcesso();
+  filtraMedsPorAcesso(); pintaAgenda();
+}
+
+/* ---------- agenda do paciente: dias da semana e turno de fim de semana ----------
+   A linha pronta continua sendo o caminho normal. Quem faz 4, 5 ou 6 sessões,
+   ou dialisa em dias fora do padrão, marca os dias direto no calendário.
+   Sábado e domingo abrem menos turnos, então quem dialisa nesses dias precisa
+   dizer em qual turno entra — senão sumiria da escala sem aviso. */
+function blocoAgenda(p) {
+  var dias = diasDoPaciente(p);
+  var ordem = [1, 2, 3, 4, 5, 6, 0];
+  return '<fieldset class="fieldset"><legend>Dias de diálise</legend>' +
+    '<div class="dia-row" id="pDias">' +
+    ordem.map(function (d) {
+      return '<button type="button" class="dia-bt' + (dias.indexOf(d) >= 0 ? ' on' : '') + '" data-d="' + d +
+        '" onclick="tglDia(' + d + ')">' + DIAS_C[d] + '</button>';
+    }).join('') +
+    '<span class="dia-cnt" id="pDiaCnt"></span></div>' +
+    '<div class="hint" style="margin-top:9px">Clique nos dias para montar a semana do paciente. As linhas prontas do campo acima apenas preenchem esta seleção.</div>' +
+    '<div id="pFdsBox" data-v="' + esc(p.turnoFds || '') + '" style="margin-top:12px"></div>' +
+    '</fieldset>';
+}
+function diasMarcados() {
+  return $$('#pDias .dia-bt.on').map(function (b) { return +b.dataset.d; })
+    .sort(function (a, b) { return a - b; });
+}
+function tglDia(d) {
+  var b = $('#pDias .dia-bt[data-d="' + d + '"]'); if (!b) return;
+  b.classList.toggle('on');
+  $('#pLinha').value = linhaDosDias(diasMarcados());
+  pintaAgenda();
+}
+/* escolher uma linha pronta reescreve os dias marcados */
+function linhaEscolhida() {
+  var l = $('#pLinha').value;
+  if (l !== 'PERS') {
+    var dias = LINHA_DIAS[l] || [];
+    $$('#pDias .dia-bt').forEach(function (b) { b.classList.toggle('on', dias.indexOf(+b.dataset.d) >= 0); });
+  }
+  pintaAgenda();
+}
+/* contador de sessões e escolha do turno de sábado e domingo */
+function pintaAgenda() {
+  var dias = diasMarcados(), n = dias.length;
+  var cnt = $('#pDiaCnt');
+  if (cnt) cnt.textContent = n ? n + (n === 1 ? ' sessão' : ' sessões') + ' por semana' : 'nenhum dia marcado';
+  var sl = $('#pSessLbl'); if (sl) sl.textContent = n || 3;
+  var box = $('#pFdsBox'); if (!box) return;
+
+  var temFds = dias.indexOf(0) >= 0 || dias.indexOf(6) >= 0;
+  if (!temFds) { box.innerHTML = ''; return; }
+
+  var fds = turnosDeFds();
+  if (!fds.length) {
+    box.innerHTML = '<div class="note warn">Nenhum turno está marcado como <b>fim de semana</b> em Configurações → Turnos. Enquanto isso, sábado e domingo não abrem escala.</div>';
+    return;
+  }
+  var tAtual = turnoById($('#pTurno').value);
+  var abre = tAtual && tAtual.fds;
+  var atual = box.dataset.v || ((tAtual && tAtual.fds) ? tAtual.id : '');
+  box.innerHTML =
+    (abre ? '' : '<div class="note warn" style="margin-bottom:10px">O <b>' + esc(tAtual ? tAtual.nome : 'turno escolhido') +
+      '</b> não abre no fim de semana. Escolha abaixo em qual turno este paciente entra no sábado ou domingo.</div>') +
+    '<div class="fld"><label>Turno no fim de semana' + (abre ? '' : ' *') + '</label>' +
+    '<select class="inp" id="pTurnoFds" onchange="document.getElementById(\'pFdsBox\').dataset.v=this.value">' +
+    (abre ? '<option value="">Mesmo turno da semana (' + esc(tAtual.nome) + ')</option>' : '') +
+    fds.map(function (t) {
+      return '<option value="' + t.id + '"' + (atual === t.id ? ' selected' : '') + '>' +
+        esc(t.nome) + ' (' + t.ini + '–' + t.fim + ')</option>';
+    }).join('') + '</select></div>';
+  box.dataset.v = $('#pTurnoFds').value;
 }
 /* mostra apenas as medicações compatíveis com o acesso escolhido */
 function filtraMedsPorAcesso() {
@@ -2411,14 +2995,33 @@ function savePat(id) {
   p.prontuario = $('#pPront').value.trim();
   p.nasc = $('#pNasc').value; p.cns = $('#pCns').value.trim();
   delete p.endereco; delete p.bairro;
-  p.acesso = $('#pAcesso').value; p.turno = $('#pTurno').value; p.linha = $('#pLinha').value;
+  p.acesso = $('#pAcesso').value; p.turno = $('#pTurno').value;
+
+  /* agenda: os dias marcados mandam; a linha é só o rótulo que casa com eles */
+  var dias = diasMarcados();
+  if (!dias.length) { toast('Marque pelo menos um dia de diálise.', 'err'); return; }
+  p.linha = linhaDosDias(dias);
+  if (p.linha === 'PERS') p.dias = dias; else delete p.dias;
+
+  var elFds = $('#pTurnoFds');
+  var temFds = dias.indexOf(0) >= 0 || dias.indexOf(6) >= 0;
+  if (temFds && elFds && elFds.value) p.turnoFds = elFds.value; else delete p.turnoFds;
+  if (semTurnoFds(p)) { toast('Escolha em qual turno este paciente entra no fim de semana.', 'err'); return; }
+
   p.ativo = $('#pAtivo').value === '1'; p.obs = $('#pObs').value.trim();
   p.meds = {};
   DB.medsCont.forEach(function (m) {
     if (!medAplicavel(m, p)) return;
     p.meds[m.id] = { on: $('#pm_' + m.id).checked, dose: num($('#pmd_' + m.id).value, m.dose), freq: $('#pmf_' + m.id).value };
   });
-  savePacientes(); closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
+  savePacientes();
+  if (podeClinico()) {
+    DB.presc = DB.presc || {};
+    var pr = lerPresc();
+    if (Object.keys(pr).length) DB.presc[p.id] = pr; else delete DB.presc[p.id];
+    savePrescricoes();
+  }
+  closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
 }
 function delPat(id) {
   if (!exigePacientes()) return;
@@ -2695,7 +3298,7 @@ function levantarPendencias(iso) {
 /* próxima data em que o paciente tem sessão, a partir de iso (inclusive) */
 function proximaSessao(p, iso) {
   var d = iso, fim = fimSemana(iso);
-  while (d <= fim) { if (linhaAtendeDia(p.linha, dayOf(d))) return d; d = isoAddDias(d, 1); }
+  while (d <= fim) { if (pacienteAtendeDia(p, dayOf(d))) return d; d = isoAddDias(d, 1); }
   return '';
 }
 
@@ -2729,7 +3332,7 @@ function renderPendencias() {
         '<td><div class="pname">' + esc(x.p.nome) + (x.p.acesso === 'CDL' ? ' <span class="badge b-cdl">CDL</span>' : '') + '</div>' +
         '<div class="pmeta">' + (x.p.prontuario ? 'Pront. ' + esc(x.p.prontuario) : '') + '</div></td>' +
         '<td class="nowrap">' + esc((turnoById(x.p.turno) || {}).nome || '—') + '</td>' +
-        '<td><span class="badge ' + (LINHA_CLS[x.p.linha] || 'b-off') + '">' + esc(LINHA_LBL[x.p.linha] || '—') + '</span></td>' +
+        '<td><span class="badge ' + (LINHA_CLS[x.p.linha] || 'b-off') + '">' + esc(linhaTexto(x.p)) + '</span></td>' +
         '<td><b>' + esc(x.m.nome) + '</b><div class="pmeta">' + esc(FREQ_LBL[x.fq]) + ' · ' + esc(fmtNum(((x.p.meds || {})[x.m.id] || {}).dose)) + ' ' + esc(x.m.un) + '</div></td>' +
         '<td class="tac mono">' + x.sd.feitas + ' / ' + x.sd.meta + '</td>' +
         '<td class="tac mono">' + (x.sd.restantes > 90 ? '—' : x.sd.restantes) + '</td>' +
@@ -2849,7 +3452,8 @@ function openPrintOpts(scope) {
   if (!DB.clinic.endereco) alerta += '<div class="note warn" style="margin-bottom:13px">O <b>endereço da clínica</b> ainda não foi preenchido em Configurações.</div>';
 
   openModal(scope === 'dia' ? 'Imprimir o dia inteiro' : 'Imprimir turno', alerta +
-    '<div class="medrow"><input type="checkbox" id="opFicha" checked><div class="nm">Ficha individual por paciente — 2 vias<small>Uma folha A4 por paciente: 1ª via clínica, 2ª via farmácia</small></div></div>' +
+    '<div class="medrow"><input type="checkbox" id="opFicha" checked><div class="nm">Ficha de medicações — 2 vias<small>Uma folha A4 por paciente: 1ª via clínica, 2ª via farmácia</small></div></div>' +
+    '<div class="medrow"><input type="checkbox" id="opRel"><div class="nm">Relatório da sessão por paciente<small>Prescrição de diálise, peso e pressão de entrada e saída, UF do dia — dois pacientes por folha</small></div></div>' +
     '<div class="medrow"><input type="checkbox" id="opCons" checked><div class="nm">Resumo consolidado do turno<small>Totais por medicação + relação nominal, para conferência na farmácia</small></div></div>' +
     '<div class="medrow"><input type="checkbox" id="opOnlyMed" checked><div class="nm">Somente pacientes com medicação registrada<small>Desmarque para imprimir ficha de todos os presentes</small></div></div>' +
     '<div class="medrow"><input type="checkbox" id="opRot"><div class="nm">Listar também as medicações de rotina não realizadas<small>Aparecem na ficha marcadas como “não realizada”</small></div></div>',
@@ -2858,10 +3462,10 @@ function openPrintOpts(scope) {
 
 function runPrint(direct) {
   var op = {
-    ficha: $('#opFicha').checked, cons: $('#opCons').checked,
+    ficha: $('#opFicha').checked, rel: $('#opRel').checked, cons: $('#opCons').checked,
     onlyMed: $('#opOnlyMed').checked, rot: $('#opRot').checked
   };
-  if (!op.ficha && !op.cons) { toast('Selecione ao menos um documento para imprimir.', 'err'); return; }
+  if (!op.ficha && !op.rel && !op.cons) { toast('Selecione ao menos um documento para imprimir.', 'err'); return; }
   var turnos = PRINT_SCOPE === 'dia' ? turnosDoDia(CUR.iso).map(function (t) { return t.id; }) : [CUR.turno];
   var html = '', total = 0;
   turnos.forEach(function (tid) {
@@ -2920,6 +3524,16 @@ function buildTurnoDocs(sess, op) {
         '</div>';
       n++;
     });
+  }
+  if (op.rel) {
+    /* dois relatórios por folha, aproveitando a mesma metade de A4 da ficha */
+    var alvoRel = op.onlyMed ? sess.itens.filter(function (it) { return it.presente; }) : alvo;
+    for (var i = 0; i < alvoRel.length; i += 2) {
+      out += '<div class="sheet">' + relatorioHTML(sess, alvoRel[i]) +
+        (alvoRel[i + 1] ? '<div class="cutline"></div>' + relatorioHTML(sess, alvoRel[i + 1]) : '') +
+        '</div>';
+      n++;
+    }
   }
   if (op.cons) { out += consHTML(sess, alvo); n++; }
   return { html: out, n: n };
@@ -3000,9 +3614,59 @@ function viaHTML(sess, it, viaN, viaQ, op) {
     '</div>';
 }
 
+/* ------------------------------------------------------------------
+   RELATÓRIO DA SESSÃO — prescrição de diálise e medidas do dia
+   ------------------------------------------------------------------ */
+function celInfo(k, v, largo) {
+  return '<div class="c' + (largo ? ' w100' : '') + '"><div class="k">' + esc(k) + '</div><div class="v sm">' + esc(v) + '</div></div>';
+}
+function relatorioHTML(sess, it) {
+  var p = pacById(it.pid) || { nome: '(paciente removido)' };
+  var t = turnoById(sess.turno) || {}, c = DB.clinic, d = dialDe(it);
+  var eq = {}; CAT_ORDEM.forEach(function (k) { eq[k] = docById(sess[CAT_CAMPO[k]]); });
+  var perda = perdaPeso(d), excedeu = ufExcedida(p.id, d);
+
+  var presc = '<table class="vtab prtab"><tbody><tr>' +
+    PRESC_CAMPOS.slice(0, 5).map(function (x) {
+      return '<td><div class="pk">' + esc(x.lbl) + '</div><div class="pv">' + esc(fmtPresc(p.id, x.k)) + '</div></td>';
+    }).join('') + '</tr><tr>' +
+    PRESC_CAMPOS.slice(5).map(function (x) {
+      return '<td><div class="pk">' + esc(x.lbl) + '</div><div class="pv">' + esc(fmtPresc(p.id, x.k)) + '</div></td>';
+    }).join('') + '<td></td></tr></tbody></table>';
+
+  var medidas = '<table class="vtab prtab"><tbody><tr>' +
+    '<td><div class="pk">Peso de entrada</div><div class="pv">' + (d.pesoEnt !== undefined ? fmtNum(d.pesoEnt) + ' kg' : '________') + '</div></td>' +
+    '<td><div class="pk">Peso de saída</div><div class="pv">' + (d.pesoSai !== undefined ? fmtNum(d.pesoSai) + ' kg' : '________') + '</div></td>' +
+    '<td><div class="pk">Perda de peso</div><div class="pv">' + (perda !== null ? fmtNum(perda) + ' kg' : '________') + '</div></td>' +
+    '<td><div class="pk">UF de hoje' + (d.ufAuto ? ' (calculada)' : '') + '</div><div class="pv' + (excedeu ? ' alerta' : '') + '">' +
+    (d.ufHoje !== undefined ? fmtNum(d.ufHoje) + ' mL' + (excedeu ? ' ⚠' : '') : '________') + '</div></td>' +
+    '</tr><tr>' +
+    '<td><div class="pk">PA de entrada</div><div class="pv">' + (d.paEntS || d.paEntD ? fmtPA(d.paEntS, d.paEntD) + ' mmHg' : '____/____') + '</div></td>' +
+    '<td><div class="pk">PA de saída</div><div class="pv">' + (d.paSaiS || d.paSaiD ? fmtPA(d.paSaiS, d.paSaiD) + ' mmHg' : '____/____') + '</div></td>' +
+    '<td colspan="2"><div class="pk">Saída em relação ao peso seco</div><div class="pv">' + esc(difSeco(p.id, d)) + '</div></td>' +
+    '</tr></tbody></table>';
+
+  return '<div class="via rel">' + cabecalho('RELATÓRIO', 'DA SESSÃO') +
+    '<div class="vtitle">Relatório de sessão de hemodiálise</div>' +
+    '<div class="vinfo">' +
+    celInfo('Data', fmtBR(sess.data) + ' (' + DIAS_C[dayOf(sess.data)] + ')') +
+    celInfo('Turno', (t.nome || '') + ' · ' + (t.ini || '') + '–' + (t.fim || '')) +
+    celInfo('Prontuário', p.prontuario || '—') +
+    celInfo('Acesso', p.acesso || '—') +
+    '<div class="c w100"><div class="k">Paciente</div><div class="v">' + esc(p.nome) + '</div></div>' +
+    '</div>' +
+    '<div class="prsec">Prescrição de diálise</div>' + presc +
+    '<div class="prsec">Medidas da sessão</div>' + medidas +
+    '<div class="vobs"><div class="k">Observações / intercorrências</div><div class="t">' + esc(it.obs || '') + '</div></div>' +
+    '<div class="vsig">' + assinaturas(eq) + '</div>' +
+    '<div class="vfoot">Registro clínico da sessão — arquivar no prontuário do paciente. · ' +
+    esc(c.nome || '') + ' · CNES ' + esc(c.cnes || '') + ' · Emitido em ' + nowStamp() + '</div>' +
+    '</div>';
+}
+
 /* bloco de assinaturas: nome e conselho de quem estava escalado */
 function assinaturas(eq) {
-  var papel = { MED: 'Médico(a) do turno', ENF: 'Enfermeiro(a) responsável', FAR: 'Farmacêutico(a)' };
+  var papel = { MED: 'Médico(a) do turno', ENF: 'Enfermeiro(a) do turno', FAR: 'Farmacêutico(a)' };
   return CAT_ORDEM.map(function (k) {
     var m = eq[k];
     return '<div class="s"><div class="n">' + esc(m ? m.nome : '') + (m ? '' : '&nbsp;') + '</div>' +
@@ -3085,7 +3749,7 @@ function download(nome, conteudo, tipo) {
   setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 400);
 }
 function pacoteAtual(sessoes) {
-  var o = { v: 2, geradoEm: new Date().toISOString(), pacientes: DB.pacientes, sessoes: {} };
+  var o = { v: 3, geradoEm: new Date().toISOString(), pacientes: DB.pacientes, presc: DB.presc || {}, sessoes: {} };
   CHAVES_CFG.forEach(function (k) { o[k] = DB[k]; });
   (sessoes || []).forEach(function (s) { o.sessoes[sessKey(s.data, s.turno)] = s; });
   return o;
