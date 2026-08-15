@@ -210,6 +210,7 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
   background:var(--surface-2);border-radius:6px}
 .pr-calc span{color:var(--muted);font-weight:600}
 .pr-calc b{font-variant-numeric:tabular-nums}
+select.inp.freq-rever{border-color:var(--warn);background:var(--warn-l)}
 /* cálculo da UF do dia */
 .uf-box{border:1px solid var(--line);border-radius:var(--radius-s);padding:11px 13px;background:var(--surface-2);font-size:12.5px}
 .uf-box.vazio{color:var(--muted)}
@@ -1125,12 +1126,12 @@ var LINHA_LBL = {
   PERS: 'Dias escolhidos'
 };
 /* frequência semanal das medicações de rotina do paciente */
-var FREQ_ORDEM = ['TODA', 'X2', 'X1', 'Q15', 'MES', 'SN'];
+var FREQ_ORDEM = ['TODA', 'X3', 'X2', 'X1', 'Q15', 'MES', 'SN'];
 var FREQ_LBL = {
-  TODA: 'Toda sessão', X2: '2x por semana', X1: '1x por semana',
+  TODA: 'Toda sessão', X3: '3x por semana', X2: '2x por semana', X1: '1x por semana',
   Q15: 'Quinzenal', MES: 'Mensal', SN: 'Conforme prescrição'
 };
-var FREQ_CURTA = { X2: '2x/sem', X1: '1x/sem', Q15: 'quinzenal', MES: 'mensal', SN: 's/n' };
+var FREQ_CURTA = { X3: '3x/sem', X2: '2x/sem', X1: '1x/sem', Q15: 'quinzenal', MES: 'mensal', SN: 's/n' };
 /* quantas sessões por semana cada linha de dias representa */
 var LINHA_SESSOES = { SQS: 3, TQS: 3, SQSS: 4, TODOS: 6 };
 function freqDe(o) { return (o && o.freq) || 'TODA'; }
@@ -1352,8 +1353,8 @@ function fimSemana(iso) { return isoAddDias(inicioSemana(iso), 6); }
 
 /* ---------- controle de doses que não são de toda sessão ---------- */
 /* meta por período e tamanho da janela em dias (0 = semana corrente) */
-var FREQ_META = { X1: 1, X2: 2, Q15: 1, MES: 1 };
-var FREQ_JANELA = { X1: 0, X2: 0, Q15: 14, MES: 30 };
+var FREQ_META = { X1: 1, X2: 2, X3: 3, Q15: 1, MES: 1 };
+var FREQ_JANELA = { X1: 0, X2: 0, X3: 0, Q15: 14, MES: 30 };
 function freqControlada(fq) { return FREQ_META[fq] !== undefined; }
 
 /* sessões que ainda restam ao paciente nesta semana, contando hoje */
@@ -2887,15 +2888,16 @@ function openPat(id) {
     '</div>' +
     blocoAgenda(p) +
     '<fieldset class="fieldset"><legend>Medicações de rotina e doses padrão</legend>' +
-    '<div class="hint" style="margin-bottom:10px">Marque as medicações de uso contínuo deste paciente, a dose habitual e com que frequência ele usa. <b>Toda sessão</b> equivale a <b id="pSessLbl">' + sessoesSemana(p) + '</b>x por semana nos dias deste paciente. As doses já vêm pré-preenchidas na escala; o botão <b>“Marcar rotina”</b> aplica automaticamente apenas as de <b>toda sessão</b> — as demais aparecem sinalizadas na grade para serem marcadas no dia certo.</div>' +
+    '<div class="hint" style="margin-bottom:10px">Marque as medicações de uso contínuo deste paciente, a dose habitual e com que frequência ele usa. <b>Toda sessão</b> acompanha a agenda do paciente e equivale a <b id="pSessLbl">' + sessoesSemana(p) + '</b>x por semana. Para uma dose fixa de <b>3x por semana</b> mesmo em quem dialisa mais vezes, escolha essa opção na lista. O botão <b>“Marcar rotina”</b> aplica automaticamente apenas as de <b>toda sessão</b> — as demais aparecem sinalizadas na grade para serem marcadas no dia certo.</div>' +
+    '<div id="pFreqAviso" class="note warn" style="display:none;margin-bottom:11px"></div>' +
     DB.medsCont.map(function (m) {
       var pm = (p.meds || {})[m.id] || {};
       return '<div class="medrow" id="pmr_' + m.id + '" data-acesso="' + esc(m.acesso || '') + '">' +
-        '<input type="checkbox" id="pm_' + m.id + '"' + (pm.on ? ' checked' : '') + '>' +
+        '<input type="checkbox" id="pm_' + m.id + '"' + (pm.on ? ' checked' : '') + ' onchange="avisaFreqToda()">' +
         '<div class="nm">' + esc(m.nome) + '<small>' + esc(m.desc || '') + ' · ' + esc(m.via || '') + '</small></div>' +
         '<input class="dose-in" id="pmd_' + m.id + '" value="' + esc(fmtNum(pm.dose != null ? pm.dose : m.dose)) + '" style="width:78px">' +
         '<span class="dose-un" style="width:30px">' + esc(m.un) + '</span>' +
-        '<select class="inp" id="pmf_' + m.id + '" style="width:186px;min-height:32px">' +
+        '<select class="inp" id="pmf_' + m.id + '" style="width:186px;min-height:32px" onchange="avisaFreqToda()">' +
         FREQ_ORDEM.map(function (f) {
           return '<option value="' + f + '"' + (freqDe(pm) === f ? ' selected' : '') + '>' + FREQ_LBL[f] + '</option>';
         }).join('') + '</select></div>';
@@ -2950,6 +2952,7 @@ function pintaAgenda() {
   var cnt = $('#pDiaCnt');
   if (cnt) cnt.textContent = n ? n + (n === 1 ? ' sessão' : ' sessões') + ' por semana' : 'nenhum dia marcado';
   var sl = $('#pSessLbl'); if (sl) sl.textContent = n || 3;
+  avisaFreqToda();
   var box = $('#pFdsBox'); if (!box) return;
 
   var temFds = dias.indexOf(0) >= 0 || dias.indexOf(6) >= 0;
@@ -2975,6 +2978,31 @@ function pintaAgenda() {
     }).join('') + '</select></div>';
   box.dataset.v = $('#pTurnoFds').value;
 }
+/* Quem passou a dialisar 4, 5 ou 6 vezes por semana costuma ter medicação que
+   continua sendo 3x. Como "toda sessão" acompanha a agenda, ela subiria junto
+   sem ninguém perceber — este aviso aponta exatamente quais rever. */
+function avisaFreqToda() {
+  var box = $('#pFreqAviso'); if (!box) return;
+  var n = diasMarcados().length;
+  var alvo = DB.medsCont.filter(function (m) {
+    var c = $('#pm_' + m.id), f = $('#pmf_' + m.id), lin = $('#pmr_' + m.id);
+    var visivel = lin && lin.style.display !== 'none';
+    return visivel && c && c.checked && f && f.value === 'TODA';
+  });
+  DB.medsCont.forEach(function (m) {
+    var f = $('#pmf_' + m.id); if (!f) return;
+    f.classList.toggle('freq-rever', n > 3 && f.value === 'TODA' &&
+      ($('#pm_' + m.id) || {}).checked);
+  });
+  if (n <= 3 || !alvo.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = '';
+  box.innerHTML = 'Este paciente faz <b>' + n + ' sessões por semana</b>. ' +
+    'Marcada(s) como <b>toda sessão</b>, ' +
+    alvo.map(function (m) { return '<b>' + esc(m.nome) + '</b>'; }).join(', ') +
+    (alvo.length === 1 ? ' será administrada' : ' serão administradas') + ' ' + n + 'x por semana. ' +
+    'Se a prescrição for 3x, troque a frequência para <b>3x por semana</b>.';
+}
+
 /* mostra apenas as medicações compatíveis com o acesso escolhido */
 function filtraMedsPorAcesso() {
   var acesso = $('#pAcesso') ? $('#pAcesso').value : '';
@@ -2984,6 +3012,7 @@ function filtraMedsPorAcesso() {
     el.style.display = ok ? '' : 'none';
     if (!ok) { var c = $('#pm_' + m.id); if (c) c.checked = false; }
   });
+  avisaFreqToda();
 }
 function savePat(id) {
   if (!exigePacientes()) return;
