@@ -189,6 +189,24 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 .dose-in:disabled{background:#f2f5f7;color:#aab6c1;border-color:var(--line-2)}
 .dose-un{font-size:10.5px;color:var(--muted);width:26px;text-align:left;flex:0 0 auto}
 .reg-line{font-size:11px;color:var(--muted);font-weight:600;min-height:14px;letter-spacing:.01em}
+.team-btn{
+  display:flex;align-items:center;gap:8px;width:100%;min-height:34px;cursor:pointer;text-align:left;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius-s);padding:6px 10px;
+  font-size:13px;color:var(--ink);transition:.15s;
+}
+.team-btn:hover{border-color:#b9c8d6;background:var(--surface-2)}
+.team-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.team-ar{color:var(--muted);font-size:11px;flex:0 0 auto}
+.team-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:0 0 auto}
+.team-dot.falta{background:var(--warn)}
+.team-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-2)}
+.team-row:last-child{border-bottom:none}
+.team-row .tr-l{flex:0 0 118px}
+.team-row .tr-l b{display:block;font-size:13px}
+.team-row .tr-l span{font-size:11px;color:var(--muted);font-weight:600}
+.team-row .tr-r{flex:1;min-width:0}
+.team-row .tr-r select{width:100%}
+.team-row .tr-r .reg-line{margin-top:3px}
 .freq-tag{
   display:block;font-size:9.5px;font-weight:700;color:#8c4405;background:var(--brand-l);
   border:1px solid #eddcc3;border-radius:4px;padding:0 4px;margin-bottom:3px;letter-spacing:.02em;
@@ -585,20 +603,13 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
             <label>Dia</label>
             <div class="inp" id="dayLbl" style="background:var(--surface-2);font-weight:600;display:flex;align-items:center"></div>
           </div>
-          <div class="fld">
-            <label>Médico do turno</label>
-            <select class="inp" id="docSel" style="min-width:190px"></select>
-            <div class="reg-line" id="regMED"></div>
-          </div>
-          <div class="fld">
-            <label>Enfermeiro(a)</label>
-            <select class="inp" id="enfSel" style="min-width:190px"></select>
-            <div class="reg-line" id="regENF"></div>
-          </div>
-          <div class="fld">
-            <label>Farmacêutico(a)</label>
-            <select class="inp" id="farSel" style="min-width:190px"></select>
-            <div class="reg-line" id="regFAR"></div>
+          <div class="fld" style="min-width:280px;max-width:340px;flex:1">
+            <label>Equipe do turno</label>
+            <button class="team-btn" id="teamBtn" onclick="openEquipe()">
+              <span class="team-dot" id="teamDot"></span>
+              <span class="team-txt" id="teamTxt">—</span>
+              <span class="team-ar">▾</span>
+            </button>
           </div>
           <div class="spacer"></div>
           <div class="fld">
@@ -1345,7 +1356,9 @@ function sessToDoc(s) {
 }
 function docToSess(d, iso, turnoId) {
   var s = { data: d.data || iso, turno: d.turno || turnoId, criadoEm: d.criadoEm, excl: d.excl || {}, itens: [] };
-  CAT_ORDEM.forEach(function (c) { s[CAT_CAMPO[c]] = d[CAT_CAMPO[c]] || ''; });
+  /* mantém undefined quando o campo nunca existiu — é o que permite o
+     preenchimento automático sem desfazer um esvaziamento proposital */
+  CAT_ORDEM.forEach(function (c) { s[CAT_CAMPO[c]] = d[CAT_CAMPO[c]]; });
   var m = d.itens || {};
   Object.keys(m).forEach(function (pid) {
     var x = m[pid] || {};
@@ -1685,24 +1698,15 @@ function renderEscala() {
   $('#turnoTitle').textContent = t.nome + ' — ' + fmtBR(iso);
   $('#turnoSub').textContent = t.ini + ' às ' + t.fim + ' · ' + DIAS[dow];
 
-  /* equipe do turno — escalada por turno e dia, com substituição pontual */
-  var SEL = { MED: '#docSel', ENF: '#enfSel', FAR: '#farSel' };
+  /* equipe do turno — preenchida pela escala; ajuste fino na caixa "Equipe" */
   CAT_ORDEM.forEach(function (cat) {
     var campo = CAT_CAMPO[cat];
-    if (!sess[campo] && !sess._carregando) {
+    if (sess[campo] === undefined && !sess._carregando) {
       var pad = profPadrao(cat, CUR.turno, iso);
       if (pad) { sess[campo] = pad; saveSessMeta(campo, pad); }
     }
-    var doDia = profDoTurno(cat, CUR.turno, iso);
-    var ids = {}; doDia.forEach(function (m) { ids[m.id] = 1; });
-    var outros = DB.medicos.filter(function (m) { return catDe(m) === cat && !ids[m.id]; });
-    function opt(m) { return '<option value="' + m.id + '"' + (m.id === sess[campo] ? ' selected' : '') + '>' + esc(m.nome) + '</option>'; }
-    $(SEL[cat]).innerHTML = '<option value="">— selecione —</option>' +
-      (doDia.length ? '<optgroup label="Escalado(s) para ' + DIAS_C[dow] + ' neste turno">' + doDia.map(opt).join('') + '</optgroup>' : '') +
-      (outros.length ? '<optgroup label="Outros (substituição)">' + outros.map(opt).join('') + '</optgroup>' : '');
-    var m = docById(sess[campo]);
-    $('#reg' + cat).textContent = m ? (registroDe(m) || '—') : '';
   });
+  pintaEquipe(sess);
 
   renderShiftTable(sess);
   renderStats(sess);
@@ -1796,6 +1800,58 @@ function renderShiftTable(sess) {
   }).join('');
 
   tb.innerHTML = head + '<tbody>' + rows + '</tbody>';
+}
+
+/* ============ EQUIPE DO TURNO ============ */
+function pintaEquipe(sess) {
+  var btn = $('#teamBtn'); if (!btn) return;
+  var faltando = [], nomes = [], detalhe = [];
+  CAT_ORDEM.forEach(function (cat) {
+    var m = docById(sess[CAT_CAMPO[cat]]);
+    if (m) {
+      nomes.push(m.nome);
+      detalhe.push(CAT_LBL[cat] + ': ' + nomeERegistro(m));
+    } else { faltando.push(CAT_CONSELHO[cat]); }
+  });
+  $('#teamDot').className = 'team-dot' + (faltando.length ? ' falta' : '');
+  $('#teamTxt').textContent = nomes.length
+    ? nomes.join(' · ') + (faltando.length ? '  (falta ' + faltando.join(', ') + ')' : '')
+    : 'Definir equipe do turno';
+  btn.title = (detalhe.join('\n') || 'Nenhum profissional definido') +
+    (faltando.length ? '\nSem definição: ' + faltando.join(', ') : '');
+}
+function opcoesEquipe(cat, sess, iso) {
+  var campo = CAT_CAMPO[cat], dow = dayOf(iso);
+  var doDia = profDoTurno(cat, CUR.turno, iso);
+  var ids = {}; doDia.forEach(function (m) { ids[m.id] = 1; });
+  var outros = DB.medicos.filter(function (m) { return catDe(m) === cat && !ids[m.id]; });
+  function opt(m) { return '<option value="' + m.id + '"' + (m.id === sess[campo] ? ' selected' : '') + '>' + esc(m.nome) + '</option>'; }
+  return '<option value="">— selecione —</option>' +
+    (doDia.length ? '<optgroup label="Escalado(s) para ' + DIAS_C[dow] + ' neste turno">' + doDia.map(opt).join('') + '</optgroup>' : '') +
+    (outros.length ? '<optgroup label="Outros (substituição)">' + outros.map(opt).join('') + '</optgroup>' : '');
+}
+function openEquipe() {
+  var sess = curSess(); if (!sess) return;
+  var t = turnoById(CUR.turno) || {};
+  var ids = { MED: 'docSel', ENF: 'enfSel', FAR: 'farSel' };
+  var body = '<div class="hint" style="margin-bottom:6px">' + esc(t.nome || '') + ' · ' + fmtBR(CUR.iso) +
+    ' — vale apenas para este turno. A escala fixa fica em Configurações → Equipe.</div>' +
+    CAT_ORDEM.map(function (cat) {
+      var m = docById(sess[CAT_CAMPO[cat]]);
+      return '<div class="team-row"><div class="tr-l"><b>' + esc(CAT_LBL[cat]) + '</b><span>' + CAT_CONSELHO[cat] + '</span></div>' +
+        '<div class="tr-r"><select class="inp" id="' + ids[cat] + '" onchange="setEquipe(\'' + cat + '\',this.value)">' +
+        opcoesEquipe(cat, sess, CUR.iso) + '</select>' +
+        '<div class="reg-line" id="reg' + cat + '">' + esc(m ? (registroDe(m) || '—') : '') + '</div></div></div>';
+    }).join('');
+  openModal('Equipe do turno', body, [{ t: 'Concluir', c: 'btn', f: 'closeModal()' }], 'slim');
+}
+function setEquipe(cat, id) {
+  var sess = curSess(); if (!sess) return;
+  var campo = CAT_CAMPO[cat];
+  sess[campo] = id; saveSessMeta(campo, id);
+  var m = docById(id);
+  if ($('#reg' + cat)) $('#reg' + cat).textContent = m ? (registroDe(m) || '—') : '';
+  pintaEquipe(sess);
 }
 
 /* ============ AÇÕES NA ESCALA ============ */
@@ -2665,15 +2721,7 @@ function wipeAll() {
 /* ================= EVENTOS ================= */
 $$('.nav button').forEach(function (b) { b.onclick = function () { go(b.dataset.v); }; });
 $('#dtSel').onchange = onDateChange;
-[['MED', '#docSel'], ['ENF', '#enfSel'], ['FAR', '#farSel']].forEach(function (x) {
-  $(x[1]).onchange = function () {
-    var s = curSess(); if (!s) return;
-    var campo = CAT_CAMPO[x[0]];
-    s[campo] = this.value; saveSessMeta(campo, this.value);
-    var m = docById(this.value);
-    $('#reg' + x[0]).textContent = m ? (registroDe(m) || '—') : '';
-  };
-});
+
 ['patSearch', 'fTurno', 'fLinha', 'fAtivo'].forEach(function (id) {
   var e = $('#' + id); e.oninput = renderPacientes; e.onchange = renderPacientes;
 });
