@@ -188,6 +188,7 @@ tbody tr.absent .pname{opacity:.5;text-decoration:line-through}
 }
 .dose-in:disabled{background:#f2f5f7;color:#aab6c1;border-color:var(--line-2)}
 .dose-un{font-size:10.5px;color:var(--muted);width:26px;text-align:left;flex:0 0 auto}
+.reg-line{font-size:11px;color:var(--muted);font-weight:600;min-height:14px;letter-spacing:.01em}
 .freq-tag{
   display:block;font-size:9.5px;font-weight:700;color:#8c4405;background:var(--brand-l);
   border:1px solid #eddcc3;border-radius:4px;padding:0 4px;margin-bottom:3px;letter-spacing:.02em;
@@ -317,6 +318,9 @@ body.previewing #printRoot{padding-top:70px}
 @media print{.pv-bar{display:none !important}}
 
 /* ============================ SHEET (print doc) ============================ */
+/* o cabecalho fixo (sticky) e das tabelas da tela; na folha ele sobrepunha
+   a primeira linha e deixava uma faixa vazia acima */
+.sheet thead th{position:static;top:auto;z-index:auto}
 /* folha A4 com as margens por dentro: garante o mesmo resultado na tela e no papel */
 .sheet{
   width:210mm;height:296mm;padding:9mm 10mm;box-sizing:border-box;
@@ -583,11 +587,18 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
           </div>
           <div class="fld">
             <label>Médico do turno</label>
-            <select class="inp" id="docSel" style="min-width:230px"></select>
+            <select class="inp" id="docSel" style="min-width:190px"></select>
+            <div class="reg-line" id="regMED"></div>
           </div>
           <div class="fld">
-            <label>CRM</label>
-            <input class="inp" id="docCrm" disabled style="width:120px">
+            <label>Enfermeiro(a)</label>
+            <select class="inp" id="enfSel" style="min-width:190px"></select>
+            <div class="reg-line" id="regENF"></div>
+          </div>
+          <div class="fld">
+            <label>Farmacêutico(a)</label>
+            <select class="inp" id="farSel" style="min-width:190px"></select>
+            <div class="reg-line" id="regFAR"></div>
           </div>
           <div class="spacer"></div>
           <div class="fld">
@@ -718,7 +729,8 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Médicos</h3><div class="spacer"></div><button class="btn sm" onclick="openDoc()">＋ Novo médico</button></div>
+      <div class="card-h"><h3>Equipe</h3><span class="sub">Médicos, enfermagem e farmácia — nome e conselho saem impressos nas duas vias</span>
+        <div class="spacer"></div><button class="btn sm" onclick="openDoc()">＋ Novo profissional</button></div>
       <div class="card-b flush"><div class="tw"><table class="zebra" id="docTable"></table></div></div>
     </div>
 
@@ -890,7 +902,20 @@ function defaults() {
 
 var DB = defaults();
 var CHAVES_CFG = ['clinic', 'turnos', 'medicos', 'medsCont', 'medsResg', 'migr'];
-var MIGR_ATUAL = 2;
+var MIGR_ATUAL = 3;
+
+/* Equipe: médicos, enfermagem e farmácia no mesmo cadastro (DB.medicos),
+   cada um com o seu conselho e a sua escala de turnos e dias. */
+var CAT_ORDEM = ['MED', 'ENF', 'FAR'];
+var CAT_LBL = { MED: 'Médico(a)', ENF: 'Enfermeiro(a)', FAR: 'Farmacêutico(a)' };
+var CAT_CONSELHO = { MED: 'CRM', ENF: 'COREN', FAR: 'CRF' };
+var CAT_CAMPO = { MED: 'medicoId', ENF: 'enfId', FAR: 'farId' };
+function catDe(m) { return (m && m.cat) || 'MED'; }
+function registroDe(m) {
+  if (!m || !m.reg) return '';
+  return CAT_CONSELHO[catDe(m)] + ' ' + (m.uf ? m.uf + ' ' : '') + m.reg;
+}
+function nomeERegistro(m) { return m ? (m.nome + (m.reg ? ' — ' + registroDe(m) : '')) : ''; }
 
 /* Restrição por acesso vascular de uma medicação:
    ''    = qualquer acesso
@@ -915,6 +940,8 @@ function normalizeDB() {
   DB.medicos.forEach(function (m) {
     if (!m.escala) { m.escala = {}; (m.turnos || []).forEach(function (x) { m.escala[x] = 'TODOS'; }); }
     delete m.turnos;
+    if (!m.cat) m.cat = 'MED';
+    if (m.reg === undefined && m.crm !== undefined) { m.reg = m.crm; delete m.crm; }
   });
   if ((DB.migr || 0) < MIGR_ATUAL) {
     /* selo de cateter só faz sentido em paciente com CDL */
@@ -932,6 +959,14 @@ function normalizeDB() {
       .sort(function (a, b) { return (pos(a.m) - pos(b.m)) || (a.i - b.i); })
       .map(function (x) { return x.m; });
     DB.migr = MIGR_ATUAL; mudou = true;
+  }
+  if ((DB.migr || 0) < 3) {
+    DB.medicos.forEach(function (m) {
+      if (!m.cat) m.cat = 'MED';
+      if (m.reg === undefined) { m.reg = m.crm || ''; }
+      delete m.crm;
+    });
+    DB.migr = 3; mudou = true;
   }
   return mudou;
 }
@@ -999,17 +1034,20 @@ function medicoAtende(m, turnoId, iso) {
   return iso ? linhaAtendeDia(l, dayOf(iso)) : true;
 }
 /* iso informado = filtra também pelo dia da semana */
-function medicosDoTurno(turnoId, iso) {
-  return DB.medicos.filter(function (m) { return medicoAtende(m, turnoId, iso); });
+function profDoTurno(cat, turnoId, iso) {
+  return DB.medicos.filter(function (m) { return catDe(m) === cat && medicoAtende(m, turnoId, iso); });
 }
-function medicoPadrao(turnoId, iso) {
-  var l = medicosDoTurno(turnoId, iso);
+function profPadrao(cat, turnoId, iso) {
+  var l = profDoTurno(cat, turnoId, iso);
   return l.length ? l[0].id : '';
 }
+function medicosDoTurno(turnoId, iso) { return profDoTurno('MED', turnoId, iso); }
+function medicoPadrao(turnoId, iso) { return profPadrao('MED', turnoId, iso); }
 
 /* Monta a escala do dia a partir do cadastro (turno + linha de dias) */
 function montaSess(iso, turnoId) {
-  var s = { data: iso, turno: turnoId, medicoId: medicoPadrao(turnoId, iso), itens: [], criadoEm: new Date().toISOString() };
+  var s = { data: iso, turno: turnoId, itens: [], criadoEm: new Date().toISOString() };
+  CAT_ORDEM.forEach(function (c) { s[CAT_CAMPO[c]] = profPadrao(c, turnoId, iso); });
   var dow = dayOf(iso);
   DB.pacientes.forEach(function (p) {
     if (p.ativo === false || p.turno !== turnoId) return;
@@ -1301,10 +1339,13 @@ function itemToDoc(it) {
 function sessToDoc(s) {
   var m = {};
   s.itens.forEach(function (it) { m[it.pid] = itemToDoc(it); });
-  return limpa({ data: s.data, turno: s.turno, medicoId: s.medicoId || '', itens: m, excl: s.excl || {}, criadoEm: s.criadoEm || new Date().toISOString() });
+  var o = { data: s.data, turno: s.turno, itens: m, excl: s.excl || {}, criadoEm: s.criadoEm || new Date().toISOString() };
+  CAT_ORDEM.forEach(function (c) { o[CAT_CAMPO[c]] = s[CAT_CAMPO[c]] || ''; });
+  return limpa(o);
 }
 function docToSess(d, iso, turnoId) {
-  var s = { data: d.data || iso, turno: d.turno || turnoId, medicoId: d.medicoId || '', criadoEm: d.criadoEm, excl: d.excl || {}, itens: [] };
+  var s = { data: d.data || iso, turno: d.turno || turnoId, criadoEm: d.criadoEm, excl: d.excl || {}, itens: [] };
+  CAT_ORDEM.forEach(function (c) { s[CAT_CAMPO[c]] = d[CAT_CAMPO[c]] || ''; });
   var m = d.itens || {};
   Object.keys(m).forEach(function (pid) {
     var x = m[pid] || {};
@@ -1644,17 +1685,24 @@ function renderEscala() {
   $('#turnoTitle').textContent = t.nome + ' — ' + fmtBR(iso);
   $('#turnoSub').textContent = t.ini + ' às ' + t.fim + ' · ' + DIAS[dow];
 
-  /* médico — vinculado ao turno, com possibilidade de substituição pontual */
-  if (!sess.medicoId && !sess._carregando) { var pad = medicoPadrao(CUR.turno, iso); if (pad) { sess.medicoId = pad; saveSessMeta('medicoId', pad); } }
-  function opt(m) { return '<option value="' + m.id + '"' + (m.id === sess.medicoId ? ' selected' : '') + '>' + esc(m.nome) + '</option>'; }
-  var doDia = medicosDoTurno(CUR.turno, iso);
-  var ids = {}; doDia.forEach(function (m) { ids[m.id] = 1; });
-  var outros = DB.medicos.filter(function (m) { return !ids[m.id]; });
-  $('#docSel').innerHTML = '<option value="">— selecione —</option>' +
-    (doDia.length ? '<optgroup label="Escalado(s) para ' + DIAS_C[dow] + ' neste turno">' + doDia.map(opt).join('') + '</optgroup>' : '') +
-    (outros.length ? '<optgroup label="Outros médicos (substituição)">' + outros.map(opt).join('') + '</optgroup>' : '');
-  var d = docById(sess.medicoId);
-  $('#docCrm').value = d ? (d.crm ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : '') : '';
+  /* equipe do turno — escalada por turno e dia, com substituição pontual */
+  var SEL = { MED: '#docSel', ENF: '#enfSel', FAR: '#farSel' };
+  CAT_ORDEM.forEach(function (cat) {
+    var campo = CAT_CAMPO[cat];
+    if (!sess[campo] && !sess._carregando) {
+      var pad = profPadrao(cat, CUR.turno, iso);
+      if (pad) { sess[campo] = pad; saveSessMeta(campo, pad); }
+    }
+    var doDia = profDoTurno(cat, CUR.turno, iso);
+    var ids = {}; doDia.forEach(function (m) { ids[m.id] = 1; });
+    var outros = DB.medicos.filter(function (m) { return catDe(m) === cat && !ids[m.id]; });
+    function opt(m) { return '<option value="' + m.id + '"' + (m.id === sess[campo] ? ' selected' : '') + '>' + esc(m.nome) + '</option>'; }
+    $(SEL[cat]).innerHTML = '<option value="">— selecione —</option>' +
+      (doDia.length ? '<optgroup label="Escalado(s) para ' + DIAS_C[dow] + ' neste turno">' + doDia.map(opt).join('') + '</optgroup>' : '') +
+      (outros.length ? '<optgroup label="Outros (substituição)">' + outros.map(opt).join('') + '</optgroup>' : '');
+    var m = docById(sess[campo]);
+    $('#reg' + cat).textContent = m ? (registroDe(m) || '—') : '';
+  });
 
   renderShiftTable(sess);
   renderStats(sess);
@@ -2063,32 +2111,42 @@ function renderConfig() {
   $('#cCnpj').value = c.cnpj || ''; $('#cRt').value = c.rt || ''; $('#cFoot').value = c.foot || '';
   $('#logoPrev').innerHTML = c.logo ? '<img src="' + c.logo + '" class="logo-prev">' : '';
 
-  $('#turnoTable').innerHTML = '<thead><tr><th>Turno</th><th>Início</th><th>Fim</th><th class="ctr">Fim de semana</th><th>Médico(s) vinculado(s)</th></tr></thead><tbody>' +
+  $('#turnoTable').innerHTML = '<thead><tr><th>Turno</th><th>Início</th><th>Fim</th><th class="ctr">Fim de semana</th><th>Equipe vinculada</th></tr></thead><tbody>' +
     DB.turnos.map(function (t, i) {
-      var md = DB.medicos.filter(function (m) { return !!escalaMedico(m)[t.id]; }).map(function (m) {
-        return '<span class="chip x">' + esc(m.nome) + ' · ' + esc(LINHA_LBL[escalaMedico(m)[t.id]] || '') + '</span>';
+      var md = CAT_ORDEM.map(function (cat) {
+        return DB.medicos.filter(function (m) { return catDe(m) === cat && !!escalaMedico(m)[t.id]; })
+          .map(function (m) {
+            return '<span class="chip x" title="' + esc(CAT_LBL[cat] + ' · ' + registroDe(m)) + '">' +
+              esc(CAT_CONSELHO[cat]) + ': ' + esc(m.nome) + ' · ' + esc(LINHA_LBL[escalaMedico(m)[t.id]] || '') + '</span>';
+          }).join('');
       }).join('');
       return '<tr><td><input class="inp" value="' + esc(t.nome) + '" onchange="setTurno(' + i + ',\'nome\',this.value)" style="min-width:150px"></td>' +
         '<td><input type="time" class="inp" value="' + esc(t.ini) + '" onchange="setTurno(' + i + ',\'ini\',this.value)"></td>' +
         '<td><input type="time" class="inp" value="' + esc(t.fim) + '" onchange="setTurno(' + i + ',\'fim\',this.value)"></td>' +
         '<td class="tac"><input type="checkbox" ' + (t.fds ? 'checked' : '') + ' onchange="setTurno(' + i + ',\'fds\',this.checked)" style="width:17px;height:17px;accent-color:var(--brand)"></td>' +
-        '<td><div class="chips">' + (md || '<span class="pmeta">defina em “Médicos”, abaixo</span>') + '</div></td></tr>';
+        '<td><div class="chips">' + (md || '<span class="pmeta">defina em “Equipe”, abaixo</span>') + '</div></td></tr>';
     }).join('') + '</tbody>';
 
-  $('#docTable').innerHTML = DB.medicos.length
-    ? '<thead><tr><th>Nome</th><th>CRM</th><th>UF</th><th>Escala (turno · dias)</th><th style="width:86px"></th></tr></thead><tbody>' +
-    DB.medicos.map(function (m) {
-      var esc_ = escalaMedico(m);
+  var CAT_BADGE = { MED: 'b-sqs', ENF: 'b-all', FAR: 'b-tqs' };
+  var equipe = DB.medicos.slice().sort(function (a, b) {
+    return (CAT_ORDEM.indexOf(catDe(a)) - CAT_ORDEM.indexOf(catDe(b))) || a.nome.localeCompare(b.nome, 'pt-BR');
+  });
+  $('#docTable').innerHTML = equipe.length
+    ? '<thead><tr><th>Nome</th><th>Função</th><th>Conselho</th><th>Escala (turno · dias)</th><th style="width:86px"></th></tr></thead><tbody>' +
+    equipe.map(function (m) {
+      var cat = catDe(m), esc_ = escalaMedico(m);
       var tg = Object.keys(esc_).map(function (tid) {
         var x = turnoById(tid);
         return x ? '<span class="chip x">' + esc(x.nome) + ' · ' + esc(LINHA_LBL[esc_[tid]] || '') + '</span>' : '';
       }).join('');
-      return '<tr><td class="pname">' + esc(m.nome) + '</td><td class="mono">' + esc(m.crm || '—') + '</td><td>' + esc(m.uf || '—') + '</td>' +
+      return '<tr><td class="pname">' + esc(m.nome) + '</td>' +
+        '<td><span class="badge ' + CAT_BADGE[cat] + '">' + esc(CAT_LBL[cat]) + '</span></td>' +
+        '<td class="mono nowrap">' + esc(registroDe(m) || '—') + '</td>' +
         '<td><div class="chips">' + (tg || '<span class="pmeta">nenhum</span>') + '</div></td>' +
         '<td class="nowrap"><button class="icon-btn" onclick="openDoc(\'' + m.id + '\')">✎</button>' +
         '<button class="icon-btn dgr" onclick="delDoc(\'' + m.id + '\')">🗑</button></td></tr>';
     }).join('') + '</tbody>'
-    : '<tbody><tr><td class="empty">Nenhum médico cadastrado. O nome e o CRM saem impressos na ficha da farmácia.</td></tr></tbody>';
+    : '<tbody><tr><td class="empty">Nenhum profissional cadastrado. Nome e conselho saem impressos nas duas vias.</td></tr></tbody>';
 
   renderMedTable('cont'); renderMedTable('resg');
   $('#cfgUser').textContent = (CUR_USER && CUR_USER.email) || '—';
@@ -2117,13 +2175,17 @@ function removeLogo() { DB.clinic.logo = ''; saveConfig(); renderConfig(); paint
 
 /* médicos */
 function openDoc(id) {
-  var m = id ? docById(id) : { nome: '', crm: '', uf: 'PA', escala: {} };
-  openModal(id ? 'Editar médico' : 'Novo médico',
+  var m = id ? docById(id) : { nome: '', cat: 'MED', reg: '', uf: 'PA', escala: {} };
+  var cat = catDe(m);
+  openModal(id ? 'Editar profissional' : 'Novo profissional',
     '<div class="grid g3"><div class="fld span2"><label>Nome completo *</label><input class="inp" id="dNome" value="' + esc(m.nome) + '"></div>' +
-    '<div class="fld"><label>CRM *</label><input class="inp" id="dCrm" value="' + esc(m.crm || '') + '"></div>' +
-    '<div class="fld"><label>UF do CRM</label><input class="inp" id="dUf" value="' + esc(m.uf || 'PA') + '" maxlength="2" style="width:80px"></div></div>' +
+    '<div class="fld"><label>Função *</label><select class="inp" id="dCat" onchange="rotuloConselho()">' +
+    CAT_ORDEM.map(function (c) { return '<option value="' + c + '"' + (cat === c ? ' selected' : '') + '>' + CAT_LBL[c] + '</option>'; }).join('') +
+    '</select></div>' +
+    '<div class="fld span2"><label id="dRegLbl">' + CAT_CONSELHO[cat] + ' *</label><input class="inp" id="dCrm" value="' + esc(m.reg || '') + '"></div>' +
+    '<div class="fld"><label>UF do conselho</label><input class="inp" id="dUf" value="' + esc(m.uf || 'PA') + '" maxlength="2" style="width:80px"></div></div>' +
     '<fieldset class="fieldset"><legend>Escala — turnos e dias</legend>' +
-    '<div class="hint" style="margin-bottom:10px">Para cada turno, escolha em quais dias este médico responde. Ele é preenchido automaticamente na escala daquele dia e sai impresso com o CRM nas duas vias — e ainda pode ser trocado no dia, em caso de substituição.</div>' +
+    '<div class="hint" style="margin-bottom:10px">Para cada turno, escolha em quais dias este profissional responde. Ele é preenchido automaticamente na escala daquele dia e sai impresso com o conselho nas duas vias — e ainda pode ser trocado no dia, em caso de substituição.</div>' +
     DB.turnos.map(function (t) {
       var atual = escalaMedico(m)[t.id] || '';
       return '<div class="medrow"><div class="nm">' + esc(t.nome) +
@@ -2136,20 +2198,27 @@ function openDoc(id) {
     }).join('') + '</fieldset>',
     [{ t: 'Salvar', c: 'btn', f: "saveDoc('" + (id || '') + "')" }], 'slim');
 }
+function rotuloConselho() {
+  var c = $('#dCat') ? $('#dCat').value : 'MED';
+  if ($('#dRegLbl')) $('#dRegLbl').textContent = CAT_CONSELHO[c] + ' *';
+}
 function saveDoc(id) {
   var n = $('#dNome').value.trim(), c = $('#dCrm').value.trim();
-  if (!n || !c) { toast('Nome e CRM são obrigatórios.', 'err'); return; }
+  var cat = $('#dCat') ? $('#dCat').value : 'MED';
+  if (!n || !c) { toast('Nome e ' + CAT_CONSELHO[cat] + ' são obrigatórios.', 'err'); return; }
   var m = id ? docById(id) : null;
   if (!m) { m = { id: uid('d') }; DB.medicos.push(m); }
-  m.nome = n; m.crm = c; m.uf = $('#dUf').value.trim().toUpperCase();
+  m.nome = n; m.cat = cat; m.reg = c; delete m.crm;
+  m.uf = $('#dUf').value.trim().toUpperCase();
   m.escala = {};
   DB.turnos.forEach(function (t) { var v = $('#dt_' + t.id).value; if (v) m.escala[t.id] = v; });
   delete m.turnos;
   DB.medicos.sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
-  saveConfig(); closeModal(); renderConfig(); renderEscala(); toast('Médico salvo.', 'ok');
+  saveConfig(); closeModal(); renderConfig(); renderEscala(); toast(CAT_LBL[cat] + ' salvo(a).', 'ok');
 }
 function delDoc(id) {
-  if (!confirm('Excluir este médico do cadastro?')) return;
+  var m = docById(id);
+  if (!confirm('Excluir ' + (m ? m.nome : 'este profissional') + ' do cadastro da equipe?')) return;
   DB.medicos = DB.medicos.filter(function (x) { return x.id !== id; });
   saveConfig(); renderConfig(); renderEscala();
 }
@@ -2368,7 +2437,8 @@ function cabecalho(viaN, viaQ) {
 function viaHTML(sess, it, viaN, viaQ, op) {
   var p = pacById(it.pid) || { nome: '(paciente removido)', endereco: '' };
   var t = turnoById(sess.turno) || {};
-  var d = docById(sess.medicoId);
+  var eq = {};
+  CAT_ORDEM.forEach(function (k) { eq[k] = docById(sess[CAT_CAMPO[k]]); });
   var c = DB.clinic;
 
   /* linhas de medicação */
@@ -2420,19 +2490,26 @@ function viaHTML(sess, it, viaN, viaQ, op) {
     '</div></div>' +
     tabela +
     '<div class="vobs"><div class="k">Observações / intercorrências</div><div class="t">' + esc(it.obs || '') + '</div></div>' +
-    '<div class="vsig">' +
-    '<div class="s"><div class="n">' + esc(d ? d.nome : '________________________') + '</div>' +
-    '<div class="r">Médico(a) do turno — ' + esc(d ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : 'CRM ______________') + '</div></div>' +
-    '<div class="s"><div class="n">&nbsp;</div><div class="r">Enfermeiro(a) / Téc. responsável — COREN</div></div>' +
-    '<div class="s"><div class="n">&nbsp;</div><div class="r">Farmácia — conferência e baixa</div></div>' +
-    '</div>' +
+    '<div class="vsig">' + assinaturas(eq) + '</div>' +
     '<div class="vfoot">' + esc(c.foot || '') + (c.rt ? ' · RT: ' + esc(c.rt) : '') +
     ' · Emitido em ' + nowStamp() + '</div>' +
     '</div>';
 }
 
+/* bloco de assinaturas: nome e conselho de quem estava escalado */
+function assinaturas(eq) {
+  var papel = { MED: 'Médico(a) do turno', ENF: 'Enfermeiro(a) responsável', FAR: 'Farmacêutico(a)' };
+  return CAT_ORDEM.map(function (k) {
+    var m = eq[k];
+    return '<div class="s"><div class="n">' + esc(m ? m.nome : '') + (m ? '' : '&nbsp;') + '</div>' +
+      '<div class="r">' + papel[k] + ' — ' + esc(m ? registroDe(m) : CAT_CONSELHO[k] + ' ____________') + '</div></div>';
+  }).join('');
+}
+
 function consHTML(sess, alvo) {
-  var t = turnoById(sess.turno) || {}, d = docById(sess.medicoId), c = DB.clinic;
+  var t = turnoById(sess.turno) || {}, c = DB.clinic;
+  var eq = {}; CAT_ORDEM.forEach(function (k) { eq[k] = docById(sess[CAT_CAMPO[k]]); });
+  var d = eq.MED;
   var totC = {}, totR = {}, cntC = {}, cntR = {};
   alvo.forEach(function (it) {
     var pac = pacById(it.pid);
@@ -2480,19 +2557,18 @@ function consHTML(sess, alvo) {
     '<div class="c"><div class="k">Turno</div><div class="v">' + esc(t.nome || '') + ' · ' + esc((t.ini || '') + '–' + (t.fim || '')) + '</div></div>' +
     '<div class="c"><div class="k">Pacientes atendidos</div><div class="v">' + alvo.length + '</div></div>' +
     '<div class="c"><div class="k">Faltas</div><div class="v">' + faltas.length + '</div></div>' +
-    '<div class="c w100"><div class="k">Médico(a) do turno</div><div class="v">' +
-    esc(d ? d.nome + ' — CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : '________________________________  CRM ______________') + '</div></div>' +
-    '</div>' +
+    '<div class="c w100" style="display:flex;padding:0">' +
+    CAT_ORDEM.map(function (k) {
+      var m = eq[k];
+      return '<div class="c"><div class="k">' + esc(CAT_LBL[k]) + '</div><div class="v sm">' +
+        esc(m ? nomeERegistro(m) : '—') + '</div></div>';
+    }).join('') + '</div></div>' +
     bloco('Medicações de uso contínuo', DB.medsCont, totC, cntC) +
     bloco('Medicações de resgate / sintomáticas', DB.medsResg, totR, cntR) +
     nominal +
     (faltas.length ? '<div class="csub">Faltas do turno</div><div style="font-size:8.4pt">' +
       esc(faltas.map(function (i) { var p = pacById(i.pid); return p ? p.nome : '—'; }).join(' · ')) + '</div>' : '') +
-    '<div class="vsig" style="margin-top:8mm">' +
-    '<div class="s"><div class="n">&nbsp;</div><div class="r">Enfermeiro(a) responsável — COREN</div></div>' +
-    '<div class="s"><div class="n">&nbsp;</div><div class="r">Farmacêutico(a) — CRF</div></div>' +
-    '<div class="s"><div class="n">' + esc(d ? d.nome : '&nbsp;') + '</div><div class="r">Médico(a) do turno — ' + esc(d ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : 'CRM') + '</div></div>' +
-    '</div>' +
+    '<div class="vsig" style="margin-top:8mm">' + assinaturas(eq) + '</div>' +
     '<div class="vfoot">' + esc(c.foot || '') + ' · Emitido em ' + nowStamp() + '</div>' +
     '</div>';
 }
@@ -2543,7 +2619,7 @@ function exportCSV() {
       var t = turnoById(s.turno) || {}, d = docById(s.medicoId) || {};
       s.itens.forEach(function (it) {
         var p = pacById(it.pid) || {};
-        var base = [s.data, DIAS_C[dayOf(s.data)], t.nome || s.turno, d.nome || '', d.crm || '', p.nome || '', p.prontuario || '',
+        var base = [s.data, DIAS_C[dayOf(s.data)], t.nome || s.turno, d.nome || '', d.reg || '', p.nome || '', p.prontuario || '',
           it.presente ? 'Sim' : 'Nao'];
         var any = false;
         DB.medsCont.forEach(function (m) {
@@ -2589,12 +2665,15 @@ function wipeAll() {
 /* ================= EVENTOS ================= */
 $$('.nav button').forEach(function (b) { b.onclick = function () { go(b.dataset.v); }; });
 $('#dtSel').onchange = onDateChange;
-$('#docSel').onchange = function () {
-  var s = curSess(); if (!s) return;
-  s.medicoId = this.value; saveSessMeta('medicoId', this.value);
-  var d = docById(s.medicoId);
-  $('#docCrm').value = d ? (d.crm ? 'CRM ' + (d.uf ? d.uf + ' ' : '') + d.crm : '') : '';
-};
+[['MED', '#docSel'], ['ENF', '#enfSel'], ['FAR', '#farSel']].forEach(function (x) {
+  $(x[1]).onchange = function () {
+    var s = curSess(); if (!s) return;
+    var campo = CAT_CAMPO[x[0]];
+    s[campo] = this.value; saveSessMeta(campo, this.value);
+    var m = docById(this.value);
+    $('#reg' + x[0]).textContent = m ? (registroDe(m) || '—') : '';
+  };
+});
 ['patSearch', 'fTurno', 'fLinha', 'fAtivo'].forEach(function (id) {
   var e = $('#' + id); e.oninput = renderPacientes; e.onchange = renderPacientes;
 });
@@ -2634,8 +2713,10 @@ function setupIcons() {
 function seedDemo() {
   if (DB.pacientes.length && !confirm('Já existem pacientes cadastrados. Adicionar mesmo assim os pacientes de exemplo?')) return;
   if (!DB.medicos.length) {
-    DB.medicos.push({ id: uid('d'), nome: 'Dr. Exemplo Silva', crm: '12345', uf: 'PA', escala: { T1: 'SQS', T2: 'TODOS' } });
-    DB.medicos.push({ id: uid('d'), nome: 'Dra. Exemplo Costa', crm: '23456', uf: 'PA', escala: { T1: 'TQS', T3: 'TODOS' } });
+    DB.medicos.push({ id: uid('d'), nome: 'Dr. Exemplo Silva', cat: 'MED', reg: '12345', uf: 'PA', escala: { T1: 'SQS', T2: 'TODOS' } });
+    DB.medicos.push({ id: uid('d'), nome: 'Dra. Exemplo Costa', cat: 'MED', reg: '23456', uf: 'PA', escala: { T1: 'TQS', T3: 'TODOS' } });
+    DB.medicos.push({ id: uid('d'), nome: 'Enf. Exemplo Rocha', cat: 'ENF', reg: '345678', uf: 'PA', escala: { T1: 'TODOS', T2: 'TODOS' } });
+    DB.medicos.push({ id: uid('d'), nome: 'Farm. Exemplo Dias', cat: 'FAR', reg: '4567', uf: 'PA', escala: { T1: 'TODOS', T2: 'TODOS', T3: 'TODOS' } });
     saveConfig();
   }
   var base = [
@@ -2673,7 +2754,7 @@ function iniciarUI() {
       openModal('Bem-vindo ao Controle de Medicações',
         '<div class="note" style="margin-bottom:14px">Logotipo, nome, endereço e CNES do <b>Centro de Hemodiálise de Belém</b> já vêm configurados, e os dados agora ficam <b>sincronizados na nuvem</b> entre todos os aparelhos. Falta apenas:</div>' +
         '<ol style="margin:0;padding-left:20px;line-height:1.9;font-size:13.5px">' +
-        '<li><b>Configurações → Médicos:</b> cadastre cada médico com CRM e defina, <b>para cada turno, em quais dias ele responde</b> (Seg/Qua/Sex, Ter/Qui/Sáb ou diário). O médico do dia passa a ser preenchido sozinho na escala.</li>' +
+        '<li><b>Configurações → Equipe:</b> cadastre médicos, enfermagem e farmácia com o conselho (CRM, COREN, CRF) e defina, <b>para cada turno, em quais dias cada um responde</b>. A equipe do dia passa a ser preenchida sozinha na escala e sai impressa nas assinaturas.</li>' +
         '<li><b>Configurações → Medicações:</b> já vêm Paricalcitol, Alfaepoetina, Noripurum e Taurolock, mais 10 sintomáticos. Ajuste doses padrão e acrescente o que faltar.</li>' +
         '<li><b>Pacientes:</b> cadastre com nome completo, turno e linha de dias (Seg/Qua/Sex ou Ter/Qui/Sáb).</li>' +
         '<li><b>Escala do dia:</b> a lista é montada sozinha. Marque as medicações e imprima as 2 vias.</li>' +
