@@ -820,6 +820,23 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
       <div class="card-b flush"><div class="tw"><table class="zebra" id="usrTable"></table></div></div>
     </div>
     <div class="card">
+      <div class="card-h"><h3>Cópias de segurança</h3><span class="sub">Guardadas no próprio servidor — uma por dia, automática</span>
+        <div class="spacer"></div>
+        <button class="btn sm sec" onclick="renderVersoes()">↻ Atualizar</button>
+        <button class="btn sm so-pac" onclick="copiaAgora()">＋ Copiar agora</button></div>
+      <div class="card-b">
+        <div class="note">O sistema grava sozinho uma cópia do cadastro por dia, na própria base de dados, e outra
+        antes de qualquer operação que possa destruir informação. Para voltar atrás, escolha a data na lista e clique em
+        <b>Restaurar</b> — não é preciso baixar nem guardar arquivo nenhum. O estado atual é sempre copiado antes de restaurar.</div>
+      </div>
+      <div class="card-b flush"><div class="tw"><table class="zebra" id="bkTable"></table></div><div id="bkEmpty"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Pacientes excluídos</h3><span class="sub">Ficam guardados — exclusão não apaga do banco</span>
+        <div class="spacer"></div><span class="sub" id="lixoCount"></span></div>
+      <div class="card-b flush"><div class="tw"><table class="zebra" id="lixoTable"></table></div><div id="lixoEmpty"></div></div>
+    </div>
+    <div class="card">
       <div class="card-h"><h3>Conta e dados</h3></div>
       <div class="card-b">
         <div class="rowline" style="margin-bottom:14px">
@@ -838,6 +855,9 @@ table.ctab tr.tot td{background:#f0f0f0;font-weight:800}
           <br><br>
           Como se trata de dado pessoal sensível de saúde (LGPD, art. 11), <b>cada pessoa deve ter o seu próprio usuário</b> —
           senha compartilhada inviabiliza rastrear quem lançou o quê. Contas são criadas no console do Firebase, em Authentication.
+          <br><br>
+          <b>Cópias de segurança.</b> São automáticas e ficam no servidor (cartão acima) — os botões de exportar abaixo são
+          opcionais, para quem quiser uma via fora da nuvem.
         </div>
         <div class="rowline" style="margin-top:14px">
           <button class="btn acc" onclick="doExport()">⬇ Exportar backup (.json)</button>
@@ -906,8 +926,11 @@ var FIREBASE_CONFIG = {
   appId: "1:510534895968:web:c1a9aaf229a87b30c8b605"
 };
 /* Nomes das coleções no Firestore (precisam bater com as regras) */
-var COL_APP = 'chb';          // documentos: config, pacientes
-var COL_SESS = 'chb_sessoes'; // um documento por dia+turno: 2026-08-17_T1
+var COL_APP = 'chb';            // config, usuarios (documentos únicos)
+var COL_SESS = 'chb_sessoes';   // um documento por dia+turno: 2026-08-17_T1
+var COL_PAC = 'chb_pacientes';  // UM DOCUMENTO POR PACIENTE
+var COL_PRESC = 'chb_prescricoes'; // uma prescrição por paciente
+var COL_BK = 'chb_versoes';     // cópias de segurança automáticas, no próprio servidor
 /* ================================================================== */
 /* ================= UTIL ================= */
 var $ = function (s, r) { return (r || document).querySelector(s); };
@@ -984,6 +1007,7 @@ function defaults() {
       { id: 'mr10', nome: 'Captopril', desc: 'Crise hipertensiva intradialítica', un: 'mg', dose: 25, via: 'VO/SL' }
     ],
     pacientes: [],
+    lixo: [],
     presc: {},
     sessoes: {}
   };
@@ -1537,7 +1561,7 @@ function ordenaItens(s) {
    ================================================================== */
 var FB = null, FS = null, AU = null, CUR_USER = null;
 var UNSUB = { cfg: null, pac: null, usr: null, presc: null, sess: {} };
-var CFG_OK = false, PAC_OK = false;
+var CFG_OK = false, PAC_OK = false, PRESC_OK = false;
 var CFG_KEY = 'chb_fbcfg';
 /* ---------- trava contra sobrescrita cega ----------
    Cada documento "inteiro" (config, pacientes, prescrições, usuários) só
@@ -1575,9 +1599,9 @@ function restaurarPacientesLocal(i) {
   var bk = backupsLocais()[i || 0];
   if (!bk) { toast('Nenhuma cópia local guardada neste aparelho.', 'err'); return; }
   if (!confirm('Restaurar a cópia local de ' + bk.em + ' com ' + bk.n + ' paciente(s)?\n\nEla substituirá a lista atual na nuvem.')) return;
-  DB.pacientes = bk.lista;
   SRV.pac = true;
-  savePacientes(); renderPacientes();
+  bk.lista.forEach(savePac);
+  renderPacientes();
   toast('Cópia local restaurada — confira o cadastro.', 'ok');
 }
 function temConfig() {
@@ -1711,8 +1735,9 @@ function sairApp() {
   Object.keys(UNSUB.sess).forEach(function (k) { UNSUB.sess[k](); });
   UNSUB.sess = {};
   if (UNSUB.cfg) UNSUB.cfg(); if (UNSUB.pac) UNSUB.pac(); if (UNSUB.usr) UNSUB.usr(); if (UNSUB.presc) UNSUB.presc();
-  UNSUB.cfg = UNSUB.pac = UNSUB.usr = UNSUB.presc = null; CFG_OK = PAC_OK = false;
+  UNSUB.cfg = UNSUB.pac = UNSUB.usr = UNSUB.presc = null; CFG_OK = PAC_OK = PRESC_OK = false;
   SRV = { cfg: false, pac: false, presc: false, usr: false }; ULT_PAC_N = 0;
+  MIGR_RODOU = false; VERSAO_OK = false; DB.lixo = [];
   USUARIOS = {}; PAPEL_ABERTO = true;
   DB = defaults(); DB.sessoes = {}; SESS_READY = {};
   $('#loginScreen').style.display = 'flex';
@@ -1887,50 +1912,104 @@ function salvarUsuarios() {
     .then(function () { setSync('ok'); })
     .catch(erroGravacao);
 }
+/* Uma prescrição por documento: salvar a do João não toca na da Maria,
+   nem com dois computadores ao mesmo tempo, nem com internet caindo. */
 function subPrescricoes() {
-  UNSUB.presc = FS.collection(COL_APP).doc('prescricoes').onSnapshot(function (snap) {
-    if (snapConfiavel(snap)) SRV.presc = true;
-    DB.presc = (snap.exists && snap.data().lista) || {};
-    /* compatibilidade: bólus gravado em UI por versão anterior vira mL
-       (um bólus em mL nunca passa de ~100; em UI é sempre milhares) */
-    Object.keys(DB.presc).forEach(function (pid) {
-      var o = DB.presc[pid];
-      if (o && num(o.hepBolus, 0) > 100) {
-        o.hepBolus = Math.round((num(o.hepBolus) / num(o.hepConc, HEP_CONC_PADRAO)) * 10) / 10;
+  UNSUB.presc = FS.collection(COL_PRESC).onSnapshot(function (snap) {
+    if (!snap.metadata.fromCache) SRV.presc = true;
+    var o = {};
+    snap.forEach(function (d) {
+      var x = d.data() || {};
+      /* compatibilidade: bólus gravado em UI por versão anterior vira mL
+         (um bólus em mL nunca passa de ~100; em UI é sempre milhares) */
+      if (num(x.hepBolus, 0) > 100) {
+        x.hepBolus = Math.round((num(x.hepBolus) / num(x.hepConc, HEP_CONC_PADRAO)) * 10) / 10;
       }
+      o[d.id] = x;
     });
+    DB.presc = o;
+    PRESC_OK = true;
+    migrarSeNecessario();
     if (VIEW === 'escala') renderEscala();
     if (VIEW === 'pacientes') renderPacientes();
-  }, function () { });
+  }, erroSnap);
 }
-/* também sem merge: a prescrição de um paciente excluído precisa sair do banco */
-function savePrescricoes() {
-  if (!FS) return;
+/* grava (ou apaga) a prescrição de um paciente só */
+function savePresc(pid) {
+  if (!FS || !pid) return;
   if (!SRV.presc) { avisoCarga('as prescrições'); return; }
+  var o = (DB.presc || {})[pid];
+  var ref = FS.collection(COL_PRESC).doc(pid);
   setSync('saving');
-  return FS.collection(COL_APP).doc('prescricoes').set({ lista: limpa(DB.presc || {}) })
+  return (o && Object.keys(o).length ? ref.set(limpa(o)) : ref.delete())
     .then(function () { setSync('ok'); })
     .catch(erroGravacao);
 }
+/* Um documento por paciente. Cada gravação toca apenas aquele paciente —
+   é o que elimina o risco de um computador desatualizado (ou que ficou
+   offline) desfazer o cadastro feito em outro. */
 function subPacientes() {
-  UNSUB.pac = FS.collection(COL_APP).doc('pacientes').onSnapshot(function (snap) {
-    DB.pacientes = (snap.exists && snap.data().lista) || [];
-    if (snapConfiavel(snap)) {
-      SRV.pac = true;
-      ULT_PAC_N = DB.pacientes.length;
-      backupLocalPacientes(DB.pacientes);
-    }
-    /* campos de identificação descontinuados — remove o que houver ficado
-       gravado (prontuário, CPF, nascimento, CNS, endereço) */
-    var limpou = 0;
-    DB.pacientes.forEach(function (p) {
+  UNSUB.pac = FS.collection(COL_PAC).onSnapshot(function (snap) {
+    var lista = [], lixo = [], limpou = [];
+    snap.forEach(function (d) {
+      var p = d.data(); if (!p) return;
+      p.id = d.id;
+      /* campos de identificação descontinuados — remove o que houver ficado
+         gravado (prontuário, CPF, nascimento, CNS, endereço) */
+      var mexeu = false;
       CAMPOS_REMOVIDOS.forEach(function (k) {
-        if (p[k] !== undefined) { delete p[k]; limpou++; }
+        if (p[k] !== undefined) { delete p[k]; mexeu = true; }
       });
+      if (mexeu) limpou.push(p);
+      (p._del ? lixo : lista).push(p);
     });
+    lista.sort(function (a, b) { return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'); });
+    DB.pacientes = lista;
+    DB.lixo = lixo;
+    if (!snap.metadata.fromCache) {
+      SRV.pac = true;
+      ULT_PAC_N = lista.length;
+      backupLocalPacientes(lista);
+    }
     PAC_OK = true; aposCarga();
-    if (limpou && SRV.pac) { savePacientes(); }
+    migrarSeNecessario();
+    if (SRV.pac && podePacientes()) limpou.forEach(savePac);
   }, erroSnap);
+}
+/* ---------- migração do formato antigo (uma lista dentro de um documento) ----------
+   Roda uma vez, quando as coleções novas estão vazias e o servidor confirma
+   que os documentos antigos ainda têm dados. O documento antigo não é
+   apagado — fica como cópia, marcado com a data da migração. */
+var MIGR_RODOU = false;
+function migrarSeNecessario() {
+  if (MIGR_RODOU || !FS || !SRV.pac || !SRV.presc) return;
+  if (DB.pacientes.length || (DB.lixo || []).length) { MIGR_RODOU = true; return; }
+  if (!podePacientes()) return;
+  MIGR_RODOU = true;
+  FS.collection(COL_APP).doc('pacientes').get().then(function (d) {
+    var lista = (d.exists && d.data().lista) || [];
+    if (!lista.length) return null;
+    return FS.collection(COL_APP).doc('prescricoes').get().then(function (dp) {
+      var presc = (dp.exists && dp.data().lista) || {};
+      var lote = FS.batch(), n = 0;
+      lista.slice(0, 400).forEach(function (p) {
+        if (!p || !p.id) return;
+        var c = JSON.parse(JSON.stringify(p)); delete c.id;
+        lote.set(FS.collection(COL_PAC).doc(p.id), limpa(c)); n++;
+      });
+      Object.keys(presc).slice(0, 400).forEach(function (pid) {
+        lote.set(FS.collection(COL_PRESC).doc(pid), limpa(presc[pid]));
+      });
+      lote.set(FS.collection(COL_APP).doc('pacientes'),
+        { migradoEm: new Date().toISOString(), migradoPor: usuarioAtual() }, { merge: true });
+      return lote.commit().then(function () { return n; });
+    });
+  }).then(function (n) {
+    if (n) toast(n + ' paciente(s) convertidos para o novo formato — cada um agora é gravado separadamente.', 'ok');
+  }).catch(function (e) {
+    MIGR_RODOU = false;
+    if (e && e.code === 'permission-denied') alertaPermissao('conversão do cadastro');
+  });
 }
 function erroSnap(e) {
   if (e.code === 'permission-denied') {
@@ -1942,6 +2021,8 @@ function erroSnap(e) {
 var BOOTED = false;
 function aposCarga() {
   if (!CFG_OK || !PAC_OK) return;
+  /* cópia de segurança do dia, no servidor — sem depender de ninguém clicar */
+  if (PRESC_OK) setTimeout(garantirVersaoDoDia, 2500);
   if (!BOOTED) { BOOTED = true; iniciarUI(); return; }
   subDia(CUR.iso);
   turnosDoDia(CUR.iso).forEach(function (t) { autoSincroniza(CUR.iso, t.id); });
@@ -1977,22 +2058,129 @@ function saveConfig() {
   if (!SRV.cfg) { avisoCarga('as configurações'); return; }
   enfileira(FS.collection(COL_APP).doc('config'), cfgToDoc());
 }
-function savePacientes() {
-  if (!FS) return;
+/* grava UM paciente (documento próprio, sem tocar nos demais) */
+function savePac(p) {
+  if (!FS || !p || !p.id) return;
   if (!SRV.pac) { avisoCarga('o cadastro de pacientes'); return; }
-  /* trava de segurança: uma lista vazia por cima de 2+ cadastros nunca é
-     uma edição normal — exclusão em massa só pelo botão próprio, com backup */
-  if (!DB.pacientes.length && ULT_PAC_N > 1) {
-    mostrarAlerta('Gravação bloqueada por segurança',
-      'Este aparelho tentou gravar uma lista de pacientes <b>vazia</b> por cima de ' + ULT_PAC_N +
-      ' cadastro(s) existentes no banco — normalmente sinal de tela desatualizada. ' +
-      'Recarregue a página (F5) e tente de novo. Para apagar tudo de propósito, use ' +
-      'Configurações → “Apagar todos os dados”, depois de gerar um backup.');
-    toast('Gravação bloqueada — veja o aviso no topo.', 'err');
-    return;
-  }
-  ULT_PAC_N = DB.pacientes.length;
-  enfileira(FS.collection(COL_APP).doc('pacientes'), { lista: limpa(DB.pacientes) });
+  var c = JSON.parse(JSON.stringify(p)); delete c.id;
+  c.em = Date.now(); c.por = usuarioAtual();
+  setSync('saving');
+  return FS.collection(COL_PAC).doc(p.id).set(limpa(c))
+    .then(function () { setSync('ok'); })
+    .catch(erroGravacao);
+}
+/* Exclusão vai para a lixeira, não some do banco: some da tela e pode ser
+   desfeita a qualquer momento em Configurações → Pacientes excluídos. */
+function excluirPaciente(id) {
+  if (!FS || !id) return;
+  setSync('saving');
+  return FS.collection(COL_PAC).doc(id)
+    .set({ _del: true, delEm: Date.now(), delPor: usuarioAtual() }, { merge: true })
+    .then(function () { setSync('ok'); })
+    .catch(erroGravacao);
+}
+function restaurarPaciente(id) {
+  if (!exigePacientes()) return;
+  if (!FS || !id) return;
+  setSync('saving');
+  return FS.collection(COL_PAC).doc(id).set({
+    _del: firebase.firestore.FieldValue.delete(),
+    delEm: firebase.firestore.FieldValue.delete(),
+    delPor: firebase.firestore.FieldValue.delete()
+  }, { merge: true }).then(function () {
+    setSync('ok'); renderPacientes(); renderConfig(); toast('Paciente restaurado.', 'ok');
+  }).catch(erroGravacao);
+}
+/* ==================================================================
+   CÓPIAS DE SEGURANÇA NO SERVIDOR
+   Uma versão por dia, criada sozinha ao abrir o sistema, guardada na
+   própria base (coleção chb_versoes). Nada de arquivo para baixar:
+   restaurar é escolher a data em Configurações.
+   ================================================================== */
+var VERSAO_OK = false, MAX_VERSOES = 60;
+function pacoteVersao(motivo) {
+  var cfg = {};
+  CHAVES_CFG.forEach(function (k) { cfg[k] = DB[k]; });
+  if (cfg.clinic) { cfg.clinic = JSON.parse(JSON.stringify(cfg.clinic)); delete cfg.clinic.logo; }
+  return limpa({
+    em: new Date().toISOString(), por: usuarioAtual(), motivo: motivo || 'cópia automática do dia',
+    nPac: DB.pacientes.length, nPresc: Object.keys(DB.presc || {}).length,
+    pacientes: DB.pacientes, lixo: DB.lixo || [], presc: DB.presc || {}, cfg: cfg
+  });
+}
+/* cria a cópia do dia se ainda não existir (idempotente entre aparelhos) */
+function garantirVersaoDoDia() {
+  if (!FS || VERSAO_OK || !SRV.pac || !SRV.presc || !DB.pacientes.length || !podeLancar()) return;
+  VERSAO_OK = true;
+  var ref = FS.collection(COL_BK).doc(todayISO());
+  ref.get().then(function (d) {
+    if (d.exists) return null;
+    return ref.set(pacoteVersao()).then(podarVersoes);
+  }).catch(function () { VERSAO_OK = false; });
+}
+/* cópia extra, feita antes de qualquer operação que possa destruir dados */
+function salvarVersao(motivo) {
+  if (!FS) return Promise.resolve();
+  return FS.collection(COL_BK).doc(todayISO() + '_' + Date.now().toString(36))
+    .set(pacoteVersao(motivo)).catch(function () { });
+}
+/* mantém as MAX_VERSOES mais recentes */
+function podarVersoes() {
+  return FS.collection(COL_BK).orderBy(firebase.firestore.FieldPath.documentId(), 'desc').get()
+    .then(function (q) {
+      var ids = []; q.forEach(function (d) { ids.push(d.id); });
+      var velhos = ids.slice(MAX_VERSOES);
+      if (!velhos.length) return null;
+      var lote = FS.batch();
+      velhos.slice(0, 200).forEach(function (id) { lote.delete(FS.collection(COL_BK).doc(id)); });
+      return lote.commit();
+    }).catch(function () { });
+}
+function listarVersoes() {
+  if (!FS) return Promise.resolve([]);
+  return FS.collection(COL_BK).orderBy(firebase.firestore.FieldPath.documentId(), 'desc').limit(MAX_VERSOES).get()
+    .then(function (q) {
+      var out = [];
+      q.forEach(function (d) { var o = d.data() || {}; o.id = d.id; out.push(o); });
+      return out;
+    }).catch(function () { return []; });
+}
+/* devolve o cadastro ao estado daquela data — antes, guarda o estado atual */
+function restaurarVersao(id) {
+  if (!exigePacientes()) return;
+  FS.collection(COL_BK).doc(id).get().then(function (d) {
+    if (!d.exists) { toast('Cópia não encontrada.', 'err'); return null; }
+    var v = d.data() || {}, pac = v.pacientes || [];
+    if (!confirm('Restaurar o cadastro como estava em ' + fmtBR(String(v.em || id).slice(0, 10)) + '?\n\n' +
+      pac.length + ' paciente(s) daquela cópia voltam a valer para todos os aparelhos.\n' +
+      'O estado atual é guardado antes, como mais uma cópia — nada se perde.')) return null;
+    toast('Restaurando…');
+    return salvarVersao('antes de restaurar a cópia de ' + id).then(function () {
+      var atual = {};
+      DB.pacientes.concat(DB.lixo || []).forEach(function (p) { atual[p.id] = 1; });
+      var lote = FS.batch();
+      pac.slice(0, 400).forEach(function (p) {
+        if (!p || !p.id) return;
+        var c = JSON.parse(JSON.stringify(p)); delete c.id; delete c._del;
+        lote.set(FS.collection(COL_PAC).doc(p.id), limpa(c));
+        delete atual[p.id];
+      });
+      /* quem existe hoje e não existia naquela data vai para a lixeira,
+         nunca para a exclusão definitiva */
+      Object.keys(atual).slice(0, 200).forEach(function (pid) {
+        lote.set(FS.collection(COL_PAC).doc(pid),
+          { _del: true, delEm: Date.now(), delPor: usuarioAtual() }, { merge: true });
+      });
+      var pr = v.presc || {};
+      Object.keys(pr).slice(0, 400).forEach(function (pid) {
+        lote.set(FS.collection(COL_PRESC).doc(pid), limpa(pr[pid]));
+      });
+      return lote.commit();
+    }).then(function () {
+      toast('Cadastro restaurado.', 'ok');
+      renderPacientes(); renderConfig();
+    }).catch(erroGravacao);
+  });
 }
 /* pid informado = grava só aquele paciente (evita sobrescrever edição de outro aparelho) */
 function saveSess(pid) {
@@ -2121,8 +2309,14 @@ function gravarTudo(dados) {
   lote.set(FS.collection(COL_APP).doc('config'), limpa((function () {
     var o = {}; CHAVES_CFG.forEach(function (k) { o[k] = dados[k]; }); return o;
   })()));
-  lote.set(FS.collection(COL_APP).doc('pacientes'), { lista: limpa(dados.pacientes || []) });
-  if (dados.presc) lote.set(FS.collection(COL_APP).doc('prescricoes'), { lista: limpa(dados.presc) });
+  (dados.pacientes || []).slice(0, 300).forEach(function (p) {
+    if (!p || !p.id) return;
+    var c = JSON.parse(JSON.stringify(p)); delete c.id;
+    lote.set(FS.collection(COL_PAC).doc(p.id), limpa(c));
+  });
+  Object.keys(dados.presc || {}).slice(0, 300).forEach(function (pid) {
+    lote.set(FS.collection(COL_PRESC).doc(pid), limpa(dados.presc[pid]));
+  });
   var chaves = Object.keys(dados.sessoes || {}).slice(0, 400);
   chaves.forEach(function (k) {
     var p = k.split('|'), s = dados.sessoes[k];
@@ -3178,21 +3372,22 @@ function savePat(id) {
     if (!medAplicavel(m, p)) return;
     p.meds[m.id] = { on: $('#pm_' + m.id).checked, dose: num($('#pmd_' + m.id).value, m.dose), freq: $('#pmf_' + m.id).value };
   });
-  savePacientes();
+  savePac(p);
   if (podeClinico()) {
     DB.presc = DB.presc || {};
     var pr = lerPresc();
     if (Object.keys(pr).length) DB.presc[p.id] = pr; else delete DB.presc[p.id];
-    savePrescricoes();
+    savePresc(p.id);
   }
   closeModal(); renderPacientes(); toast('Paciente salvo.', 'ok');
 }
 function delPat(id) {
   if (!exigePacientes()) return;
   var p = pacById(id); if (!p) return;
-  if (!confirm('Excluir ' + p.nome + ' do cadastro?\n\nOs turnos já registrados no histórico são mantidos.\nSe o paciente apenas saiu do programa, prefira marcá-lo como Inativo.')) return;
+  if (!confirm('Excluir ' + p.nome + ' do cadastro?\n\nO paciente sai das listas, mas fica guardado em Configurações → Pacientes excluídos e pode ser restaurado.\nOs turnos já registrados no histórico são mantidos.\nSe o paciente apenas saiu do programa, prefira marcá-lo como Inativo.')) return;
   DB.pacientes = DB.pacientes.filter(function (x) { return x.id !== id; });
-  savePacientes(); renderPacientes(); toast('Paciente excluído.');
+  excluirPaciente(id); renderPacientes();
+  toast('Paciente movido para a lixeira — pode ser restaurado em Configurações.');
 }
 /* ================= CONFIG ================= */
 function renderConfig() {
@@ -3237,13 +3432,63 @@ function renderConfig() {
     }).join('') + '</tbody>'
     : '<tbody><tr><td class="empty">Nenhum profissional cadastrado. Nome e conselho saem impressos nas duas vias.</td></tr></tbody>';
   renderMedTable('cont'); renderMedTable('resg');
-  renderUsuarios();
+  renderUsuarios(); renderVersoes(); renderLixo();
   $('#cfgUser').textContent = ((CUR_USER && CUR_USER.email) || '—') + ' · ' + PAPEL_LBL[meuPapel()];
-  var bk = backupsLocais();
-  $('#storeInfo').innerHTML = 'Cadastro: <b>' + DB.pacientes.length + '</b> pacientes · <b>' + DB.medicos.length + '</b> profissionais · ' +
-    'banco: <b>' + esc(FIREBASE_CONFIG.projectId || '—') + '</b> (Firestore) · ' +
+  $('#storeInfo').innerHTML = 'Cadastro: <b>' + DB.pacientes.length + '</b> pacientes (um documento por paciente) · <b>' +
+    DB.medicos.length + '</b> profissionais · banco: <b>' + esc(FIREBASE_CONFIG.projectId || '—') + '</b> (Firestore) · ' +
     'conexão: <b>' + (navigator.onLine ? 'online' : 'offline — alterações em fila') + '</b>' +
-    (bk.length ? ' · cópia local de segurança: <b>' + bk.length + '</b> versão(ões), última com ' + bk[0].n + ' paciente(s)' : '');
+    ((DB.lixo || []).length ? ' · <b>' + DB.lixo.length + '</b> na lixeira' : '');
+}
+/* ---------- cópias de segurança guardadas no servidor ---------- */
+function copiaAgora() {
+  if (!exigePacientes()) return;
+  toast('Guardando cópia…');
+  salvarVersao('cópia manual').then(function () {
+    toast('Cópia guardada no servidor.', 'ok'); renderVersoes();
+  });
+}
+function renderVersoes() {
+  var tb = $('#bkTable'); if (!tb) return;
+  tb.innerHTML = ''; $('#bkEmpty').innerHTML = '<div class="empty"><p>Carregando cópias…</p></div>';
+  listarVersoes().then(function (lista) {
+    if (!lista.length) {
+      tb.innerHTML = '';
+      $('#bkEmpty').innerHTML = '<div class="empty"><h4>Nenhuma cópia ainda</h4>' +
+        '<p>A primeira é criada sozinha logo após o cadastro do primeiro paciente.</p></div>';
+      return;
+    }
+    $('#bkEmpty').innerHTML = '';
+    tb.innerHTML = '<thead><tr><th>Data</th><th>Hora</th><th class="ctr">Pacientes</th><th>Origem</th><th>Feita por</th>' +
+      '<th style="width:110px"></th></tr></thead><tbody>' +
+      lista.map(function (v) {
+        var d = new Date(v.em || 0);
+        return '<tr><td class="mono nowrap">' + esc(fmtBR(String(v.em || v.id).slice(0, 10))) + '</td>' +
+          '<td class="mono nowrap">' + (v.em ? fmtHora(d.getTime()) : '—') + '</td>' +
+          '<td class="tac mono">' + (v.nPac === undefined ? '—' : v.nPac) + '</td>' +
+          '<td style="font-size:12px;color:var(--muted)">' + esc(v.motivo || 'automática') + '</td>' +
+          '<td style="font-size:12px">' + esc(usuarioCurto(v.por)) + '</td>' +
+          '<td class="nowrap so-pac"><button class="btn sm sec" onclick="restaurarVersao(\'' + esc(v.id) + '\')">Restaurar</button></td></tr>';
+      }).join('') + '</tbody>';
+  });
+}
+function renderLixo() {
+  var tb = $('#lixoTable'); if (!tb) return;
+  var lixo = (DB.lixo || []).slice().sort(function (a, b) { return (b.delEm || 0) - (a.delEm || 0); });
+  $('#lixoCount').textContent = lixo.length ? lixo.length + ' paciente(s) na lixeira' : '';
+  if (!lixo.length) {
+    tb.innerHTML = '';
+    $('#lixoEmpty').innerHTML = '<div class="empty"><p>Nenhum paciente excluído.</p></div>';
+    return;
+  }
+  $('#lixoEmpty').innerHTML = '';
+  tb.innerHTML = '<thead><tr><th>Paciente</th><th>Turno</th><th>Excluído em</th><th>Por</th><th style="width:110px"></th></tr></thead><tbody>' +
+    lixo.map(function (p) {
+      return '<tr><td class="pname">' + esc(p.nome || '—') + '</td>' +
+        '<td class="nowrap">' + esc((turnoById(p.turno) || {}).nome || '—') + '</td>' +
+        '<td class="mono nowrap">' + esc(p.delEm ? fmtDataHora(p.delEm) : '—') + '</td>' +
+        '<td style="font-size:12px">' + esc(usuarioCurto(p.delPor)) + '</td>' +
+        '<td class="nowrap so-pac"><button class="btn sm sec" onclick="restaurarPaciente(\'' + esc(p.id) + '\')">Restaurar</button></td></tr>';
+    }).join('') + '</tbody>';
 }
 function setTurno(i, k, v) { if (!exigeConfig()) return; DB.turnos[i][k] = v; saveConfig(); subDia(CUR.iso); renderEscala(); }
 function saveClinic() {
@@ -3939,12 +4184,17 @@ function wipeAll() {
   if (!exigeConfig()) return;
   if (!confirm('APAGAR TODOS OS DADOS DA NUVEM?\n\nPacientes, turnos gravados e configurações serão perdidos para TODOS os aparelhos, definitivamente.')) return;
   if (!confirm('Confirme novamente.\n\nSe ainda não gerou um backup, cancele agora e clique em "Backup" antes.')) return;
-  toast('Apagando…', 'inf');
-  carregarHistorico().then(function (lista) {
+  toast('Guardando uma cópia antes de apagar…', 'inf');
+  salvarVersao('antes de apagar todos os dados').then(function () {
+    return carregarHistorico();
+  }).then(function (lista) {
     var lote = FS.batch();
-    lista.slice(0, 400).forEach(function (s) { lote.delete(FS.collection(COL_SESS).doc(sessDocId(s.data, s.turno))); });
+    lista.slice(0, 300).forEach(function (s) { lote.delete(FS.collection(COL_SESS).doc(sessDocId(s.data, s.turno))); });
+    DB.pacientes.concat(DB.lixo || []).slice(0, 300).forEach(function (p) {
+      lote.delete(FS.collection(COL_PAC).doc(p.id));
+      lote.delete(FS.collection(COL_PRESC).doc(p.id));
+    });
     var d = defaults();
-    lote.set(FS.collection(COL_APP).doc('pacientes'), { lista: [] });
     lote.set(FS.collection(COL_APP).doc('config'), limpa((function () {
       var o = {}; CHAVES_CFG.forEach(function (k) { o[k] = d[k]; }); return o;
     })()));
@@ -4023,7 +4273,7 @@ function seedDemo() {
       id: uid('p'), nome: b[0], turno: b[1], linha: b[2], acesso: b[3], ativo: true, obs: '', meds: meds
     });
   });
-  savePacientes(); renderPacientes(); onDateChange();
+  DB.pacientes.forEach(savePac); renderPacientes(); onDateChange();
   toast('Pacientes de exemplo criados. Você pode excluí-los depois.', 'ok');
 }
 /* ================= UI PRONTA (chamado pela camada de nuvem) ================= */
