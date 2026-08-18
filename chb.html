@@ -1165,13 +1165,18 @@ function sessKey(iso, turnoId) { return iso + '|' + turnoId; }
    UF máxima: perfil escolhido pelo médico (8, 10 ou 13 mL/kg/h) ×
    peso seco × horas de sessão — calculada sozinha e editável.
    Anticoagulação: bólus de heparina baseado no peso (UI/kg × peso
-   seco), também calculado e editável. KDIGO recomenda HNF ou HBPM na
-   HD intermitente sem fixar dose; o padrão de 100 UI/kg em bólus único
-   é o de prática usual e deve ser ajustado ao risco de sangramento. */
+   seco), convertido para mL pela concentração do frasco (padrão
+   5000 UI/mL) — é o volume que se aspira na seringa. Calculado e
+   editável. KDIGO (AKI 2012 rec. 5.3.2.1 e rascunho AKI/AKD 2026,
+   PP 5.5.3) recomenda HNF ou HBPM na HD intermitente SEM fixar dose
+   numérica; o padrão adotado é o esquema clássico de referência:
+   bólus inicial de 50 UI/kg, com repique de metade da dose na 2ª hora
+   em sessões longas — sempre a ajustar ao risco de sangramento. */
 var MODAL_LBL = { HD: 'HD — hemodiálise', HDF: 'HDF — hemodiafiltração' };
 var UF_PERFIL_LBL = { '8': '8 × kg × T', '10': '10 × kg × T', '13': '13 × kg × T' };
 var ANTICO_LBL = { HEP: 'Heparina não fracionada — bólus', SEM: 'Sem anticoagulação' };
-var HEP_PADRAO_UIKG = 100;
+var HEP_PADRAO_UIKG = 50;     // bólus inicial clássico de HNF em HD/HDF (KDIGO não fixa dose)
+var HEP_CONC_PADRAO = 5000;   // UI/mL — frasco usual de heparina sódica
 var PRESC_CAMPOS = [
   { k: 'modalidade', lbl: 'Modalidade', sel: MODAL_LBL, cur: { HD: 'HD', HDF: 'HDF' }, def: 'HD' },
   { k: 'qb', lbl: 'Fluxo sanguíneo (Qb)', un: 'mL/min', ph: '300' },
@@ -1181,8 +1186,9 @@ var PRESC_CAMPOS = [
   { k: 'ufPerfil', lbl: 'Perfil de UF máxima', sel: UF_PERFIL_LBL, cur: { '8': '8×kg×T', '10': '10×kg×T', '13': '13×kg×T' }, def: '13' },
   { k: 'ufMax', lbl: 'UF máxima', un: 'mL', ph: 'automática', hint: true },
   { k: 'antico', lbl: 'Anticoagulação', sel: ANTICO_LBL, cur: { HEP: 'Heparina', SEM: 'Sem' }, def: 'HEP' },
-  { k: 'hepUIkg', lbl: 'Heparina', un: 'UI/kg', ph: '100', defNum: HEP_PADRAO_UIKG },
-  { k: 'hepBolus', lbl: 'Bólus de heparina', un: 'UI', ph: 'automático', hint: true },
+  { k: 'hepUIkg', lbl: 'Heparina', un: 'UI/kg', ph: '50', defNum: HEP_PADRAO_UIKG },
+  { k: 'hepConc', lbl: 'Concentração da heparina', un: 'UI/mL', ph: '5000', defNum: HEP_CONC_PADRAO },
+  { k: 'hepBolus', lbl: 'Bólus de heparina', un: 'mL', ph: 'automático', hint: true },
   { k: 'temp', lbl: 'Temperatura do banho', un: '°C', ph: '36,0', dec: true },
   { k: 'bic', lbl: 'Bicarbonato', un: 'mmol/L', ph: '32' },
   { k: 'na', lbl: 'Sódio', un: 'mmol/L', ph: '138' },
@@ -1206,11 +1212,18 @@ function ufMaxPorPerfil(perfil, pesoSeco, tempoMin) {
   if (isNaN(c) || isNaN(peso) || isNaN(t) || !peso || !t) return null;
   return Math.round(c * peso * (t / 60) / 10) * 10;
 }
-/* bólus de heparina: UI/kg × peso seco, arredondado de 100 em 100 UI */
-function hepBolusCalc(uikg, pesoSeco) {
+/* bólus de heparina em mL: (UI/kg × peso seco) ÷ concentração do frasco,
+   arredondado de 0,1 em 0,1 mL — é o volume aspirado na seringa */
+function hepBolusCalc(uikg, pesoSeco, conc) {
+  var u = num(uikg, NaN), peso = num(pesoSeco, NaN);
+  var c = num(conc, HEP_CONC_PADRAO); if (!c || isNaN(c)) c = HEP_CONC_PADRAO;
+  if (isNaN(u) || isNaN(peso) || !u || !peso) return null;
+  return Math.round((u * peso / c) * 10) / 10;
+}
+function hepUITotal(uikg, pesoSeco) {
   var u = num(uikg, NaN), peso = num(pesoSeco, NaN);
   if (isNaN(u) || isNaN(peso) || !u || !peso) return null;
-  return Math.round(u * peso / 100) * 100;
+  return Math.round(u * peso);
 }
 /* ================= MEDIDAS DA SESSÃO =================
    Peso e pressão de entrada e saída ficam com quem lança;
@@ -1874,6 +1887,14 @@ function subPrescricoes() {
   UNSUB.presc = FS.collection(COL_APP).doc('prescricoes').onSnapshot(function (snap) {
     if (snapConfiavel(snap)) SRV.presc = true;
     DB.presc = (snap.exists && snap.data().lista) || {};
+    /* compatibilidade: bólus gravado em UI por versão anterior vira mL
+       (um bólus em mL nunca passa de ~100; em UI é sempre milhares) */
+    Object.keys(DB.presc).forEach(function (pid) {
+      var o = DB.presc[pid];
+      if (o && num(o.hepBolus, 0) > 100) {
+        o.hepBolus = Math.round((num(o.hepBolus) / num(o.hepConc, HEP_CONC_PADRAO)) * 10) / 10;
+      }
+    });
     if (VIEW === 'escala') renderEscala();
     if (VIEW === 'pacientes') renderPacientes();
   }, function () { });
@@ -2660,14 +2681,14 @@ function prVal(id) { var el = $('#' + id); return el ? el.value : ''; }
 function prCalcUf() { return ufMaxPorPerfil(prVal('pr_ufPerfil'), prVal('pr_pesoSeco'), prVal('pr_tempo')); }
 function prCalcHep() {
   if (prVal('pr_antico') === 'SEM') return null;
-  return hepBolusCalc(prVal('pr_hepUIkg'), prVal('pr_pesoSeco'));
+  return hepBolusCalc(prVal('pr_hepUIkg'), prVal('pr_pesoSeco'), prVal('pr_hepConc'));
 }
 function ligaPresc(o) {
   var ufEl = $('#pr_ufMax'); if (!ufEl || ufEl.disabled) return;
   var calcUf = prCalcUf(), calcHep = prCalcHep();
   PR_UFMAN = o.ufMax !== undefined && o.ufMax !== '' && num(o.ufMax) !== calcUf;
   PR_HEPMAN = o.hepBolus !== undefined && o.hepBolus !== '' && num(o.hepBolus) !== calcHep;
-  ['pr_pesoSeco', 'pr_tempo', 'pr_ufPerfil', 'pr_hepUIkg', 'pr_antico', 'pr_modalidade'].forEach(function (id) {
+  ['pr_pesoSeco', 'pr_tempo', 'pr_ufPerfil', 'pr_hepUIkg', 'pr_hepConc', 'pr_antico', 'pr_modalidade'].forEach(function (id) {
     var el = $('#' + id); if (!el) return;
     el.oninput = el.onchange = recalcPresc;
   });
@@ -2703,13 +2724,17 @@ function recalcPresc() {
     } else hb.classList.remove('uf-auto');
     var h2 = $('#prh_hepBolus');
     if (h2) {
+      var uiTot = hepUITotal(prVal('pr_hepUIkg'), prVal('pr_pesoSeco'));
+      var conta = uiTot === null ? '' : fmtNum(uiTot) + ' UI ÷ ' + fmtNum(num(prVal('pr_hepConc'), HEP_CONC_PADRAO)) + ' UI/mL';
+      var repique = hep === null ? '' : ' · repique sugerido na 2ª hora (sessão >3 h): <b>' +
+        fmtNum(Math.round((hep / 2) * 10) / 10) + ' mL</b> (metade da dose)';
       h2.innerHTML = sem
         ? 'Sem anticoagulação nesta prescrição.'
         : hep === null
           ? 'Preencha peso seco e UI/kg para o cálculo do bólus.'
           : (PR_HEPMAN
-            ? 'Pelo peso: <b>' + fmtNum(hep) + ' UI</b> — <a href="#" onclick="PR_HEPMAN=false;recalcPresc();return false">usar</a>'
-            : 'Bólus único = UI/kg × peso seco (usual 50–100 UI/kg). Digite outro valor para substituir.');
+            ? 'Pelo peso: ' + conta + ' = <b>' + fmtNum(hep) + ' mL</b> — <a href="#" onclick="PR_HEPMAN=false;recalcPresc();return false">usar</a>'
+            : 'Bólus inicial: ' + conta + repique + '. KDIGO não fixa dose — ajuste ao risco de sangramento. Digite outro valor em mL para substituir.');
     }
   }
 }
