@@ -1167,16 +1167,20 @@ function sessKey(iso, turnoId) { return iso + '|' + turnoId; }
    Anticoagulação: bólus de heparina baseado no peso (UI/kg × peso
    seco), convertido para mL pela concentração do frasco (padrão
    5000 UI/mL) — é o volume que se aspira na seringa. Calculado e
-   editável. KDIGO (AKI 2012 rec. 5.3.2.1 e rascunho AKI/AKD 2026,
-   PP 5.5.3) recomenda HNF ou HBPM na HD intermitente SEM fixar dose
-   numérica; o padrão adotado é o esquema clássico de referência:
-   bólus inicial de 50 UI/kg, com repique de metade da dose na 2ª hora
-   em sessões longas — sempre a ajustar ao risco de sangramento. */
+   editável. Padrão de partida: 50 UI/kg em HD e 1,25× isso em HDF
+   (62,5 UI/kg), a ajustar por paciente e ao risco de sangramento. */
 var MODAL_LBL = { HD: 'HD — hemodiálise', HDF: 'HDF — hemodiafiltração' };
 var UF_PERFIL_LBL = { '8': '8 × kg × T', '10': '10 × kg × T', '13': '13 × kg × T' };
 var ANTICO_LBL = { HEP: 'Heparina não fracionada — bólus', SEM: 'Sem anticoagulação' };
-var HEP_PADRAO_UIKG = 50;     // bólus inicial clássico de HNF em HD/HDF (KDIGO não fixa dose)
+var HEP_PADRAO_UIKG = 50;     // bólus inicial de HNF em HD
+var HEP_FATOR_HDF = 1.25;     // HDF: 25% a mais, pela hemoconcentração no filtro
 var HEP_CONC_PADRAO = 5000;   // UI/mL — frasco usual de heparina sódica
+/* UI/kg de partida conforme a modalidade — 50 em HD, 62,5 em HDF */
+function hepUIkgPadrao(modalidade) {
+  var b = HEP_PADRAO_UIKG;
+  if (String(modalidade) === 'HDF') b = Math.round(b * HEP_FATOR_HDF * 10) / 10;
+  return b;
+}
 var PRESC_CAMPOS = [
   { k: 'modalidade', lbl: 'Modalidade', sel: MODAL_LBL, cur: { HD: 'HD', HDF: 'HDF' }, def: 'HD' },
   { k: 'qb', lbl: 'Fluxo sanguíneo (Qb)', un: 'mL/min', ph: '300' },
@@ -1186,7 +1190,7 @@ var PRESC_CAMPOS = [
   { k: 'ufPerfil', lbl: 'Perfil de UF máxima', sel: UF_PERFIL_LBL, cur: { '8': '8×kg×T', '10': '10×kg×T', '13': '13×kg×T' }, def: '13' },
   { k: 'ufMax', lbl: 'UF máxima', un: 'mL', ph: 'automática', hint: true },
   { k: 'antico', lbl: 'Anticoagulação', sel: ANTICO_LBL, cur: { HEP: 'Heparina', SEM: 'Sem' }, def: 'HEP' },
-  { k: 'hepUIkg', lbl: 'Heparina', un: 'UI/kg', ph: '50', defNum: HEP_PADRAO_UIKG },
+  { k: 'hepUIkg', lbl: 'Heparina', un: 'UI/kg', ph: '50', defNum: HEP_PADRAO_UIKG, hint: true },
   { k: 'hepConc', lbl: 'Concentração da heparina', un: 'UI/mL', ph: '5000', defNum: HEP_CONC_PADRAO },
   { k: 'hepBolus', lbl: 'Bólus de heparina', un: 'mL', ph: 'automático', hint: true },
   { k: 'temp', lbl: 'Temperatura do banho', un: '°C', ph: '36,0', dec: true },
@@ -2658,10 +2662,8 @@ function blocoPresc(pid) {
   var o = prescDe(pid), ed = podeClinico();
   return '<fieldset class="fieldset"><legend>Prescrição de diálise</legend>' +
     '<div class="hint" style="margin-bottom:10px">' +
-    (ed ? 'Parâmetros da máquina e metas da sessão — saem impressos no relatório do paciente. ' +
-          'A <b>UF máxima</b> é calculada pelo perfil escolhido (8, 10 ou 13 mL/kg de peso seco por hora de sessão) e o ' +
-          '<b>bólus de heparina</b> pelo peso (UI/kg) — os dois podem ser substituídos à mão. O primer é 500 mL para todos, salvo ajuste.'
-        : '<b>Somente a equipe médica altera a prescrição.</b> Os valores abaixo são exibidos apenas para consulta.') +
+    (ed ? 'Campos em verde são calculados e podem ser substituídos à mão.'
+        : '<b>Somente a equipe médica altera a prescrição.</b> Valores apenas para consulta.') +
     '</div><div class="grid g3">' +
     PRESC_CAMPOS.map(function (c) { return campoPresc(o, c, ed); }).join('') +
     '</div></fieldset>';
@@ -2676,7 +2678,7 @@ function lerPresc() {
   return o;
 }
 /* ---------- cálculos automáticos dentro do formulário ---------- */
-var PR_UFMAN = false, PR_HEPMAN = false;
+var PR_UFMAN = false, PR_HEPMAN = false, PR_HEPKGMAN = false;
 function prVal(id) { var el = $('#' + id); return el ? el.value : ''; }
 function prCalcUf() { return ufMaxPorPerfil(prVal('pr_ufPerfil'), prVal('pr_pesoSeco'), prVal('pr_tempo')); }
 function prCalcHep() {
@@ -2688,17 +2690,35 @@ function ligaPresc(o) {
   var calcUf = prCalcUf(), calcHep = prCalcHep();
   PR_UFMAN = o.ufMax !== undefined && o.ufMax !== '' && num(o.ufMax) !== calcUf;
   PR_HEPMAN = o.hepBolus !== undefined && o.hepBolus !== '' && num(o.hepBolus) !== calcHep;
+  PR_HEPKGMAN = o.hepUIkg !== undefined && o.hepUIkg !== '' &&
+    num(o.hepUIkg) !== hepUIkgPadrao(o.modalidade || 'HD');
   ['pr_pesoSeco', 'pr_tempo', 'pr_ufPerfil', 'pr_hepUIkg', 'pr_hepConc', 'pr_antico', 'pr_modalidade'].forEach(function (id) {
     var el = $('#' + id); if (!el) return;
     el.oninput = el.onchange = recalcPresc;
   });
   ufEl.oninput = function () { PR_UFMAN = this.value.trim() !== ''; recalcPresc(); };
+  var hk = $('#pr_hepUIkg');
+  if (hk) hk.oninput = function () { PR_HEPKGMAN = this.value.trim() !== ''; recalcPresc(); };
   var hb = $('#pr_hepBolus');
   if (hb) hb.oninput = function () { PR_HEPMAN = this.value.trim() !== ''; recalcPresc(); };
   recalcPresc();
 }
 function recalcPresc() {
   var ufEl = $('#pr_ufMax'); if (!ufEl) return;
+  /* UI/kg segue a modalidade enquanto ninguém tiver digitado por cima */
+  var hkEl = $('#pr_hepUIkg');
+  if (hkEl && !hkEl.disabled) {
+    var mod = prVal('pr_modalidade') || 'HD', pad = hepUIkgPadrao(mod);
+    if (!PR_HEPKGMAN) { hkEl.value = fmtNum(pad); hkEl.classList.add('uf-auto'); }
+    else hkEl.classList.remove('uf-auto');
+    var hk1 = $('#prh_hepUIkg');
+    if (hk1) {
+      hk1.innerHTML = PR_HEPKGMAN
+        ? (mod === 'HDF' ? 'HDF: ' : 'HD: ') + fmtNum(pad) +
+          ' UI/kg — <a href="#" onclick="PR_HEPKGMAN=false;recalcPresc();return false">usar</a>'
+        : (mod === 'HDF' ? fmtNum(HEP_PADRAO_UIKG) + ' × 1,25 (HDF)' : '');
+    }
+  }
   var uf = prCalcUf(), perfil = prVal('pr_ufPerfil');
   if (!PR_UFMAN) {
     ufEl.value = uf === null ? '' : fmtNum(uf);
@@ -2706,15 +2726,14 @@ function recalcPresc() {
   } else ufEl.classList.remove('uf-auto');
   var h = $('#prh_ufMax');
   if (h) {
-    h.innerHTML = uf === null
-      ? 'Preencha peso seco e tempo para o cálculo pelo perfil.'
+    var pk = num(prVal('pr_pesoSeco'), 0), th = num(prVal('pr_tempo'), 0) / 60;
+    var contaUf = esc(perfil) + ' × ' + fmtNum(pk) + ' kg × ' + fmtNum(Math.round(th * 100) / 100) + ' h';
+    h.innerHTML = uf === null ? ''
       : (PR_UFMAN
-        ? 'Pelo perfil ' + esc(perfil) + '×kg×T: <b>' + fmtNum(uf) + ' mL</b> — <a href="#" onclick="PR_UFMAN=false;recalcPresc();return false">usar</a>'
-        : 'Calculada pelo perfil ' + esc(perfil) + ' mL/kg/h. Digite outro valor para substituir.');
+        ? contaUf + ' = <b>' + fmtNum(uf) + ' mL</b> — <a href="#" onclick="PR_UFMAN=false;recalcPresc();return false">usar</a>'
+        : contaUf);
   }
   var hb = $('#pr_hepBolus'), sem = prVal('pr_antico') === 'SEM';
-  var hkg = $('#pr_hepUIkg');
-  if (hkg && !hkg.disabled) hkg.classList.toggle('uf-auto', false);
   if (hb && !hb.disabled) {
     var hep = prCalcHep();
     if (sem) { hb.value = ''; hb.classList.remove('uf-auto'); }
@@ -2726,15 +2745,10 @@ function recalcPresc() {
     if (h2) {
       var uiTot = hepUITotal(prVal('pr_hepUIkg'), prVal('pr_pesoSeco'));
       var conta = uiTot === null ? '' : fmtNum(uiTot) + ' UI ÷ ' + fmtNum(num(prVal('pr_hepConc'), HEP_CONC_PADRAO)) + ' UI/mL';
-      var repique = hep === null ? '' : ' · repique sugerido na 2ª hora (sessão >3 h): <b>' +
-        fmtNum(Math.round((hep / 2) * 10) / 10) + ' mL</b> (metade da dose)';
-      h2.innerHTML = sem
-        ? 'Sem anticoagulação nesta prescrição.'
-        : hep === null
-          ? 'Preencha peso seco e UI/kg para o cálculo do bólus.'
-          : (PR_HEPMAN
-            ? 'Pelo peso: ' + conta + ' = <b>' + fmtNum(hep) + ' mL</b> — <a href="#" onclick="PR_HEPMAN=false;recalcPresc();return false">usar</a>'
-            : 'Bólus inicial: ' + conta + repique + '. KDIGO não fixa dose — ajuste ao risco de sangramento. Digite outro valor em mL para substituir.');
+      h2.innerHTML = sem || hep === null ? ''
+        : (PR_HEPMAN
+          ? conta + ' = <b>' + fmtNum(hep) + ' mL</b> — <a href="#" onclick="PR_HEPMAN=false;recalcPresc();return false">usar</a>'
+          : conta);
     }
   }
 }
